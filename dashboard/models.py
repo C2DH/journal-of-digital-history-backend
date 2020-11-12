@@ -2,6 +2,10 @@ from django.db import models
 from django.conf import settings
 from django.utils import timezone
 
+
+
+
+""" TODO:rename class and parameter according to json daniele """
 # Create your models here.
 class Status(models.TextChoices):
     SUBMITTED = 'SUBMITTED', 'Submitted',
