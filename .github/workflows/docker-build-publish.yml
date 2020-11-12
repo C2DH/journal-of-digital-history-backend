@@ -25,7 +25,7 @@ jobs:
       id: extract_hash
     - name: Extract latest tag
       shell: bash
-      run: echo "##[set-output name=tags;]$(git describe --tags --abbrev=0 ${GITHUB_SHA})
+      run: echo "##[set-output name=tags;]$(git describe --tags --abbrev=0 ${GITHUB_SHA})"
       id: extract_tags
     - name: Publish to Registry
       uses: elgohr/Publish-Docker-Github-Action@master
