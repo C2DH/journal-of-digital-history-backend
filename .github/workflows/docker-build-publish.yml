@@ -32,10 +32,10 @@ jobs:
       env:
         GIT_BRANCH: ${{ steps.extract_branch.outputs.branch }}
         GIT_REVISION: ${{ steps.extract_hash.outputs.hash }}
-        RELEASE_VERSION: ${{ steps.extract_hash.outputs.extract_tags }}
+        GIT_TAG: ${{ steps.extract_hash.outputs.extract_tags }}
       with:
         name: c2dhunilu/journal-of-digital-history-backend
         username: ${{ secrets.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_PASSWORD }}
-        buildargs: GIT_BRANCH,GIT_REVISION
-        tags: "${{ env.RELEASE_VERSION }}"
+        buildargs: GIT_BRANCH,GIT_REVISION,GIT_TAG
+        tags: GIT_TAG
