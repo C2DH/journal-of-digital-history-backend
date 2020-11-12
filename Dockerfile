@@ -7,8 +7,8 @@ ARG GIT_REVISION
 
 RUN pip install --upgrade pip
 
-COPY journal-of-digital-history-backend ./journal-of-digital-history-backend
-COPY manage.py .
+# COPY journal-of-digital-history-backend ./journal-of-digital-history-backend
+# COPY manage.py .
 COPY requirements.txt .
 
 RUN pip install -r requirements.txt
