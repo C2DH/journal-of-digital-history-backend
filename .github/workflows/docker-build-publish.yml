@@ -35,3 +35,4 @@ jobs:
         username: ${{ secrets.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_PASSWORD }}
         buildargs: GIT_BRANCH,GIT_REVISION,GIT_TAG
+        tags: "latest"
