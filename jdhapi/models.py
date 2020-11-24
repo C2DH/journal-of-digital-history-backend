@@ -13,13 +13,13 @@ class Status(models.TextChoices):
     DECLINED = 'DECLINED', 'Declined'
 
 
-class Contributor(models.Model):
+class Author(models.Model):
     id = models.AutoField(primary_key=True, db_column="id")
     email = models.EmailField(max_length = 254, null=True, blank=True)
     lastname = models.CharField(max_length=50)
     firstname = models.CharField(max_length=50)
     orcid = models.CharField(max_length=50,null=True, blank=True)
-    institution = models.CharField(max_length=250)
+    affiliation = models.CharField(max_length=250)
 
     class Meta:
         ordering = ['lastname']
@@ -27,35 +27,35 @@ class Contributor(models.Model):
     def __str__(self):
         return self.lastname
 
-class Ressource(models.Model):
+class Dataset(models.Model):
     id = models.AutoField(primary_key=True, db_column="id")
     url = models.URLField(max_length = 254,null=True, blank=True)
     description = models.TextField(null=True, blank=True)
 
 
 
-class AbstractSubmission(models.Model):
+class Abstract(models.Model):
     id= models.AutoField(primary_key=True, db_column="id")
     title = models.CharField(max_length=250)
     abstract = models.TextField()
     submitted_date = models.DateTimeField(default=timezone.now)
     validation_date = models.DateTimeField(blank=True, null=True)
-    submitter_orcid = models.CharField(max_length=50)
-    submitter_institution = models.CharField(max_length=250)
-    submitter_email = models.EmailField(max_length = 254)
-    submitter_lastname = models.CharField(max_length=50)
-    submitter_firstname = models.CharField(max_length=50)
+    contact_orcid = models.CharField(max_length=50)
+    contact_affiliation = models.CharField(max_length=250)
+    contact_email = models.EmailField(max_length = 254)
+    contact_lastname = models.CharField(max_length=50)
+    contact_firstname = models.CharField(max_length=50)
     status = models.CharField(
         max_length=15,
         choices=Status.choices,
         default=Status.SUBMITTED,
     )
-    contributors = models.ManyToManyField(Contributor)
-    ressources = models.ManyToManyField(Ressource)
+    authors = models.ManyToManyField(Author, related_name='abstracts', blank=True)
+    datasets = models.ManyToManyField(Dataset, related_name='abstracts',blank=True)
     consented = models.BooleanField(default=False)
 
     class Meta:
-        ordering = ['title']
+        ordering = ['submitted_date']
 
     def accepted(self):
         self.validation_date = timezone.now()

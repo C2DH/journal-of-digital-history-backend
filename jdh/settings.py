@@ -39,8 +39,17 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'dashboard.apps.DashboardConfig',
+    'rest_framework',
+    'jdhapi.apps.JdhapiConfig',
+    #to use Bootsrap
     'crispy_forms',
 ]
+
+REST_FRAMEWORK = {
+    'DEFAULT_PERMISSION_CLASSES': ['rest_framework.permissions.IsAuthenticatedOrReadOnly',],
+   # 'DEFAULT_PAGINATION_CLASS': ['rest_framework.pagination.PageNumberPagination',],
+   # 'PAGE_SIZE' : 5
+} 
 
 CRISPY_TEMPLATE_PACK = 'bootstrap4'
 
