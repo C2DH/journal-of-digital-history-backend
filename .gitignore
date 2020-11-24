@@ -1,7 +1,11 @@
 db.sqlite3
 __pycache__
-.pyc 
+.pyc
 .DS_Store
 jdhapi/test/shell.py
 jdhapi/test/test-httpie.py
 
+# env files
+.env
+.env.*
+!.env.example
