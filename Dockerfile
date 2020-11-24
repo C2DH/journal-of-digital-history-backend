@@ -7,11 +7,36 @@ ARG GIT_REVISION
 
 RUN pip install --upgrade pip
 
-# COPY journal-of-digital-history-backend ./journal-of-digital-history-backend
-# COPY manage.py .
+RUN apk add --no-cache \
+    postgresql-libs
+
+RUN apk add --no-cache --virtual .build-deps \
+    gcc \
+    musl-dev \
+    postgresql-dev \
+    jpeg-dev \
+    zlib-dev \
+    freetype-dev \
+    lcms2-dev \
+    openjpeg-dev \
+    tiff-dev \
+    tk-dev \
+    tcl-dev \
+    harfbuzz-dev \
+    fribidi-dev \
+    libxslt-dev
+
+COPY jdh ./jdh
+COPY jdhapi ./jdhapi
+COPY dashboard ./dashboard
+COPY dbconnection.py .
+COPY manage.py .
 COPY requirements.txt .
 
 RUN pip install -r requirements.txt
+
+RUN apk del --no-cache .build-deps
+
 RUN mkdir -p logs
 
 ENV GIT_TAG=${GIT_TAG}

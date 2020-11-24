@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/3.1/ref/settings/
 
 from pathlib import Path
 import os
+from .base import get_env_variable
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -24,9 +25,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = get_env_variable('DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = ['127.0.0.1']
+ALLOWED_HOSTS = get_env_variable('ALLOWED_HOSTS', 'localhost').split(',')
 
 
 # Application definition
@@ -41,15 +42,19 @@ INSTALLED_APPS = [
     'dashboard.apps.DashboardConfig',
     'rest_framework',
     'jdhapi.apps.JdhapiConfig',
-    #to use Bootsrap
+    # to use Bootsrap
     'crispy_forms',
 ]
 
 REST_FRAMEWORK = {
-    'DEFAULT_PERMISSION_CLASSES': ['rest_framework.permissions.IsAuthenticatedOrReadOnly',],
-   # 'DEFAULT_PAGINATION_CLASS': ['rest_framework.pagination.PageNumberPagination',],
-   # 'PAGE_SIZE' : 5
-} 
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticatedOrReadOnly',
+    ],
+    # 'DEFAULT_PAGINATION_CLASS': [
+    #    'rest_framework.pagination.PageNumberPagination',
+    # ],
+    # 'PAGE_SIZE' : 5
+}
 
 CRISPY_TEMPLATE_PACK = 'bootstrap4'
 
@@ -86,14 +91,18 @@ WSGI_APPLICATION = 'jdh.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/3.1/ref/settings/#databases
-
+# Database
+# https://docs.djangoproject.com/en/3.0/ref/settings/#databases
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        'ENGINE': get_env_variable('DATABASE_ENGINE'), # 'django.db.backends.postgresql_psycopg2',
+        'NAME': get_env_variable('DATABASE_NAME'),
+        'USER': get_env_variable('DATABASE_USER'),
+        'PASSWORD': get_env_variable('DATABASE_PASSWORD'),
+        'HOST': get_env_variable('DATABASE_HOST', 'localhost'),
+        'PORT': get_env_variable('DATABASE_PORT', '54320'),
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/3.1/ref/settings/#auth-password-validators
@@ -128,17 +137,33 @@ USE_L10N = True
 USE_TZ = True
 
 
+JDH_SCHEMA_ROOT = get_env_variable(
+    'JDH_SCHEMA_ROOT',
+    os.path.join(BASE_DIR, 'schema')
+)
+# Current version
+JDH_GIT_BRANCH = get_env_variable('JDH_GIT_BRANCH', 'nd')
+JDH_GIT_REVISION = get_env_variable('JDH_GIT_REVISION', 'nd')
+
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.1/howto/static-files/
+# Static files (CSS, JavaScript, Images)
+# https://docs.djangoproject.com/en/3.0/howto/static-files/
+STATIC_URL = get_env_variable('STATIC_URL', '/static/')
+STATIC_ROOT = get_env_variable('STATIC_ROOT', '/static')
+STATICFILES_DIRS = [
+    # ...
+    ('schema', JDH_SCHEMA_ROOT),
+]
 
-STATIC_URL ='/static/'
-STATIC_ROOT = os.path.join(BASE_DIR,'static')
+MEDIA_URL = get_env_variable('MEDIA_URL', '/media/')
+MEDIA_ROOT = get_env_variable('MEDIA_ROOT', '/media')
 
 #ACCOUNT_EMAIL_VERIFICATION = 'none'
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 
 # Host for sending e-mail.
-EMAIL_HOST = 'smtp.uni.lux'
+EMAIL_HOST = get_env_variable('EMAIL_HOST', 'smtp.')
 
 # Port for sending e-mail.
-EMAIL_PORT = 25
+EMAIL_PORT = get_env_variable('EMAIL_PORT', 0)
