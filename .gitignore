@@ -1,0 +1,7 @@
+db.sqlite3
+__pycache__
+.pyc 
+.DS_Store
+jdhapi/test/shell.py
+jdhapi/test/test-httpie.py
+
