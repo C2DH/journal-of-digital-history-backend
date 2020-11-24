@@ -2,6 +2,13 @@ import os
 import sys
 import psycopg2
 
+is_env_ready = (
+    os.environ.get('DATABASE_NAME') and os.environ.get('DATABASE_PASSWORD') and
+    os.environ.get('DATABASE_HOST') and os.environ.get('DATABASE_USER')
+) is not None
+
+print(f'dbconection.py: is_env_ready={is_env_ready}')
+
 try:
     connection = psycopg2.connect(
         user=os.environ.get('DATABASE_USER'),
