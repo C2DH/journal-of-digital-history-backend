@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "eb140e215cc55f905aaa534c7eed062e1b9aecb71eeabb15b4a2edd4e828c57b"
+            "sha256": "55297b0a61dd5b5d2a6d8b2580669a6e9edf24516cb325d3647617d074d8d39b"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -21,6 +21,7 @@
                 "sha256:5ee950735509d04eb673bd7f7120f8fa1c9e2df495394992c73234d526907e17",
                 "sha256:7162a3cb30ab0609f1a4c95938fd73e8604f63bdba516a7f7d64b83ff09478f0"
             ],
+            "index": "pypi",
             "version": "==3.3.1"
         },
         "django": {
@@ -39,12 +40,26 @@
             "index": "pypi",
             "version": "==1.10.0"
         },
+        "django-ipware": {
+            "hashes": [
+                "sha256:c7df8e1410a8e5d6b1fbae58728402ea59950f043c3582e033e866f0f0cf5e94"
+            ],
+            "version": "==3.0.2"
+        },
         "djangorestframework": {
             "hashes": [
                 "sha256:0209bafcb7b5010fdfec784034f059d512256424de2a0f084cb82b096d6dd6a7"
             ],
             "index": "pypi",
             "version": "==3.12.2"
+        },
+        "drf-recaptcha": {
+            "hashes": [
+                "sha256:758d5e026516d5821799de7cdf369b13a1a13d4d80f20a2d91f35ff1f372555d",
+                "sha256:ded63a89a91efe41064aac9069959abb879921bf37434fb405422adb46169153"
+            ],
+            "index": "pypi",
+            "version": "==2.0.4"
         },
         "psycopg2-binary": {
             "hashes": [
@@ -92,6 +107,7 @@
                 "sha256:3e6b7dd2d1e0a59084bcee14a17af60c5c562cdc16d828e8eba2e683d3a7e268",
                 "sha256:5c55e189b682d420be27c6995ba6edce0c0a77dd67bfbe2ae6607134d5851ffd"
             ],
+            "index": "pypi",
             "version": "==2020.4"
         },
         "sqlparse": {
@@ -99,6 +115,7 @@
                 "sha256:017cde379adbd6a1f15a61873f43e8274179378e95ef3fede90b5aa64d304ed0",
                 "sha256:0f91fd2e829c44362cbcfab3e9ae12e22badaa8a29ad5ff599f9ec109f0454e8"
             ],
+            "index": "pypi",
             "version": "==0.4.1"
         }
     },
