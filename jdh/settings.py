@@ -29,6 +29,8 @@ DEBUG = get_env_variable('DEBUG', 'True') == 'True'
 
 ALLOWED_HOSTS = get_env_variable('ALLOWED_HOSTS', 'localhost').split(',')
 
+DRF_RECAPTCHA_SECRET_KEY = get_env_variable('DRF_RECAPTCHA_SECRET_KEY')
+
 
 # Application definition
 
@@ -44,6 +46,7 @@ INSTALLED_APPS = [
     'jdhapi.apps.JdhapiConfig',
     # to use Bootsrap
     'crispy_forms',
+    'drf_recaptcha',
 ]
 
 REST_FRAMEWORK = {
