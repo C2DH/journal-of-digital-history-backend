@@ -15,12 +15,13 @@ from rest_framework.decorators import permission_classes
 from drf_recaptcha.fields import ReCaptchaV2Field
 from rest_framework.serializers import Serializer
 
+
 @api_view(['GET'])
 def api_root(request, format=None):
     return Response({
-        'authors':reverse('author-list',request=request, format=format),
-        'datasets':reverse('dataset-list',request=request, format=format),
-        'abstracts':reverse('abstract-list',request=request, format=format),
+        'authors': reverse('author-list', request=request, format=format),
+        'datasets': reverse('dataset-list', request=request, format=format),
+        'abstracts': reverse('abstract-list', request=request, format=format),
     })
 
 
@@ -59,10 +60,11 @@ class AbstractList(generics.ListCreateAPIView):
     def create(self, request, *args, **kwargs):
         serializer = V2Serializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
+        self.serializer_class = CreateAbstractSerializer
         super().create(request, *args, **kwargs)
         return Response({'received data': request.data})
 
-   
+
 
 
 class AbstractDetail(generics.RetrieveUpdateDestroyAPIView):
@@ -100,12 +102,12 @@ class AuthorDetail(mixins.RetrieveModelMixin, mixins.UpdateModelMixin, mixins.De
 
 
 class AuthorList(APIView):
-  
+
     def get(self,request, format=None):
         authors = Author.objects.all()
         serializer = AuthorSerializer(authors, many=True)
         return Response(serializer.data)
-    
+
     def post(self,request, format=None):
         serializer = AuthorSerializer(data=request.data)
         if serializer.is_valid():
@@ -114,7 +116,7 @@ class AuthorList(APIView):
         return Response(serializer.data, status=status.HTTP_400_BAD_REQUEST)
 
 class AuthorDetail(APIView):
-  
+
     def get_object(self, pk):
         try:
             return Author.objects.get(pk=pk)
