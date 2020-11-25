@@ -2,6 +2,17 @@ from rest_framework import serializers
 from jdhapi.models import Abstract, Author, Dataset, Status
 
 
+class CreateAbstractSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Abstract
+        fields = ('title', 'abstract')
+
+    def validate(self, data):
+        print('@validate', data)
+        # validate against a JSON SCHEMA only.
+        return data
+
+
 class AbstractSerializer(serializers.ModelSerializer):
 
     class Meta:
@@ -28,10 +39,3 @@ class DatasetSerializer(serializers.ModelSerializer):
     class Meta:
         model = Dataset
         fields = ['id', 'url', 'description','abstracts']
-
-
-
-
-
-
-
