@@ -6,8 +6,13 @@ class AbstractSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Abstract
-        fields = ("id", "title","abstract","validation_date","contact_orcid","contact_affiliation","contact_email","contact_lastname","contact_firstname","status","authors","datasets","consented")
-        extra_kwargs = {'authors':{'required': False}, 'datasets':{'required': False}}
+        fields = ("id", "title","abstract","validation_date","contact_orcid","contact_affiliation","contact_email","contact_lastname","contact_firstname","status","consented")
+        #extra_kwargs = {'authors':{'required': False}, 'datasets':{'required': False}}
+
+    def create(self, validated_data):
+        print(validated_data)
+        abstract = Abstract(**validated_data)
+        return abstract
 
 class AuthorSerializer(serializers.ModelSerializer):
     abstracts = AbstractSerializer(many=True, read_only=True)

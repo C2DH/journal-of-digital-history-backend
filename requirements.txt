@@ -6,3 +6,4 @@ djangorestframework==3.12.2
 psycopg2-binary==2.8.6
 pytz==2020.4
 sqlparse==0.4.1
+drf-recaptcha==2.0.4

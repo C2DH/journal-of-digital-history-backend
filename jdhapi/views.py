@@ -9,7 +9,11 @@ from rest_framework import permissions
 from rest_framework.decorators import api_view
 from rest_framework.reverse import reverse
 from rest_framework.response import Response
-
+from django.views.decorators.csrf import csrf_exempt
+from rest_framework.permissions import AllowAny
+from rest_framework.decorators import permission_classes
+from drf_recaptcha.fields import ReCaptchaV2Field
+from rest_framework.serializers import Serializer
 
 @api_view(['GET'])
 def api_root(request, format=None):
@@ -19,6 +23,9 @@ def api_root(request, format=None):
         'abstracts':reverse('abstract-list',request=request, format=format),
     })
 
+
+class V2Serializer(Serializer):
+    token = ReCaptchaV2Field()
 
 class AuthorList(generics.ListCreateAPIView):
     queryset = Author.objects.all()
@@ -42,9 +49,21 @@ class DatasetDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Dataset.objects.all()
     serializer_class = DatasetSerializer
 
+
 class AbstractList(generics.ListCreateAPIView):
     queryset = Abstract.objects.all()
     serializer_class = AbstractSerializer
+    permission_classes = [permissions.AllowAny]
+
+    @csrf_exempt
+    def create(self, request, *args, **kwargs):
+        serializer = V2Serializer(data=request.data, context={"request": request})
+        serializer.is_valid(raise_exception=True)
+        super().create(request, *args, **kwargs)
+        return Response({'received data': request.data})
+
+   
+
 
 class AbstractDetail(generics.RetrieveUpdateDestroyAPIView):
     # TO UPDATE OR DELETE need to be authenticated
