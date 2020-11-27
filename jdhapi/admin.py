@@ -5,3 +5,5 @@ from . models import *
 admin.site.register(Abstract)
 admin.site.register(Dataset)
 admin.site.register(Author)
+
+admin.site.site_url = "/dashboard"
