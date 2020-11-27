@@ -88,12 +88,21 @@ def SubmitAbstract(request):
     abstract.save()
     authors = request.data.get('authors', [])
     for author in authors:
-        new_author = Author(**author)
+        new_author = Author(
+            lastname=author['lastname'],
+            firstname=author['firstname'],
+            email=author['email'],
+            affiliation=author['affiliation'],
+            orcid=author['orcid']
+        )
         new_author.save()
         abstract.authors.add(new_author)
     datasets = request.data.get('datasets', [])
     for dataset in datasets:
-        new_dataset = Dataset(**dataset)
+        new_dataset = Dataset(
+            url=dataset['url'],
+            description=dataset['description']
+        )
         new_dataset.save()
         abstract.datasets.add(new_dataset)
     logger.info("End submit abstract")
