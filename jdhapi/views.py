@@ -14,6 +14,29 @@ from rest_framework.permissions import AllowAny
 from rest_framework.decorators import permission_classes
 from drf_recaptcha.fields import ReCaptchaV2Field
 from rest_framework.serializers import Serializer
+from django.core.mail import send_mail
+import logging
+
+logger = logging.getLogger(__name__)
+
+def getDefaultBody(subject):
+    defaultBody = "Dear author, your submission " + subject + " has been sent to the managing editor of the Journal of Digital History. We will contact you back in a few days to discuss the feasibility of your article, as the JDH's layered articles imply to publish an hermeneutics and a data layer." +  "\n" + "Best regard, the JDH team."
+    return defaultBody 
+
+
+
+def sendmailAbstractReceived(subject, sent_to):
+    body = getDefaultBody(subject) 
+    try:
+        send_mail(
+            subject,
+            body,
+            'jdh.admin@uni.lu',
+            [sent_to,'jdh.admin@uni.lu'],
+            fail_silently=False,
+        )
+    except Exception as e:
+        print(e)
 
 
 @api_view(['GET'])
@@ -24,6 +47,46 @@ def api_root(request, format=None):
         'abstracts': reverse('abstract-list', request=request, format=format),
     })
 
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def SubmitAbstract(request):
+    #JSON validation
+    logger.debug("Begin submit abstract")
+    contact = request.data.get("contact")
+    abstract = Abstract(
+        title = request.data.get("title"),
+        abstract = request.data.get("abstract"),
+        contact_orcid = contact.get("orcid"),
+        contact_affiliation = contact.get("affiliation"),
+        contact_email = contact.get("email"),
+        contact_lastname = contact.get("lastname"),
+        contact_firstname = contact.get("firstname"),
+        consented = request.data.get("acceptConditions")
+    )
+    abstract.save()
+    authors = request.data.get("authors")
+    if (len(authors)>0):
+        for author in authors: 
+            new_author = Author(lastname=author['lastname'],
+            firstname=author['firstname'], 
+            email=author['email'],
+            affiliation=author['affiliation'], 
+            orcid=author['orcid'])
+            new_author.save()
+            abstract.authors.add(new_author)
+    datasets = request.data.get("datasets")
+    if (len(datasets)>0):
+        for dataset in datasets: 
+            new_dataset = Dataset(url=dataset['url']
+            , description=dataset['description'] 
+           )
+            new_dataset .save()
+            abstract.datasets.add(new_dataset)
+    logger.debug("End submit abstract")
+    #Send an email of confirmation
+    sendmailAbstractReceived(abstract.title, abstract.contact_email)
+    serializer = AbstractSerializer(abstract)
+    return Response(serializer.data)
 
 class V2Serializer(Serializer):
     token = ReCaptchaV2Field()
@@ -54,7 +117,9 @@ class DatasetDetail(generics.RetrieveUpdateDestroyAPIView):
 class AbstractList(generics.ListCreateAPIView):
     queryset = Abstract.objects.all()
     serializer_class = AbstractSerializer
-    permission_classes = [permissions.AllowAny]
+  
+
+
 
     @csrf_exempt
     def create(self, request, *args, **kwargs):

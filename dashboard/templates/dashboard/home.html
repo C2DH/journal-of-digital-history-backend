@@ -37,7 +37,7 @@
                   </thead>
                   <tbody>
                   {% for abstractsubmission in abstractsubmissions %}
-                    {% for contributor in abstractsubmission.contributors.all %}
+                    {% for contributor in abstractsubmission.authors.all %}
                      <tr>
                      {% if abstractsubmission.status == "SUBMITTED" %}
                         <th scope="row" class="col-submitted"></th>
@@ -48,7 +48,7 @@
                       {% endif %}
                       {% if forloop.first %}
                         <td>{{abstractsubmission.submitted_date}}</td>
-                        <td>{{abstractsubmission.submitter_lastname}} {{abstractsubmission.submitter_firstname}}</td>
+                        <td>{{abstractsubmission.contact_lastname}} {{abstractsubmission.contact_firstname}}</td>
                       {% else %}
                         <td></td>
                         <td></td>
@@ -57,15 +57,15 @@
                       {{ contributor.lastname}} {{ contributor.firstname}}
                       </td>
                       <td>
-                      {{ contributor.institution}}
+                      {{ contributor.affiliation}}
                       </td>
                       <td>
-                      <a href="http://orcid.org/{{ contributor.orcid}}" target="_blank"  title="{{ contributor.orcid}}"><img src="{% static 'media/link.png' %}"/></a>
+                      <a href="{{ contributor.orcid}}" target="_blank"  title="{{ contributor.orcid}}"><img src="{% static 'media/link.png' %}"/></a>
                       </td>
                       {% if forloop.first %}
                       <td>{{abstractsubmission.title}}</td>
                       <td>
-                        {% for ressource in abstractsubmission.ressources.all %}
+                        {% for ressource in abstractsubmission.datasets.all %}
                         <a href="{{ ressource.url}}" target="_blank"  title="{{ressource.url}}"><img src="{% static 'media/link.png' %}"/></a>
                         {% endfor %}
                       </td>

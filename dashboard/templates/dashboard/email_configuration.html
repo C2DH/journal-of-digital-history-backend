@@ -33,7 +33,7 @@
                             </div>
                             <div class="form-group">
                                 <label for="inputEmail">Send to</label>
-                                <input type="email" class="form-control-plaintext"    id="inputEmail" aria-describedby="emailHelp" value="{{abstractsubmission.submitter_email}}" readonly>
+                                <input type="email" class="form-control-plaintext"    id="inputEmail" aria-describedby="emailHelp" value="{{abstractsubmission.contact_email}}" readonly>
                             </div>
                             {% csrf_token %}
                             {{ form.subject|as_crispy_field }}

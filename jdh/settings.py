@@ -170,3 +170,6 @@ EMAIL_HOST = get_env_variable('EMAIL_HOST', 'smtp.')
 
 # Port for sending e-mail.
 EMAIL_PORT = get_env_variable('EMAIL_PORT', 0)
+
+# in settings, no request to Google, no warnings,
+#DRF_RECAPTCHA_TESTING=True

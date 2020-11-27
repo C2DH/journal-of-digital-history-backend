@@ -4,34 +4,42 @@ from django.http import HttpResponse
 from django.core.mail import send_mail
 from django.core.mail import EmailMultiAlternatives
 from django.conf import settings
-from . models import AbstractSubmission, Status
+from jdhapi.models import Abstract, Status
 from dashboard.forms import  EmailConfigurationForm
 from django.shortcuts import render, get_object_or_404
 from django.views.generic.edit import CreateView
+from django.http import HttpResponseRedirect
+from django.urls import reverse
 import imaplib, time
 
 
 def home(request):
-    abstractsubmissions = AbstractSubmission.objects.all()
-    return render(request,'dashboard/home.html',{'abstractsubmissions': abstractsubmissions})
+    if request.user.is_authenticated:
+        abstractsubmissions = Abstract.objects.all()
+        return render(request,'dashboard/home.html',{'abstractsubmissions': abstractsubmissions})
+    else:
+        return HttpResponseRedirect(reverse('admin:index'))
+    
 
 
 def abstract(request, pk):
-    abstractsubmission = get_object_or_404(AbstractSubmission, pk=pk)
-    return render(request, 'dashboard/abstract_detail.html', {'abstractsubmission': abstractsubmission})
-
+    if request.user.is_authenticated:
+        abstractsubmission = get_object_or_404(Abstract, pk=pk)
+        return render(request, 'dashboard/abstract_detail.html', {'abstractsubmission': abstractsubmission})
+    else:
+        return HttpResponseRedirect(reverse('admin:index'))
 
 def getDefaultSubject(abstractsubmission):
     defaultSubject = abstractsubmission.title
     return defaultSubject 
 
 def getDefaultBody(abstractsubmission):
-    defaultBody = "Dear " + abstractsubmission.submitter_firstname + " " + abstractsubmission.submitter_lastname + "\n" + "We're sorry, we were unable to proceed with your article submission as it is. \nWe encouage you to review the methodology point. \nBest regards, \nFrédéric Clavert"
+    defaultBody = "Dear " + abstractsubmission.contact_firstname + " " + abstractsubmission.contact_lastname + "\n" + "We're sorry, we were unable to proceed with your article submission as it is. \nWe encouage you to review the methodology point. \nBest regards, \nFrédéric Clavert"
     return defaultBody 
 
 def validated(request, pk, STATUS):
-    abstractsubmission = get_object_or_404(AbstractSubmission, pk=pk) 
-    sent_to = abstractsubmission.submitter_email
+    abstractsubmission = get_object_or_404(Abstract, pk=pk) 
+    sent_to = abstractsubmission.contact_email
     # if this is a POST request we need to process the form data
     if request.method == 'POST':
         # create a form instance and populate it with data from the request:
@@ -42,15 +50,17 @@ def validated(request, pk, STATUS):
             cd = form.cleaned_data
             subject = cd.get('subject')
             body = cd.get('body') 
-            # send email          
-            sendmail(subject, body,sent_to)
-            # set the status
-            if STATUS == Status.DECLINED:
-                abstractsubmission.declined()
-            if STATUS == Status.ACCEPTED:
-                abstractsubmission.accepted()
+            #not resubmit mail in case of refresh
+            if (abstractsubmission.status == Status.SUBMITTED):
+                # send email          
+                sendmail(subject, body,sent_to)
+                # set the status
+                if STATUS == Status.DECLINED:
+                    abstractsubmission.declined()
+                if STATUS == Status.ACCEPTED:
+                    abstractsubmission.accepted()
             # redirect to a new URL:
-            abstractsubmissions = AbstractSubmission.objects.all()
+            abstractsubmissions = Abstract.objects.all()
             return render(request,'dashboard/home.html',{'abstractsubmissions': abstractsubmissions})
             #return HttpResponseRedirect('/thanks/')
 
