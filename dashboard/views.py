@@ -10,24 +10,20 @@ from django.shortcuts import render, get_object_or_404
 from django.views.generic.edit import CreateView
 from django.http import HttpResponseRedirect
 from django.urls import reverse
+from django.contrib.admin.views.decorators import staff_member_required
 import imaplib, time
 
-
+@staff_member_required
 def home(request):
-    if request.user.is_authenticated:
-        abstractsubmissions = Abstract.objects.all()
-        return render(request,'dashboard/home.html',{'abstractsubmissions': abstractsubmissions})
-    else:
-        return HttpResponseRedirect(reverse('admin:index'))
+    abstractsubmissions = Abstract.objects.all()
+    return render(request,'dashboard/home.html',{'abstractsubmissions': abstractsubmissions})
+
     
-
-
+@staff_member_required
 def abstract(request, pk):
-    if request.user.is_authenticated:
-        abstractsubmission = get_object_or_404(Abstract, pk=pk)
-        return render(request, 'dashboard/abstract_detail.html', {'abstractsubmission': abstractsubmission})
-    else:
-        return HttpResponseRedirect(reverse('admin:index'))
+    abstractsubmission = get_object_or_404(Abstract, pk=pk)
+    return render(request, 'dashboard/abstract_detail.html', {'abstractsubmission': abstractsubmission})
+
 
 def getDefaultSubject(abstractsubmission):
     defaultSubject = abstractsubmission.title
