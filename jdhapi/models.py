@@ -1,11 +1,8 @@
 from django.db import models
 from django.conf import settings
 from django.utils import timezone
+import shortuuid
 
-
-
-
-""" TODO:rename class and parameter according to json daniele """
 # Create your models here.
 class Status(models.TextChoices):
     SUBMITTED = 'SUBMITTED', 'Submitted',
@@ -33,9 +30,12 @@ class Dataset(models.Model):
     description = models.TextField(null=True, blank=True)
 
 
+def create_short_url():
+    return shortuuid.uuid()[:12]  # es => "IRVaY2b3VI89"
 
 class Abstract(models.Model):
     id= models.AutoField(primary_key=True, db_column="id")
+    pid = models.CharField(max_length=255,default=create_short_url, db_index=True)
     title = models.CharField(max_length=250)
     abstract = models.TextField()
     submitted_date = models.DateTimeField(default=timezone.now)
@@ -53,6 +53,7 @@ class Abstract(models.Model):
     authors = models.ManyToManyField(Author, related_name='abstracts', blank=True)
     datasets = models.ManyToManyField(Dataset, related_name='abstracts',blank=True)
     consented = models.BooleanField(default=False)
+    comment = models.TextField(blank=True, null=True)
 
     class Meta:
         ordering = ['submitted_date']

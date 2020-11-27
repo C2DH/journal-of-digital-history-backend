@@ -15,5 +15,6 @@ urlpatterns = [
     path('api/datasets/<int:pk>/', views.DatasetDetail.as_view(), name='dataset-detail'),
     path('api/abstracts/', views.AbstractList.as_view(),name='abstract-list' ),
     path('api/abstracts/<int:pk>/', views.AbstractDetail.as_view(), name='abstract-detail'),
+    path('api/submit-abstract/', views.SubmitAbstract)
 ]
 urlpatterns = format_suffix_patterns(urlpatterns)

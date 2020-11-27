@@ -59,18 +59,18 @@ class AbstractSerializer(serializers.Serializer):
     id = serializers.IntegerField(read_only=True)
     title = serializers.CharField(max_length=250)
     abstract = serializers.CharField(style={'base_template':'textarea.html'})
-    contact_lastname = serializers.CharField(max_length=50)
-    contact_firstname = serializers.CharField(max_length=50)
-    contact_affiliation = serializers.CharField(max_length=250)
-    contact_email = serializers.EmailField(max_length = 254)
-    contact_orcid = serializers.CharField(required=False, allow_blank=True,max_length=50)
-    consented = serializers.BooleanField()
+   # contact_lastname = serializers.CharField(max_length=50)
+   # contact_firstname = serializers.CharField(max_length=50)
+   # contact_affiliation = serializers.CharField(max_length=250)
+   # contact_email = serializers.EmailField(max_length = 254)
+   # contact_orcid = serializers.CharField(required=False, allow_blank=True,max_length=50)
+   # consented = serializers.BooleanField()
     status = serializers.ChoiceField(
         choices=Status.choices,
         default=Status.SUBMITTED,
     )
-    authors = AuthorSerializer(many=True, read_only=False)
-    datasets = DatasetSerializer(many=True, read_only=False)
+    authors = AuthorSerializer(many=True, read_only=False, required=False)
+    datasets = DatasetSerializer(many=True, read_only=False, required=False)
     
 
 
