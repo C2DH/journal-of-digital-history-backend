@@ -46,7 +46,8 @@ def api_root(request, format=None):
         'datasets': reverse('dataset-list', request=request, format=format),
         'abstracts': reverse('abstract-list', request=request, format=format),
     })
-
+    
+@csrf_exempt
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def SubmitAbstract(request):
