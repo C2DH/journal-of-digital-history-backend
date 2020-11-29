@@ -8,7 +8,7 @@
   "definitions": {
     "id": {
       "$id": "#/definitions/id",
-      "type": ["string", "number"],
+      "type": ["string","number"],
       "title": "An usual ID string",
       "default": "",
       "examples": ["ieoryY78", 1],
@@ -291,8 +291,7 @@
         "required": [
           "firstname",
           "lastname",
-          "affiliation",
-          "email"
+          "affiliation"
         ],
         "additionalProperties": false,
         "properties": {
@@ -303,13 +302,29 @@
             "$ref": "#/definitions/lastname"
           },
           "email": {
-            "$ref": "#/definitions/email"
+            "anyOf": [
+              {
+                "$ref": "#/definitions/email"
+              },
+              {
+                "type": "string",
+                "maxLength": 0
+              }
+            ]
           },
           "affiliation": {
             "$ref": "#/definitions/affiliation"
           },
           "orcid": {
-            "$ref": "#/definitions/orcid"
+            "anyOf": [
+              {
+                "$ref": "#/definitions/orcid"
+              },
+              {
+                "type": "string",
+                "maxLength": 0
+              }
+            ]
           },
           "id": {
             "$ref": "#/definitions/id"
