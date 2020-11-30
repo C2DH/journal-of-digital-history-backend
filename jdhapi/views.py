@@ -88,13 +88,22 @@ def SubmitAbstract(request):
     abstract.save()
     authors = request.data.get('authors', [])
     for author in authors:
-        new_author = Author(
+        if 'orcid' in author:
+            new_author = Author(
             lastname=author['lastname'],
             firstname=author['firstname'],
             email=author['email'],
             affiliation=author['affiliation'],
             orcid=author['orcid']
         )
+        else:
+            new_author = Author(
+            lastname=author['lastname'],
+            firstname=author['firstname'],
+            email=author['email'],
+            affiliation=author['affiliation'],
+            orcid=''
+        )    
         new_author.save()
         abstract.authors.add(new_author)
     datasets = request.data.get('datasets', [])
