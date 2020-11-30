@@ -28,13 +28,13 @@ document_json_schema = JSONSchema(filepath='submit-abstract.json')
 logger = logging.getLogger(__name__)
 
 
-def getDefaultBody(subject):
-    defaultBody = "Dear author, your submission " + subject + " has been sent to the managing editor of the Journal of Digital History. We will contact you back in a few days to discuss the feasibility of your article, as the JDH's layered articles imply to publish an hermeneutics and a data layer." +  "\n" + "Best regard, the JDH team."
+def getDefaultBody(subject, firstname, lastname):
+    defaultBody = "Dear " + firstname + " " + lastname  + ',' + '\n\n'+ "Your submission " + subject + " has been sent to the managing editor of the Journal of Digital History. We will contact you back in a few days to discuss the feasibility of your article, as the JDH's layered articles imply to publish an hermeneutics and a data layer." +  "\n\n" + "Best regard," + "\n\n" + "The JDH team."
     return defaultBody
 
 
-def sendmailAbstractReceived(subject, sent_to):
-    body = getDefaultBody(subject)
+def sendmailAbstractReceived(subject, sent_to, firstname, lastname):
+    body = getDefaultBody(subject, firstname, lastname)
     try:
         send_mail(
             subject,
@@ -108,7 +108,7 @@ def SubmitAbstract(request):
         abstract.datasets.add(new_dataset)
     logger.info("End submit abstract")
     # Send an email of confirmation
-    sendmailAbstractReceived(abstract.title, abstract.contact_email)
+    sendmailAbstractReceived(abstract.title, abstract.contact_email, abstract.contact_firstname, abstract.contact_lastname)
     serializer = AbstractSerializer(abstract)
     return Response(serializer.data)
 

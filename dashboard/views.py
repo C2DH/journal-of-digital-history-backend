@@ -30,7 +30,7 @@ def getDefaultSubject(abstractsubmission):
     return defaultSubject 
 
 def getDefaultBody(abstractsubmission):
-    defaultBody = "Dear " + abstractsubmission.contact_firstname + " " + abstractsubmission.contact_lastname + "\n" + "We're sorry, we were unable to proceed with your article submission as it is. \nWe encouage you to review the methodology point. \nBest regards, \nFrédéric Clavert"
+    defaultBody = "Dear " + abstractsubmission.contact_firstname + " " + abstractsubmission.contact_lastname + "\n\n" + "We're sorry, we were unable to proceed with your article submission as it is. \nWe encouage you to review the methodology point. \nBest regards, \n\nFrédéric Clavert"
     return defaultBody 
 
 def validated(request, pk, STATUS):
