@@ -1,5 +1,10 @@
+import os
 from django.contrib import admin
-from . models import *
+from django.utils.safestring import mark_safe
+from .models import Abstract
+from .models import Dataset
+from .models import Author
+
 
 # Register your models here.
 admin.site.register(Abstract)
@@ -7,3 +12,8 @@ admin.site.register(Dataset)
 admin.site.register(Author)
 
 admin.site.site_url = "/dashboard"
+
+admin.site.site_header = mark_safe(
+    '<b style="color:white">JDH admin</b>'
+    f'({os.environ.get("GIT_BRANCH")}/{os.environ.get("GIT_REVISION")})'
+)
