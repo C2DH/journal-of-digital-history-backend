@@ -15,6 +15,7 @@ from rest_framework.reverse import reverse
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
 from rest_framework.decorators import permission_classes
+from rest_framework.decorators import authentication_classes
 from drf_recaptcha.fields import ReCaptchaV2Field
 from rest_framework.serializers import Serializer
 from django.core.mail import send_mail
@@ -55,8 +56,8 @@ def api_root(request, format=None):
     })
 
 
-@csrf_exempt
 @api_view(['POST'])
+@authentication_classes([])
 @permission_classes([AllowAny])
 def SubmitAbstract(request):
     try:
@@ -78,7 +79,7 @@ def SubmitAbstract(request):
     abstract = Abstract(
         title=request.data.get("title"),
         abstract=request.data.get("abstract"),
-        contact_orcid=contact.get("orcid"),
+        contact_orcid=contact.get("orcid", ""),
         contact_affiliation=contact.get("affiliation"),
         contact_email=contact.get("email"),
         contact_lastname=contact.get("lastname"),
@@ -88,22 +89,13 @@ def SubmitAbstract(request):
     abstract.save()
     authors = request.data.get('authors', [])
     for author in authors:
-        if 'orcid' in author:
-            new_author = Author(
+        new_author = Author(
             lastname=author['lastname'],
             firstname=author['firstname'],
-            email=author['email'],
+            email=author.get('email', ''),
             affiliation=author['affiliation'],
-            orcid=author['orcid']
+            orcid=author.get('orcid', '')
         )
-        else:
-            new_author = Author(
-            lastname=author['lastname'],
-            firstname=author['firstname'],
-            email=author['email'],
-            affiliation=author['affiliation'],
-            orcid=''
-        )    
         new_author.save()
         abstract.authors.add(new_author)
     datasets = request.data.get('datasets', [])
