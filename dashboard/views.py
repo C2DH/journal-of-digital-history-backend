@@ -72,12 +72,14 @@ def validated(request, pk, STATUS):
         form = EmailConfigurationForm(initial={'subject': defaultSubject, 'body': defaultBody})
     return render(request, 'dashboard/email_configuration.html', {'form': form, 'abstractsubmission' : abstractsubmission})
 
+@staff_member_required
 def declined(request, pk):
     return validated(request, pk, Status.DECLINED)
 
-
+@staff_member_required
 def accepted(request, pk):
     return validated(request, pk, Status.ACCEPTED)
+
 
 def sendmail(subject, body, sent_to):
     try:

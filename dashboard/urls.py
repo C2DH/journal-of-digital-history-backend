@@ -4,8 +4,7 @@ from . import views
 
 urlpatterns = [
     path('dashboard',views.home, name='dashboard'),
-    path('sendmail', views.sendmail, name='sendmail'),
-    path('abstract/<int:pk>/', views.abstract, name='abstract'),
-    path('accepted/<int:pk>/', views.accepted, name='accepted'),
-    path('declined/<int:pk>/', views.declined, name='declined'),
+    path('dashboard/abstract/<int:pk>/', views.abstract, name='abstract'),
+    path('dashboard/accepted/<int:pk>/', views.accepted, name='accepted'),
+    path('dashboard/declined/<int:pk>/', views.declined, name='declined'),
 ] 
