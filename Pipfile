@@ -17,6 +17,8 @@ Django = "==3.1.3"
 django-ipware = "==3.0.2"
 shortuuid = "==1.0.1"
 jsonschema = "*"
+gunicorn = "*"
+celery = "*"
 
 [requires]
 python_version = "3.8"
