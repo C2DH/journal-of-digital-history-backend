@@ -197,3 +197,11 @@ LOGGING = {
         },
     },
 }
+
+# Celery
+REDIS_HOST = get_env_variable('REDIS_HOST', 'localhost')
+REDIS_PORT = get_env_variable('REDIS_PORT', '63790')
+CELERY_BROKER_URL = f'redis://{REDIS_HOST}:{REDIS_PORT}/4'
+CELERY_RESULT_BACKEND = f'redis://{REDIS_HOST}:{REDIS_PORT}/5'
+CELERYD_PREFETCH_MULTIPLIER = 2
+CELERYD_CONCURRENCY = 2

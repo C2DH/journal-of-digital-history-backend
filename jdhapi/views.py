@@ -22,6 +22,7 @@ from django.core.mail import send_mail
 from jdh.validation import JSONSchema
 from jsonschema.exceptions import SchemaError
 from jsonschema.exceptions import ValidationError
+from django.shortcuts import render, get_object_or_404
 
 
 document_json_schema = JSONSchema(filepath='submit-abstract.json')
@@ -40,7 +41,7 @@ def sendmailAbstractReceived(subject, sent_to, firstname, lastname):
             subject,
             body,
             'jdh.admin@uni.lu',
-            [sent_to,'jdh.admin@uni.lu'],
+            [sent_to, 'jdh.admin@uni.lu'],
             fail_silently=False,
         )
     except Exception as e:
@@ -53,6 +54,31 @@ def api_root(request, format=None):
         'authors': reverse('author-list', request=request, format=format),
         'datasets': reverse('dataset-list', request=request, format=format),
         'abstracts': reverse('abstract-list', request=request, format=format),
+    })
+
+
+@api_view(['GET'])
+def GenerateNotebook(request, pid):
+    abstractsubmission = get_object_or_404(Abstract, pid=pid)
+    return Response({
+        "nbformat": 4,
+        "nbformat_minor": 4,
+        "metadata": {
+            "jdh": {
+                "pid": abstractsubmission.pid
+            }
+        },
+        "cells": [
+            {
+                "cell_type": "markdown",
+                "metadata": {
+                    "jdh": {
+                        "section": "title"
+                    }
+                },
+                "source": abstractsubmission.title.split('\n')  
+            }
+        ]
     })
 
 
