@@ -1,9 +1,8 @@
 import os
 from django.contrib import admin
 from django.utils.safestring import mark_safe
-from .models import Abstract
-from .models import Dataset
-from .models import Author
+from .models import Author,Abstract, Dataset
+
 
 
 # Register your models here.

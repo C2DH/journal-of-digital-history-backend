@@ -4,7 +4,7 @@ from django.http import HttpResponse
 from django.core.mail import send_mail
 from django.core.mail import EmailMultiAlternatives
 from django.conf import settings
-from jdhapi.models import Abstract, Status
+from jdhapi.models import Abstract
 from dashboard.forms import  EmailConfigurationForm
 from django.shortcuts import render, get_object_or_404
 from django.views.generic.edit import CreateView
@@ -15,8 +15,14 @@ import imaplib, time
 
 @staff_member_required
 def home(request):
+    return render(request,'dashboard/home.html')
+
+@staff_member_required
+def abstractSubmissions(request):
     abstractsubmissions = Abstract.objects.all()
-    return render(request,'dashboard/home.html',{'abstractsubmissions': abstractsubmissions})
+    return render(request,'dashboard/abstract_submissions.html',{'abstractsubmissions': abstractsubmissions})
+
+   
 
     
 @staff_member_required

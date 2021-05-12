@@ -19,6 +19,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='abstract',
             name='pid',
-            field=models.CharField(db_index=True, default=jdhapi.models.create_short_url, max_length=255),
+            field=models.CharField(db_index=True, default=jdhapi.models.abstract.create_short_url, max_length=255),
         ),
     ]

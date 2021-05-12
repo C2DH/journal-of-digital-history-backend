@@ -3,37 +3,20 @@ from django.conf import settings
 from django.utils import timezone
 import shortuuid
 
-# Create your models here.
-class Status(models.TextChoices):
-    SUBMITTED = 'SUBMITTED', 'Submitted',
-    ACCEPTED = 'ACCEPTED', 'Accepted',
-    DECLINED = 'DECLINED', 'Declined'
 
-
-class Author(models.Model):
-    id = models.AutoField(primary_key=True, db_column="id")
-    email = models.EmailField(max_length = 254, null=True, blank=True)
-    lastname = models.CharField(max_length=50)
-    firstname = models.CharField(max_length=50)
-    orcid = models.CharField(max_length=50,null=True, blank=True)
-    affiliation = models.CharField(max_length=250)
-
-    class Meta:
-        ordering = ['lastname']
-
-    def __str__(self):
-        return self.lastname
-
-class Dataset(models.Model):
-    id = models.AutoField(primary_key=True, db_column="id")
-    url = models.URLField(max_length = 254,null=True, blank=True)
-    description = models.TextField(null=True, blank=True)
 
 
 def create_short_url():
     return shortuuid.uuid()[:12]  # es => "IRVaY2b3VI89"
 
 class Abstract(models.Model):
+
+    class Status(models.TextChoices):
+        SUBMITTED = 'SUBMITTED', 'Submitted',
+        ACCEPTED = 'ACCEPTED', 'Accepted',
+        DECLINED = 'DECLINED', 'Declined'
+
+
     id= models.AutoField(primary_key=True, db_column="id")
     pid = models.CharField(max_length=255,default=create_short_url, db_index=True)
     title = models.CharField(max_length=250)
@@ -50,8 +33,8 @@ class Abstract(models.Model):
         choices=Status.choices,
         default=Status.SUBMITTED,
     )
-    authors = models.ManyToManyField(Author, related_name='abstracts', blank=True)
-    datasets = models.ManyToManyField(Dataset, related_name='abstracts',blank=True)
+    authors = models.ManyToManyField('jdhapi.Author', related_name='abstracts', blank=True)
+    datasets = models.ManyToManyField('jdhapi.Dataset', related_name='abstracts',blank=True)
     consented = models.BooleanField(default=False)
     comment = models.TextField(blank=True, null=True)
 

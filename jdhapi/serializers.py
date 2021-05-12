@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from jdhapi.models import Abstract, Author, Dataset, Status
+from jdhapi.models import Abstract, Author, Dataset
 
 
 class CreateAbstractSerializer(serializers.ModelSerializer):
