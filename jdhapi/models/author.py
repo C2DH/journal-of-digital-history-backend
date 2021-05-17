@@ -3,12 +3,13 @@ from django.conf import settings
 from django.utils import timezone
 import shortuuid
 
+
 class Author(models.Model):
     id = models.AutoField(primary_key=True, db_column="id")
-    email = models.EmailField(max_length = 254, null=True, blank=True)
+    email = models.EmailField(max_length=254, null=True, blank=True)
     lastname = models.CharField(max_length=50)
     firstname = models.CharField(max_length=50)
-    orcid = models.CharField(max_length=50,null=True, blank=True)
+    orcid = models.CharField(max_length=50, null=True, blank=True)
     affiliation = models.CharField(max_length=250)
 
     class Meta:

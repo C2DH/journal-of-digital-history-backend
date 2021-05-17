@@ -10,9 +10,6 @@ class AuthorSerializer(serializers.Serializer):
     email = serializers.EmailField(required=False, allow_blank=True, max_length = 254)
     orcid = serializers.CharField(required=False, allow_blank=True,max_length=50)
 
-    
-
-
     def create(self, validated_data):
         print("inside create serializer")
         """

@@ -4,10 +4,14 @@ from rest_framework import generics
 from jdhapi.models import Abstract
 from jdhapi.models import Author
 from jdhapi.models import Dataset
-from jdhapi.serializers import CreateAbstractSerializer
-from jdhapi.serializers import AbstractSerializer
-from jdhapi.serializers import AuthorSerializer
-from jdhapi.serializers import DatasetSerializer
+from jdhapi.models import Article
+from jdhapi.models import Issue
+from jdhapi.serializers.abstract import CreateAbstractSerializer
+from jdhapi.serializers.abstract import AbstractSerializer
+from jdhapi.serializers.author import AuthorSerializer
+from jdhapi.serializers.dataset import DatasetSerializer
+from jdhapi.serializers.article import ArticleSerializer
+from jdhapi.serializers.issue import IssueSerializer
 from rest_framework import permissions
 from rest_framework import status
 from rest_framework.decorators import api_view
@@ -30,7 +34,7 @@ logger = logging.getLogger(__name__)
 
 
 def getDefaultBody(subject, firstname, lastname):
-    defaultBody = "Dear " + firstname + " " + lastname  + ',' + '\n\n'+ "Your submission " + subject + " has been sent to the managing editor of the Journal of Digital History. We will contact you back in a few days to discuss the feasibility of your article, as the JDH's layered articles imply to publish an hermeneutics and a data layer." +  "\n\n" + "Best regard," + "\n\n" + "The JDH team."
+    defaultBody = "Dear " + firstname + " " + lastname + ',' + '\n\n' + "Your submission " + subject + " has been sent to the managing editor of the Journal of Digital History. We will contact you back in a few days to discuss the feasibility of your article, as the JDH's layered articles imply to publish an hermeneutics and a data layer." + "\n\n" + "Best regard," + "\n\n" + "The JDH team."
     return defaultBody
 
 
@@ -54,6 +58,8 @@ def api_root(request, format=None):
         'authors': reverse('author-list', request=request, format=format),
         'datasets': reverse('dataset-list', request=request, format=format),
         'abstracts': reverse('abstract-list', request=request, format=format),
+        'articles': reverse('article-list', request=request, format=format),
+        'issues': reverse('issue-list', request=request, format=format)
     })
 
 
@@ -76,7 +82,7 @@ def GenerateNotebook(request, pid):
                         "section": "title"
                     }
                 },
-                "source": abstractsubmission.title.split('\n')  
+                "source": abstractsubmission.title.split('\n')
             }
         ]
     })
@@ -147,9 +153,10 @@ class AuthorList(generics.ListCreateAPIView):
     queryset = Author.objects.all()
     serializer_class = AuthorSerializer
 
+
 class AuthorDetail(generics.RetrieveUpdateDestroyAPIView):
     # TO UPDATE OR DELETE need to be authenticated
-    #permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    # permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     queryset = Author.objects.all()
     serializer_class = AuthorSerializer
 
@@ -158,9 +165,10 @@ class DatasetList(generics.ListCreateAPIView):
     queryset = Dataset.objects.all()
     serializer_class = DatasetSerializer
 
+
 class DatasetDetail(generics.RetrieveUpdateDestroyAPIView):
     # TO UPDATE OR DELETE need to be authenticated
-    #permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    # permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     queryset = Dataset.objects.all()
     serializer_class = DatasetSerializer
@@ -169,9 +177,6 @@ class DatasetDetail(generics.RetrieveUpdateDestroyAPIView):
 class AbstractList(generics.ListCreateAPIView):
     queryset = Abstract.objects.all()
     serializer_class = AbstractSerializer
-
-
-
 
     @csrf_exempt
     def create(self, request, *args, **kwargs):
@@ -182,13 +187,33 @@ class AbstractList(generics.ListCreateAPIView):
         return Response({'received data': request.data})
 
 
-
-
 class AbstractDetail(generics.RetrieveUpdateDestroyAPIView):
     # TO UPDATE OR DELETE need to be authenticated
-    #permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    # permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     queryset = Abstract.objects.all()
     serializer_class = AbstractSerializer
+
+
+class ArticleList(generics.ListCreateAPIView):
+    queryset = Article.objects.all()
+    serializer_class = ArticleSerializer
+
+
+class ArticleDetail(generics.RetrieveUpdateDestroyAPIView):
+    # TO UPDATE OR DELETE need to be authenticated
+    # permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    queryset = Article.objects.all()
+    serializer_class = ArticleSerializer
+
+
+class IssueList(generics.ListCreateAPIView):
+    queryset = Issue.objects.all()
+    serializer_class = IssueSerializer
+
+
+class IssueDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Issue.objects.all()
+    serializer_class = IssueSerializer
 
 
 """
