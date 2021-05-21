@@ -50,6 +50,11 @@ th.col-accepted {
 
 }
 
+th.col-abandoned {
+    background-color: yellow;
+
+}
+
 th.col-declined {
     background-color: #FD8E97;
 
@@ -139,6 +144,34 @@ align-self: center;
 flex-grow: 0;
 margin: 10px 0px;
 }
+
+.abandoned{
+    /* Blue/50 */
+    background-color: yellow;
+    border-radius: 4px;
+    /* Submitted */
+    position: static;
+    height: 14px;
+    left: 8px;
+    top: 5px;
+
+    font-family: Roboto;
+    font-style: normal;
+    font-weight: 500;
+    font-size: 12px;
+    line-height: 14px;
+    /* identical to box height */
+    display: flex;
+    align-items: center;
+    /* Gray 2 */
+    color: #4F4F4F;
+    /* Inside Auto Layout */
+    flex: none;
+    order: 0;
+    align-self: center;
+    flex-grow: 0;
+    margin: 10px 0px;
+    }
 
 .btn {
     line-height: 9px;

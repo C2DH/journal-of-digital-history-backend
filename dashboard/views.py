@@ -81,7 +81,7 @@ def validated(request, pk, STATUS):
                     abstractsubmission.accepted()
             # redirect to a new URL:
             abstractsubmissions = Abstract.objects.all()
-            return render(request, 'dashboard/home.html', {'abstractsubmissions': abstractsubmissions})
+            return render(request, 'dashboard/abstract_submissions.html', {'abstractsubmissions': abstractsubmissions})
             # return HttpResponseRedirect('/thanks/')
 
     # if a GET (or any other method) we'll create a blank form
@@ -90,7 +90,7 @@ def validated(request, pk, STATUS):
         if STATUS == Abstract.Status.DECLINED:
             defaultSubject = getDefaultSubject(abstractsubmission)
             defaultBody = getDefaultBody(abstractsubmission)
-        if STATUS == Abstract.Status.DECLINED:
+        if STATUS == Abstract.Status.ACCEPTED:
             defaultSubject = getDefaultSubject(abstractsubmission)
             defaultBody = "ACCEPTED"
         form = EmailConfigurationForm(initial={'subject': defaultSubject, 'body': defaultBody})
@@ -105,3 +105,12 @@ def declined(request, pk):
 @staff_member_required
 def accepted(request, pk):
     return validated(request, pk, Abstract.Status.ACCEPTED)
+
+
+@staff_member_required
+def abandoned(request, pk):
+    abstractsubmission = get_object_or_404(Abstract, pk=pk)
+    abstractsubmission.abandoned()
+    # redirect to a new URL:
+    abstractsubmissions = Abstract.objects.all()
+    return render(request, 'dashboard/abstract_submissions.html', {'abstractsubmissions': abstractsubmissions})

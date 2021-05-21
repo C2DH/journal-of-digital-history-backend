@@ -13,7 +13,8 @@ class Abstract(models.Model):
     class Status(models.TextChoices):
         SUBMITTED = 'SUBMITTED', 'Submitted',
         ACCEPTED = 'ACCEPTED', 'Accepted',
-        DECLINED = 'DECLINED', 'Declined'
+        DECLINED = 'DECLINED', 'Declined',
+        ABANDONED = 'ABANDONED', 'Abandoned'
 
     id = models.AutoField(primary_key=True, db_column="id")
     pid = models.CharField(max_length=255, default=create_short_url, db_index=True)
@@ -47,6 +48,11 @@ class Abstract(models.Model):
     def declined(self):
         self.validation_date = timezone.now()
         self.status = Abstract.Status.DECLINED
+        self.save()
+
+    def abandoned(self):
+        self.validation_date = timezone.now()
+        self.status = Abstract.Status.ABANDONED
         self.save()
 
     def __str__(self):
