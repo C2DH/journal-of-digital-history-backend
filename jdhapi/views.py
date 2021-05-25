@@ -1,3 +1,4 @@
+from jdhapi.models.role import Role
 import logging
 from django.views.decorators.csrf import csrf_exempt
 from django_filters.rest_framework import DjangoFilterBackend
@@ -12,7 +13,7 @@ from jdhapi.serializers.abstract import CreateAbstractSerializer
 from jdhapi.serializers.abstract import AbstractSerializer
 from jdhapi.serializers.abstract import AbstractSlimSerializer
 from jdhapi.serializers.author import AuthorSlimSerializer
-from jdhapi.serializers.dataset import DatasetSerializer
+from jdhapi.serializers.role import RoleSerializer
 from jdhapi.serializers.dataset import DatasetSlimSerializer
 from jdhapi.serializers.article import ArticleSerializer
 from jdhapi.serializers.issue import IssueSerializer
@@ -63,6 +64,7 @@ def api_root(request, format=None):
         'datasets': reverse('dataset-list', request=request, format=format),
         'abstracts': reverse('abstract-list', request=request, format=format),
         'articles': reverse('article-list', request=request, format=format),
+        'roles': reverse('role-list', request=request, format=format),
         'issues': reverse('issue-list', request=request, format=format)
     })
 
@@ -229,3 +231,15 @@ class IssueList(generics.ListCreateAPIView):
 class IssueDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Issue.objects.all()
     serializer_class = IssueSerializer
+
+
+class RoleList(generics.ListCreateAPIView):
+    queryset = Role.objects.all()
+    serializer_class = RoleSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ["id", "order_id", "author", "article"]
+
+
+class RoleDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Issue.objects.all()
+    serializer_class = RoleSerializer

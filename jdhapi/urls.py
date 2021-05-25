@@ -8,6 +8,8 @@ from rest_framework import routers
 urlpatterns = [
     path('api/', views.api_root),
     path('api-auth/', include('rest_framework.urls')),
+    path('api/roles/', views.RoleList.as_view(), name='role-list'),
+    path('api/roles/<int:pk>/', views.RoleDetail.as_view(), name='role-detail'),
     path('api/authors/', views.AuthorList.as_view(), name='author-list'),
     path('api/authors/<int:pk>/', views.AuthorDetail.as_view(), name='author-detail'),
     path('api/datasets/', views.DatasetList.as_view(), name='dataset-list'),
