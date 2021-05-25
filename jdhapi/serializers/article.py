@@ -1,14 +1,15 @@
+from jdhapi.serializers.abstract import AbstractSerializer
 from rest_framework import serializers
 from ..models.article import Article
 from .tag import TagSerializer
 from .issue import IssueSerializer
-from .author import AuthorSerializer
+from .author import AuthorSlimSerializer
 
 
 class ArticleSerializer(serializers.ModelSerializer):
     tags = TagSerializer(many=True)
     issue = IssueSerializer()
-    authors = AuthorSerializer(many=True)
+    authors = AuthorSlimSerializer(many=True)
 
     class Meta:
         model = Article

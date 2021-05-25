@@ -47,12 +47,14 @@ INSTALLED_APPS = [
     # to use Bootsrap
     'crispy_forms',
     'drf_recaptcha',
+    'django_filters',
 ]
 
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticatedOrReadOnly',
     ],
+    'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend']
     # 'DEFAULT_PAGINATION_CLASS': [
     #    'rest_framework.pagination.PageNumberPagination',
     # ],
@@ -98,7 +100,7 @@ WSGI_APPLICATION = 'jdh.wsgi.application'
 # https://docs.djangoproject.com/en/3.0/ref/settings/#databases
 DATABASES = {
     'default': {
-        'ENGINE': get_env_variable('DATABASE_ENGINE'), # 'django.db.backends.postgresql_psycopg2',
+        'ENGINE': get_env_variable('DATABASE_ENGINE'),  # 'django.db.backends.postgresql_psycopg2',
         'NAME': get_env_variable('DATABASE_NAME'),
         'USER': get_env_variable('DATABASE_USER'),
         'PASSWORD': get_env_variable('DATABASE_PASSWORD'),
@@ -162,7 +164,7 @@ STATICFILES_DIRS = [
 MEDIA_URL = get_env_variable('MEDIA_URL', '/media/')
 MEDIA_ROOT = get_env_variable('MEDIA_ROOT', '/media')
 
-#ACCOUNT_EMAIL_VERIFICATION = 'none'
+# ACCOUNT_EMAIL_VERIFICATION = 'none'
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 
 # Host for sending e-mail.

@@ -23,3 +23,11 @@ class AbstractSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         abstract = Abstract(**validated_data)
         return abstract
+
+
+class AbstractSlimSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Abstract
+        fields = ("id", "pid", "title", "abstract", "submitted_date", "validation_date", "contact_orcid", "contact_affiliation", "contact_lastname", "contact_firstname", "status", "consented", "authors", "datasets")
+        extra_kwargs = {'authors': {'required': False}, 'datasets': {'required': False}}

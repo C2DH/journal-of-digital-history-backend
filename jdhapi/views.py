@@ -1,5 +1,7 @@
 import logging
 from django.views.decorators.csrf import csrf_exempt
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters
 from rest_framework import generics
 from jdhapi.models import Abstract
 from jdhapi.models import Author
@@ -8,8 +10,10 @@ from jdhapi.models import Article
 from jdhapi.models import Issue
 from jdhapi.serializers.abstract import CreateAbstractSerializer
 from jdhapi.serializers.abstract import AbstractSerializer
-from jdhapi.serializers.author import AuthorSerializer
+from jdhapi.serializers.abstract import AbstractSlimSerializer
+from jdhapi.serializers.author import AuthorSlimSerializer
 from jdhapi.serializers.dataset import DatasetSerializer
+from jdhapi.serializers.dataset import DatasetSlimSerializer
 from jdhapi.serializers.article import ArticleSerializer
 from jdhapi.serializers.issue import IssueSerializer
 from rest_framework import permissions
@@ -151,32 +155,39 @@ class V2Serializer(Serializer):
 
 class AuthorList(generics.ListCreateAPIView):
     queryset = Author.objects.all()
-    serializer_class = AuthorSerializer
+    serializer_class = AuthorSlimSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['id', 'lastname', 'firstname', 'affiliation', 'orcid']
+    # filter_backends = [filters.SearchFilter]
+    # search_fields = ['lastname']
 
 
 class AuthorDetail(generics.RetrieveUpdateDestroyAPIView):
     # TO UPDATE OR DELETE need to be authenticated
     # permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     queryset = Author.objects.all()
-    serializer_class = AuthorSerializer
+    serializer_class = AuthorSlimSerializer
 
 
 class DatasetList(generics.ListCreateAPIView):
     queryset = Dataset.objects.all()
-    serializer_class = DatasetSerializer
+    serializer_class = DatasetSlimSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['id', 'url', 'description']
 
 
 class DatasetDetail(generics.RetrieveUpdateDestroyAPIView):
     # TO UPDATE OR DELETE need to be authenticated
     # permission_classes = [permissions.IsAuthenticatedOrReadOnly]
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     queryset = Dataset.objects.all()
-    serializer_class = DatasetSerializer
+    serializer_class = DatasetSlimSerializer
 
 
 class AbstractList(generics.ListCreateAPIView):
     queryset = Abstract.objects.all()
-    serializer_class = AbstractSerializer
+    serializer_class = AbstractSlimSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ["id", "pid", "title", "abstract", "submitted_date", "validation_date", "contact_orcid", "contact_affiliation", "contact_lastname", "contact_firstname", "status", "consented", "authors"]
 
     @csrf_exempt
     def create(self, request, *args, **kwargs):
@@ -191,12 +202,14 @@ class AbstractDetail(generics.RetrieveUpdateDestroyAPIView):
     # TO UPDATE OR DELETE need to be authenticated
     # permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     queryset = Abstract.objects.all()
-    serializer_class = AbstractSerializer
+    serializer_class = AbstractSlimSerializer
 
 
 class ArticleList(generics.ListCreateAPIView):
     queryset = Article.objects.all()
     serializer_class = ArticleSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ["abstract", "repository_url", "status", "repository_type", "notebook_url", "notebook_commit_hash", "tags", "issue", "authors"]
 
 
 class ArticleDetail(generics.RetrieveUpdateDestroyAPIView):
@@ -209,117 +222,10 @@ class ArticleDetail(generics.RetrieveUpdateDestroyAPIView):
 class IssueList(generics.ListCreateAPIView):
     queryset = Issue.objects.all()
     serializer_class = IssueSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ["id", "name", "description", "creation_date", "publication_date"]
 
 
 class IssueDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Issue.objects.all()
     serializer_class = IssueSerializer
-
-
-"""
-class AuthorList(mixins.ListModelMixin, mixins.CreateModelMixin,generics.GenericAPIView):
-    queryset = Author.objects.all()
-    serializer_class = AuthorSerializer
-
-    def get(self,request, *args, **kwargs):
-        return self.list(request,*args,**kwargs)
-
-    def post(self,request, *args, **kwargs):
-        return self.create(request,*args,**kwargs)
-
-
-class AuthorDetail(mixins.RetrieveModelMixin, mixins.UpdateModelMixin, mixins.DestroyModelMixin,generics.GenericAPIView):
-    queryset = Author.objects.all()
-    serializer_class = AuthorSerializer
-
-    def get(self,request, *args, **kwargs):
-        return self.retrieve(request,*args,**kwargs)
-
-    def put(self,request, *args, **kwargs):
-        return self.update(request,*args,**kwargs)
-
-    def delete(self,request, *args, **kwargs):
-        return self.destroy(request,*args,**kwargs)
-
-
-
-class AuthorList(APIView):
-
-    def get(self,request, format=None):
-        authors = Author.objects.all()
-        serializer = AuthorSerializer(authors, many=True)
-        return Response(serializer.data)
-
-    def post(self,request, format=None):
-        serializer = AuthorSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.data, status=status.HTTP_400_BAD_REQUEST)
-
-class AuthorDetail(APIView):
-
-    def get_object(self, pk):
-        try:
-            return Author.objects.get(pk=pk)
-        except Author.DoesNotExist:
-            raise Http404
-
-    def get(self, request, pk, format=None):
-        author = self.get_object(pk)
-        serializer = AuthorSerializer(author)
-        return Response(serializer.data)
-
-    def put(self, request, pk, format=None):
-        author = self.get_object(pk)
-        serializer = AuthorSerializer(author, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    def delete(self, request, pk, format=None):
-        author = self.get_object(pk)
-        author.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
-
- @api_view(['GET','POST'])
-def author_list(request, format=None):
-    if request.method == 'GET':
-        authors = Author.objects.all()
-        serializer = AuthorSerializer(authors, many=True)
-        return Response(serializer.data)
-
-    elif request.method == 'POST':
-        data = JSONParser().parse(request)
-        serializer = AuthorSerializer(data=data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data,status=status.HTTP_201_CREATED)
-        return Response(serializer.data,status=status.HTTP_400_BAD_REQUEST)
-
-
-@api_view(['GET','PUT', 'DELETE'])
-def author_detail(request, pk,format=None):
-    try:
-        author = Author.objects.get(pk=pk)
-    except Author.DoesNotExist:
-        return Response(status=status.HTTP_404_NOT_FOUND)
-
-    if request.method == 'GET':
-        serializer = AuthorSerializer(author)
-        return Response(serializer.data)
-
-    elif request.method == 'PUT':
-        data = JSONParser().parse(request)
-        serializer = AuthorSerializer(snippet, data=data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    elif request.method == 'DELETE':
-        author.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
- """
