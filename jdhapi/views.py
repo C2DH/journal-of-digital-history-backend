@@ -224,13 +224,16 @@ class ArticleDetail(generics.RetrieveUpdateDestroyAPIView):
 class IssueList(generics.ListCreateAPIView):
     queryset = Issue.objects.all()
     serializer_class = IssueSerializer
-    filter_backends = [DjangoFilterBackend]
-    filterset_fields = ["id", "name", "description", "creation_date", "publication_date"]
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    filterset_fields = ["id", "pid", "name", "description", "creation_date", "publication_date"]
+    ordering_fields = ["creation_date", "publication_date"]
+    # lookup_value_regex = 'jdh[0-9]+'
 
 
 class IssueDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Issue.objects.all()
     serializer_class = IssueSerializer
+    lookup_field = "pid"
 
 
 class RoleList(generics.ListCreateAPIView):

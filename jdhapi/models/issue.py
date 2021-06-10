@@ -5,6 +5,7 @@ from django.utils import timezone
 
 class Issue(models.Model):
     id = models.AutoField(primary_key=True, db_column="id")
+    pid = models.CharField(max_length=10, unique=True, default="jdh001")
     name = models.CharField(max_length=250)
     description = models.TextField(null=True, blank=True)
     creation_date = models.DateTimeField(default=timezone.now)

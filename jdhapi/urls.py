@@ -19,7 +19,7 @@ urlpatterns = [
     path('api/articles/', views.ArticleList.as_view(), name='article-list'),
     path('api/articles/<int:pk>/', views.ArticleDetail.as_view(), name='article-detail'),
     path('api/issues/', views.IssueList.as_view(), name='issue-list'),
-    path('api/issues/<int:pk>/', views.IssueDetail.as_view(), name='issue-detail'),
+    path('api/issues/<str:pid>/', views.IssueDetail.as_view(), name='issue-detail'),
     path('api/submit-abstract/', views.SubmitAbstract),
     path('api/generate-notebook/<str:pid>', views.GenerateNotebook)
 ]
