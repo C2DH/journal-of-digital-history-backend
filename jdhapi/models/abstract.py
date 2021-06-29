@@ -17,7 +17,7 @@ class Abstract(models.Model):
         ABANDONED = 'ABANDONED', 'Abandoned'
 
     id = models.AutoField(primary_key=True, db_column="id")
-    pid = models.CharField(max_length=255, default=create_short_url, db_index=True)
+    pid = models.CharField(max_length=255, default=create_short_url, db_index=True, unique=True)
     title = models.CharField(max_length=250)
     abstract = models.TextField()
     submitted_date = models.DateTimeField(default=timezone.now)

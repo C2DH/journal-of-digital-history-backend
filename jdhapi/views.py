@@ -205,6 +205,7 @@ class AbstractDetail(generics.RetrieveUpdateDestroyAPIView):
     # permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     queryset = Abstract.objects.all()
     serializer_class = AbstractSlimSerializer
+    lookup_field = "pid"
 
 
 class ArticleList(generics.ListCreateAPIView):
@@ -213,12 +214,24 @@ class ArticleList(generics.ListCreateAPIView):
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ["abstract", "repository_url", "status", "repository_type", "notebook_url", "notebook_commit_hash", "tags", "issue", "authors"]
 
+    def get_queryset(self):
+        """
+        Optionally restricts the returned articles to a given issue,
+        by filtering against a `pid` query parameter in the URL.
+        """
+        queryset = Article.objects.all()
+        pid = self.request.query_params.get('pid')
+        if pid is not None:
+            queryset = queryset.filter(issue__pid=pid)
+        return queryset
+
 
 class ArticleDetail(generics.RetrieveUpdateDestroyAPIView):
     # TO UPDATE OR DELETE need to be authenticated
     # permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     queryset = Article.objects.all()
     serializer_class = ArticleSerializer
+    lookup_field = "abstract__pid"
 
 
 class IssueList(generics.ListCreateAPIView):
@@ -227,7 +240,6 @@ class IssueList(generics.ListCreateAPIView):
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
     filterset_fields = ["id", "pid", "name", "description", "creation_date", "publication_date"]
     ordering_fields = ["creation_date", "publication_date"]
-    # lookup_value_regex = 'jdh[0-9]+'
 
 
 class IssueDetail(generics.RetrieveUpdateDestroyAPIView):

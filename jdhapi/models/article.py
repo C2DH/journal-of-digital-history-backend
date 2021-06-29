@@ -23,7 +23,7 @@ class Article(models.Model):
     )
 
     repository_url = models.URLField(max_length=254, null=True, blank=True)
-    notebook_url = models.URLField(max_length=254, null=True, blank=True)
+    notebook_url = models.CharField(max_length=254, null=True, blank=True)
     notebook_commit_hash = models.CharField(max_length=22, default='', help_text='store the git hash', blank=True)
     status = models.CharField(
         max_length=15,

@@ -9,11 +9,12 @@ from .author import AuthorSlimSerializer
 class ArticleSerializer(serializers.ModelSerializer):
     tags = TagSerializer(many=True)
     issue = IssueSerializer()
+    abstract = AbstractSerializer()
     authors = AuthorSlimSerializer(many=True)
-    abstract = serializers.SlugRelatedField(
-        read_only=True,
-        slug_field='pid'
-    )
+    # abstract = serializers.SlugRelatedField(
+    #    read_only=True,
+    #    slug_field='pid',
+    # )
 
     class Meta:
         model = Article
