@@ -1,3 +1,9 @@
+run-dev:
+	GIT_TAG=$(shell git describe --tags) \
+	GIT_BRANCH=$(shell git rev-parse --abbrev-ref HEAD) \
+	GIT_REVISION=$(shell git rev-parse --short HEAD) \
+	pipenv run ./manage.py runserver 8889
+
 build:
 	docker build \
 		-t c2dhunilu/journal-of-digital-history-backend \
