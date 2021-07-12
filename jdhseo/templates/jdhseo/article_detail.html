@@ -1,0 +1,33 @@
+{% extends "jdhseo/default.html" %}
+
+{% block title %}
+  {{ article.abstract.title }} - Journal of Digital History
+{% endblock %}
+
+{% block content %}
+<article>
+  <div class="container my-5">
+    <div class="row">
+      <div class="col-md-8 offset-md-2">
+        {% autoescape off %}
+        {% for t in nb.title %}
+          {{ t }}
+        {% endfor %}
+        {% for t in nb.abstract %}
+          {{ t }}
+        {% endfor %}
+        {% for t in nb.contributor %}
+          {{ t }}
+        {% endfor %}
+        {% for t in nb.disclaimer %}
+          {{ t }}
+        {% endfor %}
+        {% for t in nb.paragraphs %}
+          {{ t }}
+        {% endfor %}
+        {% endautoescape %}
+      </div>
+    </div>
+  </div>
+</article>
+{% endblock %}
