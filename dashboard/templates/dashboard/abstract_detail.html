@@ -27,26 +27,46 @@
                         {% load crispy_forms_tags %}
                         {% block content %}
                 <ul class="nav nav-tabs" id="myTab" role="tablist">
+                    {% if article %}
+                    <li class="nav-item">
+                        <a class="nav-link" id="abstract-tab" data-toggle="tab" href="#abstract" role="tab" aria-controls="abstract" aria-selected="true">Abstract</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" id="article-tab" data-toggle="tab" href="#article" role="tab" aria-controls="article" aria-selected="false">Article</a>
+                    </li>
+                    {% else %}
                     <li class="nav-item">
                         <a class="nav-link active" id="abstract-tab" data-toggle="tab" href="#abstract" role="tab" aria-controls="abstract" aria-selected="true">Abstract</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link disabled" id="article-tab" data-toggle="tab" href="#article" role="tab" aria-controls="article" aria-selected="false">Article</a>
                     </li>
+                    {% endif%}
                     <li class="nav-item">
                         <a class="nav-link " id="timeline-tab" data-toggle="tab" href="#timeline"   role="tab" aria-controls="timeline" aria-selected="false">Timeline</a>
                     </li>
                 </ul>
                 <div class="tab-content" id="myTabContent">
+                    {% if article %}
                     {% comment %} Abstract {% endcomment %}
+                    <div class="tab-pane fade" id="abstract" role="tabpanel" aria-labelledby="abstract-tab">
+                        <h1>{{ abstractsubmission.title }}</h1>
+                        <p>{{ abstractsubmission.abstract }}</p>
+                    </div>
+                    {% comment %} Article {% endcomment %}
+                    <div class="tab-pane fade show active" id="article" role="tabpanel" aria-labelledby="article-tab">
+                        <p>Statistics: {{ article.data }}</p>
+                    </div>
+                    {% else %}
                     <div class="tab-pane fade show active" id="abstract" role="tabpanel" aria-labelledby="abstract-tab">
                         <h1>{{ abstractsubmission.title }}</h1>
                         <p>{{ abstractsubmission.abstract }}</p>
                     </div>
                     {% comment %} Article {% endcomment %}
                     <div class="tab-pane fade" id="article" role="tabpanel" aria-labelledby="article-tab">
-                        Raw denim you probably haven't heard of them jean shorts Austin. Nesciunt tofu stumptown aliqua, retro synth master cleanse. Mustache cliche tempor, williamsburg carles vegan helvetica. Reprehenderit butcher retro keffiyeh dreamcatcher synth. Cosby sweater eu banh mi, qui irure terry richardson ex squid. Aliquip placeat salvia cillum iphone. Seitan aliquip quis cardigan american apparel, butcher voluptate nisi qui.
+                        <p>Statistics: {{ article.data }}</p>
                     </div>
+                    {% endif%}
                     {% comment %} Timeline {% endcomment %}
                     <div class="tab-pane fade" id="timeline" role="tabpanel" aria-labelledby="timeline-tab">
                         <p>Submitted: {{ abstractsubmission.submitted_date|date }}</p>

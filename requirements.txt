@@ -23,6 +23,7 @@ psycopg2-binary==2.8.6
 pyrsistent==0.17.3
 pytz==2020.4
 redis==3.5.3
+requests==2.24.0
 shortuuid==1.0.1
 six==1.15.0
 sqlparse==0.4.1
