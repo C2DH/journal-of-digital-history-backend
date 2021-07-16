@@ -29,6 +29,7 @@ RUN apk add --no-cache --virtual .build-deps \
 COPY jdh ./jdh
 COPY jdhapi ./jdhapi
 COPY jdhseo ./jdhseo
+COPY jdhtasks ./jdhtasks
 COPY dashboard ./dashboard
 COPY schema ./schema
 COPY dbconnection.py .
