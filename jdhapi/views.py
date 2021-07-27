@@ -187,6 +187,7 @@ class DatasetDetail(generics.RetrieveUpdateDestroyAPIView):
 
 class AbstractList(generics.ListCreateAPIView):
     queryset = Abstract.objects.all()
+    permission_classes = [permissions.IsAdminUser]
     serializer_class = AbstractSlimSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ["id", "pid", "title", "abstract", "submitted_date", "validation_date", "contact_orcid", "contact_affiliation", "contact_lastname", "contact_firstname", "status", "consented", "authors"]
