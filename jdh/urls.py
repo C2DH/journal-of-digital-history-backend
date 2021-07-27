@@ -19,5 +19,7 @@ from django.urls import path, include
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('dashboard.urls')),
-    path('', include('jdhapi.urls'))
+    path('', include('jdhapi.urls')),
+    # add seo urls and views
+    path('', include('jdhseo.urls')),
 ]
