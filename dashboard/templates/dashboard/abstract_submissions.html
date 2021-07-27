@@ -1,0 +1,139 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
+        <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+        <title>Home page</title>
+    </head>
+    <body>
+        <!-- Optional JavaScript -->
+        <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+        <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+        <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js" integrity="sha384-OgVRvuATP1z7JjHLkuOU7Xw704+h835Lr+6QL9UvYjZE3Ipu6Tp75j7Bh/kR0JKI" crossorigin="anonymous"></script>
+        <div class="container col-12">
+            <div class="row">
+              <div class="col-1 col-bg vh-100">
+              </div>
+              <div class="col-11">
+              <div>
+                <h1 class="jdhTitle">Abstracts</h1>
+                <table class="table  table-hover">
+                  <thead>
+                    <tr>
+                      <th scope="col"></th>
+                      <th scope="col">Submission date</th>
+                      <th scope="col">Submitter</th>
+                      <th scope="col">Author</th>
+                      <th scope="col">Institutional Affiliation</th>
+                      <th scope="col">ORCID</th>
+                      <th scope="col">Title</th> 
+                      <th scope="col">Tools, Code & Data</th>
+                      <th scope="col">Status</th>
+                      <th scope="col" class="col-2"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                  {% for abstractsubmission in abstractsubmissions %}
+                    {% for contributor in abstractsubmission.authors.all %}
+                     <tr>
+                     {% if abstractsubmission.status == "SUBMITTED" %}
+                        <th scope="row" class="col-submitted"></th>
+                      {% elif abstractsubmission.status == "DECLINED" %}
+                        <th scope="row" class="col-declined"></th>
+                      {% elif abstractsubmission.status == "ACCEPTED" %}
+                        <th scope="row" class="col-accepted"></th>
+                      {% elif abstractsubmission.status == "ABANDONED" %}
+                        <th scope="row" class="col-abandoned"></th>
+                      {% endif %}
+                      {% if forloop.first %}
+                        <td>{{abstractsubmission.submitted_date}}</td>
+                        <td>{{abstractsubmission.contact_lastname}} {{abstractsubmission.contact_firstname}}</td>
+                      {% else %}
+                        <td></td>
+                        <td></td>
+                      {% endif%}
+                      <td>
+                      {{ contributor.lastname}} {{ contributor.firstname}}
+                      </td>
+                      <td>
+                      {{ contributor.affiliation}}
+                      </td>
+                      <td>
+                      <a href="{{ contributor.orcid}}" target="_blank"  title="{{ contributor.orcid}}"><img src="{% static 'media/link.png' %}"/></a>
+                      </td>
+                      {% if forloop.first %}
+                      <td>{{abstractsubmission.title}}</td>
+                      <td>
+                        {% for ressource in abstractsubmission.datasets.all %}
+                        <a href="{{ ressource.url}}" target="_blank"  title="{{ressource.url}}"><img src="{% static 'media/link.png' %}"/></a>
+                        {% endfor %}
+                      </td>
+                      {% else %}
+                      <td></td>
+                      <td></td>
+                      {% endif%}
+                      {% if forloop.first %}
+                        {% if abstractsubmission.status == "SUBMITTED" %}
+                          <td class="submitted">{{abstractsubmission.status}}</td>
+                          <td>
+                            <div class="dropdown">
+                              <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                <!-- <img src="{% static 'media/action_button.png' %}"  />  --> ...
+                              </button>
+                              <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                                <a class="dropdown-item" href="{% url 'abstract' pk=abstractsubmission.id %}">View</a>
+                                <a class="dropdown-item" href="{% url 'accepted' pk=abstractsubmission.id %}">Approve</a>
+                                <a class="dropdown-item" href="{% url 'declined' pk=abstractsubmission.id %}">Decline</a>
+                                <a class="dropdown-item" href="{% url 'abandoned' pk=abstractsubmission.id %}">Abandoned</a>
+                              </div>
+                            </div>
+                          </td>
+                          {% elif abstractsubmission.status == "DECLINED" %}
+                          <td class="declined">{{abstractsubmission.status}}</td>
+                          <td>
+                            <div class="dropdown">
+                              <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                <!-- <img src="{% static 'media/action_button.png' %}"  />  --> ...
+                              </button>
+                              <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                                <a class="dropdown-item" href="{% url 'abstract' pk=abstractsubmission.id %}">View</a>
+                              </div>
+                            </div>
+                          </td>
+                          {% elif abstractsubmission.status == "ACCEPTED" %}
+                          <td class="accepted">{{abstractsubmission.status}}</td>
+                          <td>
+                            <div class="dropdown">
+                              <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                <!-- <img src="{% static 'media/action_button.png' %}"  />  --> ...
+                              </button>
+                              <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                                <a class="dropdown-item" href="{% url 'abstract' pk=abstractsubmission.id %}">View</a>
+                                <a class="dropdown-item" href="{% url 'abandoned' pk=abstractsubmission.id %}">Abandoned</a>
+                                <a class="dropdown-item" href="{% url 'fingerprint' pk=abstractsubmission.id %}">Generate fingerprint</a>
+                              </div>
+                            </div>
+                          </td>
+                          {% elif abstractsubmission.status == "ABANDONED" %}
+                          <td class="abandoned">{{abstractsubmission.status}}</td>
+                          <td>
+                          </td>
+                          {% endif %}
+                      {% else %}
+                      <td></td>
+                      <td></td>
+                      {% endif%}
+                    </tr>
+                    {% endfor %}
+                   {% endfor %}                   
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>       
+    </body>
+</html>
