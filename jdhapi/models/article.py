@@ -1,8 +1,4 @@
 from django.db import models
-from django.conf import settings
-from django.utils import timezone
-from django.db.models import JSONField
-import shortuuid
 
 
 class Article(models.Model):
@@ -24,7 +20,8 @@ class Article(models.Model):
 
     repository_url = models.URLField(max_length=254, null=True, blank=True)
     notebook_url = models.CharField(max_length=254, null=True, blank=True)
-    notebook_commit_hash = models.CharField(max_length=22, default='', help_text='store the git hash', blank=True)
+    notebook_commit_hash = models.CharField(
+        max_length=22, default='', help_text='store the git hash', blank=True)
     notebook_path = models.CharField(max_length=254, null=True, blank=True)
     binder_url = models.URLField(max_length=254, null=True, blank=True)
     status = models.CharField(
@@ -38,7 +35,9 @@ class Article(models.Model):
         default=RepositoryType.GITHUB,
     )
     issue = models.ForeignKey('jdhapi.Issue', on_delete=models.CASCADE)
-    data = models.JSONField(verbose_name=u'data contents', help_text='JSON format', default=dict, blank=True)
+    data = models.JSONField(
+        verbose_name=u'data contents', help_text='JSON format',
+        default=dict, blank=True)
     tags = models.ManyToManyField('jdhapi.Tag', blank=True)
     authors = models.ManyToManyField('jdhapi.Author', through='Role')
 
