@@ -13,13 +13,23 @@ def save_notebook_fingerprint(modeladmin, request, queryset):
 save_notebook_fingerprint.short_description = "Save notebook fingerprint in data"
 
 
+class AbstractAdmin(admin.ModelAdmin):
+    list_display = ['title', 'status']
+    list_filter = ('status',)
+
+
 class ArticleAdmin(admin.ModelAdmin):
-    list_display = ['issue', 'status']
+    list_display = ['issue', 'abstract_title', 'status']
+    list_filter = ('issue', 'status')
     actions = [save_notebook_fingerprint]
+
+    def abstract_title(self, obj):
+        return obj.abstract.title
+    abstract_title.short_description = 'Title'
 
 
 # Register your models here.
-admin.site.register(Abstract)
+admin.site.register(Abstract, AbstractAdmin)
 admin.site.register(Dataset)
 admin.site.register(Author)
 admin.site.register(Article, ArticleAdmin)
