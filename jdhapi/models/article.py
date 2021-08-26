@@ -19,7 +19,10 @@ class Article(models.Model):
     )
 
     repository_url = models.URLField(max_length=254, null=True, blank=True)
+    # Url of the article in the front
     notebook_url = models.CharField(max_length=254, null=True, blank=True)
+    # Json source from raw.github
+    notebook_ipython_url = models.URLField(max_length=254, null=True, blank=True)
     notebook_commit_hash = models.CharField(
         max_length=22, default='', help_text='store the git hash', blank=True)
     notebook_path = models.CharField(max_length=254, null=True, blank=True)
@@ -37,6 +40,12 @@ class Article(models.Model):
     issue = models.ForeignKey('jdhapi.Issue', on_delete=models.CASCADE)
     data = models.JSONField(
         verbose_name=u'data contents', help_text='JSON format',
+        default=dict, blank=True)
+    fingerprint = models.JSONField(
+        verbose_name=u'fingerprint contents', help_text='JSON format',
+        default=dict, blank=True)
+    citation = models.JSONField(
+        verbose_name=u'citation contents', help_text='JSON format',
         default=dict, blank=True)
     tags = models.ManyToManyField('jdhapi.Tag', blank=True)
     authors = models.ManyToManyField('jdhapi.Author', through='Role')

@@ -38,7 +38,7 @@ def send_confirmation():
             'jdh.admin@uni.lu',
             ['elisabeth.guerard@uni.lu'],
             fail_silently=False,
-        )
+    )
 
 
 @shared_task
@@ -48,6 +48,6 @@ def save_article_fingerprint(article_id):
         article = Article.objects.get(pk=article_id)
     except Article.DoesNotExist:
         logger.error(f'save_article_fingerprint article_id:{article_id} not found')
-    fingerprint = get_notebook_stats(repository_url=article.repository_url)
-    article.data.update({'fingerprint': fingerprint})
+    fingerprint = get_notebook_stats(raw_url=article.notebook_ipython_url)
+    article.fingerprint = fingerprint
     article.save()

@@ -7,6 +7,13 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+def get_notebook_from_raw_github(raw_url):
+    logger.info(
+        f'get_notebook_from_raw_github - parsing url: {raw_url}')
+    r = requests.get(raw_url)
+    return r.json()
+
+
 def get_notebook_from_github(
     repository_url, host='https://raw.githubusercontent.com'
 ):
@@ -26,13 +33,12 @@ def get_notebook_from_github(
     # then extract the gighub username nd the filepath to download
     # conveniently from githubusercontent server.
     logger.info(f'get_notebook_from_github - requesting raw_url: {raw_url}...')
-    r = requests.get(raw_url)
-    return r.json()
+    return get_notebook_from_raw_github(raw_url)
 
 
-def get_notebook_stats(repository_url):
-    notebook = get_notebook_from_github(repository_url=repository_url)
-    logger.info(f'get_notebook_stats - notebook loaded: {repository_url}')
+def get_notebook_stats(raw_url):
+    notebook = get_notebook_from_raw_github(raw_url=raw_url)
+    logger.info(f'get_notebook_stats - notebook loaded: {raw_url}')
 
     cells = notebook.get('cells')
     # output
