@@ -104,6 +104,7 @@ def get_notebook_stats(raw_url):
 
 def get_notebook_specifics_tags(raw_url):
     selected_tags = ['title', 'abstract', 'contributor']
+    countTagsFound = 0
     notebook = get_notebook_from_raw_github(raw_url=raw_url)
     logger.info(f'get_notebook_specifics_tags - notebook loaded: {raw_url}')
     cells = notebook.get('cells')
@@ -115,11 +116,13 @@ def get_notebook_specifics_tags(raw_url):
         tags = cell.get('metadata').get('tags', [])
         for tag in tags:
             if tag in selected_tags:
-                logger.info(f'get_notebook_specifics_tags - tag found : {tag}')
+                countTagsFound += 1
                 c = {tag: cell.get('source', [])}
                 if not c:
                     continue
                 cells_sources.append(c)
+    if countTagsFound < len(selected_tags):
+        logger.error(f'get_notebook_specifics_tags - MISSING TAG in notebook: {raw_url}')
     result = {
         'cells': cells_sources
     }
