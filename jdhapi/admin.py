@@ -2,7 +2,7 @@ import os
 from django.contrib import admin
 from django.utils.safestring import mark_safe
 from .models import Author, Abstract, Dataset, Article, Issue, Tag, Role
-from .tasks import save_article_fingerprint
+from .tasks import save_article_fingerprint, save_article_specific_content
 
 
 def save_notebook_fingerprint(modeladmin, request, queryset):
@@ -10,7 +10,15 @@ def save_notebook_fingerprint(modeladmin, request, queryset):
         save_article_fingerprint.delay(article_id=article.pk)
 
 
-save_notebook_fingerprint.short_description = "Save notebook fingerprint in data"
+save_notebook_fingerprint.short_description = "Save notebook fingerprint in fingerprint"
+
+
+def save_notebook_specific_cell(modeladmin, request, queryset):
+    for article in queryset:
+        save_article_specific_content.delay(article_id=article.pk)
+
+
+save_notebook_specific_cell.short_description = "Save notebook specific tagged cells in data"
 
 
 class AbstractAdmin(admin.ModelAdmin):
@@ -21,7 +29,7 @@ class AbstractAdmin(admin.ModelAdmin):
 class ArticleAdmin(admin.ModelAdmin):
     list_display = ['issue', 'abstract_title', 'status']
     list_filter = ('issue', 'status')
-    actions = [save_notebook_fingerprint]
+    actions = [save_notebook_fingerprint, save_notebook_specific_cell]
 
     def abstract_title(self, obj):
         return obj.abstract.title

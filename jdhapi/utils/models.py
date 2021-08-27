@@ -100,3 +100,28 @@ def get_notebook_stats(raw_url):
     }
 
     return result
+
+
+def get_notebook_specifics_tags(raw_url):
+    selected_tags = ['title', 'abstract', 'contributor']
+    notebook = get_notebook_from_raw_github(raw_url=raw_url)
+    logger.info(f'get_notebook_specifics_tags - notebook loaded: {raw_url}')
+    cells = notebook.get('cells')
+    # output
+    cells_sources = []
+    # loop through cells and save relevant informations
+    for cell in cells:
+        # check cell metadata
+        tags = cell.get('metadata').get('tags', [])
+        for tag in tags:
+            if tag in selected_tags:
+                logger.info(f'get_notebook_specifics_tags - tag found : {tag}')
+                c = {tag: cell.get('source', [])}
+                if not c:
+                    continue
+                cells_sources.append(c)
+    result = {
+        'cells': cells_sources
+    }
+
+    return result
