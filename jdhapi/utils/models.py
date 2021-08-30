@@ -129,7 +129,7 @@ def get_notebook_specifics_tags(raw_url):
             # logger.info("HOST" + settings.EMAIL_HOST + " PORT " + settings.EMAIL_PORT)
             body = "One or more than one tag are missing, look at for tags '%s' in the following notebook %s." % (" ".join(selected_tags), raw_url)
             logger.info(body)
-            send_mail("Missing tags in notebooks", body, 'jdh.admin@uni.lu', ['jdh.admin@uni.lu;elisabeth.guerard@uni.lu'], fail_silently=False,)
+            send_mail("Missing tags in notebooks", body, 'jdh.admin@uni.lu', ['jdh.admin@uni.lu,elisabeth.guerard@uni.lu'], fail_silently=False,)
         except Exception as e:  # catch *all* exceptions
             logger.error(f'send_confirmation exception:{e}')
     result = {
