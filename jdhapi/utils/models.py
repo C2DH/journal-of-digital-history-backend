@@ -1,8 +1,10 @@
 # function that can be used in models live here
 import json
 import requests
+from django.core.mail import send_mail
 import re
 import logging
+from django.conf import settings  # import the settings file
 
 logger = logging.getLogger(__name__)
 
@@ -123,8 +125,14 @@ def get_notebook_specifics_tags(raw_url):
                 cells_sources.append(c)
     if countTagsFound < len(selected_tags):
         logger.error(f'get_notebook_specifics_tags - MISSING TAG in notebook: {raw_url}')
+        try:
+            # logger.info("HOST" + settings.EMAIL_HOST + " PORT " + settings.EMAIL_PORT)
+            body = "One or more than one tag are missing, look at for tags '%s' in the following notebook %s." % (" ".join(selected_tags), raw_url)
+            logger.info(body)
+            send_mail("Missing tags in notebooks", body, 'jdh.admin@uni.lu', ['jdh.admin@uni.lu;elisabeth.guerard@uni.lu'], fail_silently=False,)
+        except Exception as e:  # catch *all* exceptions
+            logger.error(f'send_confirmation exception:{e}')
     result = {
         'cells': cells_sources
     }
-
     return result

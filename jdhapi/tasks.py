@@ -32,7 +32,10 @@ def count_abstracts():
 
 @shared_task
 def send_confirmation():
-    send_mail("test subject", "test body", 'jdh.admin@uni.lu', ['elisabeth.guerard@uni.lu'], fail_silently=False,)
+    try:
+        send_mail("test subject", "test body", 'jdh.admin@uni.lu', ['elisabeth.guerard@uni.lu'], fail_silently=False,)
+    except Exception as e:  # catch *all* exceptions
+        logger.error(f'send_confirmation exception:{e}')
 
 
 @shared_task
