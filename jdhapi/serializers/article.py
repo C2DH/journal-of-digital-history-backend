@@ -18,4 +18,4 @@ class ArticleSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Article
-        fields = ["abstract", "repository_url", "status", "repository_type", "notebook_url", "notebook_commit_hash", "data", "fingerprint", "citation", "tags", "issue", "authors"]
+        fields = ["abstract", "repository_url", "status", "repository_type", "notebook_url", "notebook_commit_hash", "notebook_path", "data", "fingerprint", "citation", "tags", "issue", "authors"]
