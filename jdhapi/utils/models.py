@@ -111,7 +111,7 @@ def get_notebook_specifics_tags(raw_url):
     logger.info(f'get_notebook_specifics_tags - notebook loaded: {raw_url}')
     cells = notebook.get('cells')
     # output
-    cells_sources = []
+    result = {}
     # loop through cells and save relevant informations
     for cell in cells:
         # check cell metadata
@@ -119,20 +119,25 @@ def get_notebook_specifics_tags(raw_url):
         for tag in tags:
             if tag in selected_tags:
                 countTagsFound += 1
-                c = {tag: cell.get('source', [])}
-                if not c:
+                source = cell.get('source', [])
+                logger.info(
+                    f'celltagged {tag} : {source[0]}'
+                )
+                if not source:
                     continue
-                cells_sources.append(c)
+                if tag in result:
+                    logger.info(
+                        f'already one {tag} in {result}'
+                    )
+                    result[tag].append(source)
+                else:
+                    result[tag] = source
     if countTagsFound < len(selected_tags):
         logger.error(f'get_notebook_specifics_tags - MISSING TAG in notebook: {raw_url}')
         try:
             # logger.info("HOST" + settings.EMAIL_HOST + " PORT " + settings.EMAIL_PORT)
             body = "One or more than one tag are missing, look at for tags '%s' in the following notebook %s." % (" ".join(selected_tags), raw_url)
-            logger.info(body)
             send_mail("Missing tags in notebooks", body, 'jdh.admin@uni.lu', ['jdh.admin@uni.lu'], fail_silently=False,)
         except Exception as e:  # catch *all* exceptions
             logger.error(f'send_confirmation exception:{e}')
-    result = {
-        'cells': cells_sources
-    }
     return result
