@@ -27,9 +27,13 @@ class AbstractAdmin(admin.ModelAdmin):
 
 
 class ArticleAdmin(admin.ModelAdmin):
-    list_display = ['issue', 'abstract_title', 'status']
+    list_display = ['abstract_pid', 'issue', 'abstract_title', 'status']
     list_filter = ('issue', 'status')
     actions = [save_notebook_fingerprint, save_notebook_specific_cell]
+
+    def abstract_pid(self, obj):
+        return obj.abstract.pid
+    abstract_pid.short_description = 'Pid'
 
     def abstract_title(self, obj):
         return obj.abstract.title
