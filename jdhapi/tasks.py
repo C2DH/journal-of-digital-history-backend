@@ -3,6 +3,11 @@
 from celery import shared_task
 from jdhapi.models import Abstract
 from django.core.mail import send_mail
+from celery.utils.log import get_task_logger
+from .models import Article
+from jdhapi.utils.models import get_notebook_stats, get_notebook_specifics_tags
+
+logger = get_task_logger(__name__)
 
 
 @shared_task
@@ -27,10 +32,31 @@ def count_abstracts():
 
 @shared_task
 def send_confirmation():
-    send_mail(
-            "test subject",
-            "test body",
-            'jdh.admin@uni.lu',
-            ['elisabeth.guerard@uni.lu'],
-            fail_silently=False,
-        )
+    try:
+        send_mail("test subject", "test body", 'jdh.admin@uni.lu', ['elisabeth.guerard@uni.lu'], fail_silently=False,)
+    except Exception as e:  # catch *all* exceptions
+        logger.error(f'send_confirmation exception:{e}')
+
+
+@shared_task
+def save_article_fingerprint(article_id):
+    logger.info(f'save_article_fingerprint article_id:{article_id}')
+    try:
+        article = Article.objects.get(pk=article_id)
+    except Article.DoesNotExist:
+        logger.error(f'save_article_fingerprint article_id:{article_id} not found')
+    fingerprint = get_notebook_stats(raw_url=article.notebook_ipython_url)
+    article.fingerprint = fingerprint
+    article.save()
+
+
+@shared_task
+def save_article_specific_content(article_id):
+    logger.info(f'save_article_specific_content:{article_id}')
+    try:
+        article = Article.objects.get(pk=article_id)
+    except Article.DoesNotExist:
+        logger.error(f'save_article_specific_content:{article_id} not found')
+    data = get_notebook_specifics_tags(raw_url=article.notebook_ipython_url)
+    article.data = data
+    article.save()
