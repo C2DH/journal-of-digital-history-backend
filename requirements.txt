@@ -37,3 +37,4 @@ traitlets==5.0.5
 urllib3==1.26.6
 vine==5.0.0
 wcwidth==0.2.5
+xhtml2pdf==0.2.5

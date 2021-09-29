@@ -16,10 +16,13 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 
+from .views import GeneratePDF
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('dashboard.urls')),
     path('', include('jdhapi.urls')),
     # add seo urls and views
     path('', include('jdhseo.urls')),
+    path('pdf/', GeneratePDF.as_view()),
 ]
