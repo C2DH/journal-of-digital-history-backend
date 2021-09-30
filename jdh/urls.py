@@ -24,5 +24,7 @@ urlpatterns = [
     path('', include('jdhapi.urls')),
     # add seo urls and views
     path('', include('jdhseo.urls')),
-    path('pdf/', GeneratePDF.as_view()),
+    #path('document/doi/<str:doi1>/<str:doi2>/pdf', GeneratePDF.as_view()),
+    # document/doi/10.1515/JDH.2021.1000.R1/pdf
+    path('pdf/<str:pid>/', GeneratePDF.as_view()),
 ]

@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <link rel="stylesheet" href="">
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Archivo+Narrow&display=swap');
-</style> <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Serif+Pro:400,700%7CFira+Code:400,700%7CFira+Sans:400,700,ital&amp;subset=latin-ext,latin-ext" media="all">
+@import url('https://fonts.googleapis.com/css2?family=Source+Serif+Pro:400,700%7CFira+Code:400,700%7CFira+Sans:400,700,ital&subset=latin-ext,latin-ext&display=swap');
+</style>
 <style>
 body{
 		font-family: 'Archivo Narrow', sans-serif;
@@ -111,19 +111,19 @@ width:40%; height:auto; float:right
 
 
 
-<h2>Topic-specific corpus building: The creation of a representative newspaper corpus on the topic of return migration using LDA and JSD</h2>
+<h2>{{ article_title }}</h2>
 
 
  <h3>
-	Author name1, Author name2
+	{{ article_authors }}
 </h3>
 
 <h4>
-	Affiliation1, Affiliation2, Affiliation3
+	{{ article_authors_affiliation }}
 </h4>
 
 <h4>
-	Keywords:  Keyword1, Keyword 2, Keyword 3
+	{{ article_keywords }}
 </h4>
 
 
@@ -132,7 +132,8 @@ width:40%; height:auto; float:right
  	Abstract
  </h5>
  <p>
-<span class="lettrine">H</span>umanities researchers often encounter the problem that their specialized corpora, created by keyword searches, either contain documents that are irrelevant for their research questions because the search queries were too broad, or they miss relevant documents because the search requests were too narrow. The reason for this lies in the complexity of language, which is characterized by ambiguity and concepts that are difficult, if not impossible, to trace by computational methods and thus keyword searches alone. This paper shows how text mining methods can support the building of a topic-specific corpus. Using the example of return migration issues, the aim is, on the one hand, to build a corpus that is as representative as possible and, on the other hand, to overcome the bias that comes with complex keyword searches that are influenced by the researcher’s prior knowledge. The paper begins with a discussion of the motivations for and the challenges of building research driven corpora, leads through the steps that were taken to obtain a satisfactory corpus that can be analyzed further and gives an outlook on how the created corpus was used to conduct a qualitative, discourse-driven analysis on return migration from the Americas to Europe between 1850 and 1950.
+<span class="lettrine">{{ article_abstract_first_letter }}</span>
+{{ article_abstract }}
 <br><br>
 <br>
 <br>
