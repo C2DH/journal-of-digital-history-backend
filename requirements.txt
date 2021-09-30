@@ -28,6 +28,7 @@ prompt-toolkit==3.0.8
 psycopg2-binary==2.8.6
 pyrsistent==0.17.3
 pytz==2020.4
+qrcode==7.3
 redis==3.5.3
 requests==2.25.1
 shortuuid==1.0.1
