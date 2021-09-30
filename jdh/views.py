@@ -20,13 +20,15 @@ class GeneratePDF(View):
         article = get_object_or_404(Article, abstract=abstract)
         template_file = 'abstract.html'
         template = get_template(template_file)
+        abstract_text = article.data['abstract'][0]
+        first_caracter = abstract_text[0:1]
         context = {
             "article_title": abstract.title,
             "article_authors": abstract.contact_firstname + " " + abstract.contact_lastname,
             "article_authors_affiliation": abstract.contact_affiliation,
             "article_keywords": article.data['keywords'][0],
-            "article_abstract_first_letter": "C",
-            "article_abstract": article.data['abstract'][0],
+            "article_abstract_first_letter": first_caracter,
+            "article_abstract": abstract_text[1:],
         }
         html = template.render(context)
         pdf = render_to_pdf(template_file, context)
