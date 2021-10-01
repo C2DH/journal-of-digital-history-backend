@@ -72,7 +72,8 @@ body{
 		column-count: 2;
 		font-size: 1.8rem;
 	}
-	
+
+
 
 .lettrine {
 float: left;
@@ -90,7 +91,7 @@ color:#00f5d4;
 }
 
 .logo img{
-	width:100%;
+	width:50%;
 	height:auto
 }
 
@@ -106,8 +107,7 @@ bas_article {
 bas_article a  {
 	font-style:italic;
 	font-weight:lighter;
-	font-size:2.5rem;
-	color:#00f5d4;
+	font-size:1rem;
 	text-decoration:none;
 	border-bottom:1px solid #00f5d4;
 	letter-spacing:2px;
@@ -144,6 +144,13 @@ width:40%; height:auto; float:right
 	{{ article_keywords }}
 </h4>
 
+<bas_article>
+For optimized experience read this article via this link:
+<br>
+<a href="https://journalofdigitalhistory.org/en/">https://journalofdigitalhistory.org/en/</a><br>
+Send yourself a link of this article for a later read:
+<img src={{ qr_code }}>
+</bas_article>
 
 <article>
  <h5>
@@ -156,15 +163,12 @@ width:40%; height:auto; float:right
 <br>
 <br>
 
-<bas_article>
+  <!-- Content for Static Frame 'footer_frame' -->
+    <div id="footer_content">(c) - page <pdf:pagenumber>
+        of <pdf:pagecount>
 For optimized experience read this article via this link:
-<br>
-<a href="https://journalofdigitalhistory.org/en/">https://journalofdigitalhistory.org/en/</a><br>
-
-Send yourself a link of this article for a later read:	
-<img src={{ qr_code }}
->
-</bas_article>
+<a href="https://journalofdigitalhistory.org/en/">https://journalofdigitalhistory.org/en/</a>
+    </div>
 
 </p>
 
