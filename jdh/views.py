@@ -1,6 +1,6 @@
 from django.http import HttpResponse
 from django.views.generic import View
-from .utils import render_to_pdf
+from .utils import render_to_pdf, generate_qrcode
 from django.template.loader import get_template
 from xhtml2pdf import pisa
 import os
@@ -22,6 +22,7 @@ class GeneratePDF(View):
         template = get_template(template_file)
         abstract_text = article.data['abstract'][0]
         first_caracter = abstract_text[0:1]
+        qrCodebase64 = generate_qrcode(pid)
         context = {
             "article_title": abstract.title,
             "article_authors": abstract.contact_firstname + " " + abstract.contact_lastname,
@@ -29,12 +30,14 @@ class GeneratePDF(View):
             "article_keywords": article.data['keywords'][0],
             "article_abstract_first_letter": first_caracter,
             "article_abstract": abstract_text[1:],
+            "qr_code": qrCodebase64
+
         }
         html = template.render(context)
         pdf = render_to_pdf(template_file, context)
         if pdf:
             response = HttpResponse(pdf, content_type='application/pdf')
-            filename = "abstract_%s.pdf" % ("12345")
+            filename = "abstract_%s.pdf" % (pid)
             content = "inline;filename=%s" % (filename)
             download = request.GET.get("download")
             if download:
