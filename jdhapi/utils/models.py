@@ -105,7 +105,7 @@ def get_notebook_stats(raw_url):
 
 
 def get_notebook_specifics_tags(raw_url):
-    selected_tags = ['title', 'abstract', 'contributor', 'keywords']
+    selected_tags = ['title', 'abstract', 'contributor', 'keywords', 'collaborators']
     countTagsFound = 0
     notebook = get_notebook_from_raw_github(raw_url=raw_url)
     logger.info(f'get_notebook_specifics_tags - notebook loaded: {raw_url}')
