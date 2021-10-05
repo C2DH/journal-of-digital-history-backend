@@ -10,27 +10,33 @@
 <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;700&family=Fira+Sans:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/paper-css/0.3.0/paper.css">
 <style>
+  body{
+    font-family: 'Fira Sans', sans-serif;
+    font-size: 10pt;
+    line-height: 1.5em;
+  }
+  .code, code, pre{
+    font-family: 'Fira Code', monospace;
+  }
+  .abstract p:first-child:first-letter {
+    font-family: 'Fira Code', monospace;
+    font-weight: bold;
+  }
+  p{
+    margin: 0;
+  }
   @page {
     size: A4;
   }
   @media print {
-    body{
-      font-family: 'Fira Sans', sans-serif;
-      font-size: 10pt;
-      line-height: 1.5em;
-    }
-    p{
-      margin: 0;
-    }
+
     blockquote{
       border-left: 1pt black solid;
       padding-left: 5mm;
       margin-left: 5mm;
       margin-right: 5mm;
     }
-    .code, code, pre{
-      font-family: 'Fira Code', monospace;
-    }
+
     .title{
       max-width: 75%;
     }
