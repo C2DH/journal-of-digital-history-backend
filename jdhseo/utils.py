@@ -8,6 +8,9 @@ def parseJupyterNotebook(notebook):
     contributor = []
     disclaimer = []
     paragraphs = []
+    collaborators = []
+    keywords = []
+
     for cell in cells:
         # check cell metadata
         tags = cell.get('metadata', {}).get('tags', [])
@@ -22,12 +25,19 @@ def parseJupyterNotebook(notebook):
             contributor.append(marko.convert(source))
         elif 'disclaimer' in tags:
             disclaimer.append(marko.convert(source))
+        elif 'collaborators' in tags:
+            collaborators.append(marko.convert(source))
+        elif 'keywords' in tags:
+            keywords.append(marko.convert(source))
         elif cell.get('cell_type') == 'markdown':
             paragraphs.append(marko.convert(source))
+
     return {
         'title': title,
         'abstract': abstract,
         'contributor': contributor,
         'disclaimer': disclaimer,
-        'paragraphs': paragraphs
+        'paragraphs': paragraphs,
+        'collaborators': collaborators,
+        'keywords': keywords
     }
