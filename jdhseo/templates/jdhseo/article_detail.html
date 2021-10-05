@@ -4,30 +4,145 @@
   {{ article.abstract.title }} - Journal of Digital History
 {% endblock %}
 
+{% block head %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;700&family=Fira+Sans:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/paper-css/0.3.0/paper.css">
+<style>
+  @page {
+    size: A4;
+  }
+  @media print {
+    body{
+      font-family: 'Fira Sans', sans-serif;
+      font-size: 10pt;
+      line-height: 1.5em;
+    }
+    p{
+      margin: 0;
+    }
+    blockquote{
+      border-left: 1pt black solid;
+      padding-left: 5mm;
+      margin-left: 5mm;
+      margin-right: 5mm;
+    }
+    .code, code, pre{
+      font-family: 'Fira Code', monospace;
+    }
+    .title{
+      max-width: 75%;
+    }
+    .abstract{
+      font-size: 12pt;
+      line-height: 18pt;
+    }
+    .keywords{
+      font-size: 12pt;
+    }
+    .abstract p:first-child:first-letter {
+      float: left;
+      height: 36pt;
+      font-size: 36pt;
+      line-height: 36pt;
+      margin-right: 1mm;
+      font-family: 'Fira Code', monospace;
+      font-weight: bold;
+    }
+    .collaborators{
+      max-width: 50%;
+    }
+    .page-break {page-break-after: always;}
+    .dual-column{
+      column-count: 2;
+      -webkit-column-count: 2;
+      -moz-column-count: 2;
+    }
+    h1{
+      font-size: 35pt;
+      line-height: 1.5em;
+    }
+    h2{
+      margin: 15mm 0 5mm;
+    }
+    h3{
+      margin: 10mm 0 5mm;
+    }
+    .mb5{
+      margin-bottom: 5mm;
+    }
+    .mb10{
+      margin-bottom: 10mm;
+    }
+    .mt10{
+      margin-top: 10mm;
+    }
+    .mr10{
+      margin-right: 10mm;
+    }
+    .mt20{
+      margin-top: 20mm;
+    }
+    .contributors{
+      display: flex;
+      max-width: 75%;
+    }
+    .contributor h3{
+      margin-top: 0;
+      margin-bottom: 0;
+    }
+  }
+</style>
+{% endblock %}
+
+
 {% block content %}
-<article>
-  <div class="container my-5">
-    <div class="row">
-      <div class="col-md-8 offset-md-2">
-        {% autoescape off %}
-        {% for t in nb.title %}
+{% autoescape off %}
+<section class="sheet padding-20mm">
+  <article>
+      <div class="title mt20 mb10">
+      {% for t in nb.title %}
+        {{ t }}
+      {% endfor %}
+      </div>
+      <div class="contributors mb5">
+        {% for t in nb.contributor %}
+          <div class="contributor mr10">
+          {{ t }}
+          </div>
+        {% endfor %}
+      </div>
+      <div class="collaborators mb5">
+        {% for t in nb.collaborators %}
           {{ t }}
         {% endfor %}
+      </div>
+      <div class="keywords mb5 mt20">
+        {% for t in nb.keywords %}
+          {{ t }}
+        {% endfor %}
+      </div>
+      <div class="abstract dual-column mb5">
         {% for t in nb.abstract %}
           {{ t }}
         {% endfor %}
-        {% for t in nb.contributor %}
-          {{ t }}
-        {% endfor %}
-        {% for t in nb.disclaimer %}
-          {{ t }}
-        {% endfor %}
-        {% for t in nb.paragraphs %}
-          {{ t }}
-        {% endfor %}
-        {% endautoescape %}
       </div>
-    </div>
-  </div>
-</article>
+      <div class="disclaimer">
+      {% for t in nb.disclaimer %}
+        {{ t }}
+      {% endfor %}
+      </div>
+    </article>
+  </section>
+  <section class="sheet padding-20mm">
+    <article>
+    {% for t in nb.paragraphs %}
+      <div class="paragraph mb5">
+      {{ t }}
+      </div>
+    {% endfor %}
+    </article>
+</section>
+{% endautoescape %}
 {% endblock %}
