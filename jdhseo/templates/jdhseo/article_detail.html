@@ -27,6 +27,7 @@
   }
   @page {
     size: A4;
+    margin: 1cm;
   }
   @media print {
 
@@ -107,48 +108,54 @@
 {% autoescape off %}
 <section class="sheet padding-20mm">
   <article>
-      <div class="title mt20 mb10">
-      {% for t in nb.title %}
-        {{ t }}
-      {% endfor %}
-      </div>
-      <div class="contributors mb5">
-        {% for t in nb.contributor %}
-          <div class="contributor mr10">
-          {{ t }}
-          </div>
-        {% endfor %}
-      </div>
-      <div class="collaborators mb5">
-        {% for t in nb.collaborators %}
-          {{ t }}
-        {% endfor %}
-      </div>
-      <div class="keywords mb5 mt20">
-        {% for t in nb.keywords %}
-          {{ t }}
-        {% endfor %}
-      </div>
-      <div class="abstract dual-column mb5">
-        {% for t in nb.abstract %}
-          {{ t }}
-        {% endfor %}
-      </div>
-      <div class="disclaimer">
-      {% for t in nb.disclaimer %}
-        {{ t }}
-      {% endfor %}
-      </div>
-    </article>
-  </section>
-  <section class="sheet padding-20mm">
-    <article>
-    {% for t in nb.paragraphs %}
-      <div class="paragraph mb5">
+    <div class="title mt20 mb10">
+    {% for t in nb.title %}
       {{ t }}
-      </div>
     {% endfor %}
-    </article>
+    </div>
+    <div class="contributors mb5">
+      {% for t in nb.contributor %}
+        <div class="contributor mr10">
+        {{ t }}
+        </div>
+      {% endfor %}
+    </div>
+    <div class="collaborators mb5">
+      {% for t in nb.collaborators %}
+        {{ t }}
+      {% endfor %}
+    </div>
+    <div class="keywords mb5 mt20">
+      {% for t in nb.keywords %}
+        {{ t }}
+      {% endfor %}
+    </div>
+    <div class="abstract dual-column mb5">
+      {% for t in nb.abstract %}
+        {{ t }}
+      {% endfor %}
+    </div>
+    <div class="disclaimer">
+    {% for t in nb.disclaimer %}
+      {{ t }}
+    {% endfor %}
+    </div>
+  </article>
+</section>
+<section class="sheet padding-20mm">
+  <article>
+  {% for t in nb.paragraphs %}
+    <div class="paragraph mb5">
+    {{ t }}
+    </div>
+  {% endfor %}
+  </article>
+  <h2 >Bibliography</h2>
+  {% for t in nb.bibliography %}
+    <div class="paragraph mb5">
+    {{ t }}
+    </div>
+  {% endfor %}
 </section>
 {% endautoescape %}
 {% endblock %}
