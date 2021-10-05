@@ -44,6 +44,7 @@ jupyter-core = "==4.7.1"
 traitlets = "==5.0.5"
 urllib3 = "==1.26.6"
 ipython_genutils = "==0.2.0"
+citeproc-py = "*"
 
 [requires]
 python_version = "3.8"
