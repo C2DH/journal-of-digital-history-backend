@@ -6,7 +6,9 @@ from django.http import Http404
 from django.shortcuts import render
 from jdhapi.models import Article
 from django.conf import settings
-from .utils import parseJupyterNotebook
+from .utils import parseJupyterNotebook, generate_qrcode
+from django.views.generic import View
+
 
 logger = logging.getLogger(__name__)
 
@@ -19,11 +21,16 @@ def ArticleDetail(request, pid):
             status=Article.Status.PUBLISHED)
     except Article.DoesNotExist:
         raise Http404("Article does not exist")
+    # generate qrcode
+    qrCodebase64 = generate_qrcode(pid)
     # decode notebook url
     notebook_url = urllib.parse.unquote(
         base64.b64decode(article.notebook_url).decode('utf-8'))
     # fill the context for the template file.
-    context = {'article': article}
+    context = {
+        'article': article,
+        'qr_code': qrCodebase64
+    }
     # check if it is a github url
 
     context.update({'proxy': 'github', 'host': settings.JDHSEO_PROXY_HOST})
@@ -48,3 +55,17 @@ def ArticleDetail(request, pid):
     # get content from notebook_url using our proxy
     # r = requests.get('https://api.github.com/user')
     return render(request, 'jdhseo/article_detail.html', context)
+
+
+class PdfSeoView(View):
+    template = 'template.html'
+    context = {'title': 'Hello World!'}
+
+    def get(self, request, pid):
+        response = PDFTemplateResponse(request=request,
+                                       template=self.template,
+                                       filename="hello.pdf",
+                                       context=self.context,
+                                       show_content_in_browser=False
+                                       )
+        return response
