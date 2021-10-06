@@ -55,17 +55,3 @@ def ArticleDetail(request, pid):
     # get content from notebook_url using our proxy
     # r = requests.get('https://api.github.com/user')
     return render(request, 'jdhseo/article_detail.html', context)
-
-
-class PdfSeoView(View):
-    template = 'template.html'
-    context = {'title': 'Hello World!'}
-
-    def get(self, request, pid):
-        response = PDFTemplateResponse(request=request,
-                                       template=self.template,
-                                       filename="hello.pdf",
-                                       context=self.context,
-                                       show_content_in_browser=False
-                                       )
-        return response
