@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<meta charset="UTF-8">
+<title>TEST 2</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Serif+Pro:400,700%7CFira+Code:400,700%7CFira+Sans:400,700,ital&amp;subset=latin-ext,latin-ext" media="all">
+<style>
+	h1{
+		font-size: 4rem
+	}
+	article-header{
+		text-align: center;
+
+	}
+		article{
+		margin: 4rem;
+	}
+	p{
+		column-gap: 1rem;
+		column-count: 2;
+	}
+	body{
+		font-family: Source Serif Pro,Georgia,serif;
+		margin: 4rem;
+
+	}
+</style>
+<body>
+
+<img src="/Users/elisabeth.guerard/c2dh/journal-of-digital-history-backend/jdh/templates/pdf/jdh-logo.svg" alt="LA" style="width:4rem">
+
+<article-header>
+
+ <h2>
+{{ article_title }}
+</h2>
+
+ <h3>
+	{{ article_authors }}
+</h3>
+
+ <h4>
+	{{ article_authors_affiliation }}
+</h4>
+
+ <h4>
+	{{ article_keywords }}
+</h4>
+</article-header>
+
+<article>
+ <h2>
+ 	Abstract
+ </h2>
+ <p>
+{{ article_abstract_first_letter}}{{ article_abstract }}
+</p>
+
+
+</article>
+
+</body>
+
+
+</html> 
