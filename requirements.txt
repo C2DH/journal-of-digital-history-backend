@@ -26,6 +26,7 @@ kombu==5.0.2
 lxml==4.6.3
 marko==1.0.3
 nbformat==5.0.8
+Pillow==8.1.2
 prompt-toolkit==3.0.8
 psycopg2-binary==2.8.6
 pyrsistent==0.17.3
