@@ -8,7 +8,9 @@ ARG GIT_REVISION
 RUN pip install --upgrade pip
 
 RUN apk add --no-cache \
-    postgresql-libs
+    postgresql-libs \
+    libxml2 \
+    libxslt
 
 RUN apk add --no-cache --virtual .build-deps \
     gcc \
