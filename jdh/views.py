@@ -2,6 +2,7 @@ from django.http import HttpResponse
 from django.views.generic import View
 from .utils import render_to_pdf, generate_qrcode
 from django.template.loader import get_template
+from django.http import Http404
 from xhtml2pdf import pisa
 import base64
 import os
