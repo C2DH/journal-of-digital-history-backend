@@ -10,7 +10,18 @@ RUN pip install --upgrade pip
 RUN apk add --no-cache \
     postgresql-libs \
     libxml2 \
-    libxslt
+    libxslt \
+# Pillow dependencies
+    freetype-dev \
+    fribidi-dev \
+    harfbuzz-dev \
+    jpeg-dev \
+    lcms2-dev \
+    openjpeg-dev \
+    tcl-dev \
+    tiff-dev \
+    tk-dev \
+    zlib-dev
 
 RUN apk add --no-cache --virtual .build-deps \
     gcc \
