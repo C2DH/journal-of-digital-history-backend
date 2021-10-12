@@ -120,18 +120,20 @@ def get_notebook_specifics_tags(raw_url):
             if tag in selected_tags:
                 countTagsFound += 1
                 source = cell.get('source', [])
-                logger.info(
-                    f'celltagged {tag} : {source[0]}'
-                )
+                logger.info(f'number element {len(source)}')
                 if not source:
                     continue
+                sourceStr = ' '.join([str(elem) for elem in source])
+                logger.info(
+                    f'celltagged {tag} : {sourceStr}'
+                )
                 if tag in result:
                     logger.info(
                         f'already one {tag} in {result}'
                     )
-                    result[tag].append(source)
+                    result[tag].append(sourceStr)
                 else:
-                    result[tag] = source
+                    result[tag] = [sourceStr]
     if countTagsFound < len(selected_tags):
         logger.error(f'get_notebook_specifics_tags - MISSING TAG in notebook: {raw_url}')
         try:
