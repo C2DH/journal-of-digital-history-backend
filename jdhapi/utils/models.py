@@ -143,3 +143,9 @@ def get_notebook_specifics_tags(raw_url):
         except Exception as e:  # catch *all* exceptions
             logger.error(f'send_confirmation exception:{e}')
     return result
+
+
+def get_citation(raw_url, article):
+    # output
+    result = {"test": "coucou"}
+    return result
