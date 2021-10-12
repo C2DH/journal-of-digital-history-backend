@@ -2,7 +2,7 @@ import os
 from django.contrib import admin
 from django.utils.safestring import mark_safe
 from .models import Author, Abstract, Dataset, Article, Issue, Tag, Role
-from .tasks import save_article_fingerprint, save_article_specific_content
+from .tasks import save_article_fingerprint, save_article_specific_content, save_citation
 
 
 def save_notebook_fingerprint(modeladmin, request, queryset):
@@ -10,7 +10,7 @@ def save_notebook_fingerprint(modeladmin, request, queryset):
         save_article_fingerprint.delay(article_id=article.pk)
 
 
-save_notebook_fingerprint.short_description = "Save notebook fingerprint in fingerprint"
+save_notebook_fingerprint.short_description = "1: Generate fingerprint"
 
 
 def save_notebook_specific_cell(modeladmin, request, queryset):
@@ -18,7 +18,15 @@ def save_notebook_specific_cell(modeladmin, request, queryset):
         save_article_specific_content.delay(article_id=article.pk)
 
 
-save_notebook_specific_cell.short_description = "Save notebook specific tagged cells in data"
+save_notebook_specific_cell.short_description = "2: Generate preload information"
+
+
+def save_article_citation(modeladmin, request, queryset):
+    for article in queryset:
+        save_citation.delay(article_id=article.pk)
+
+
+save_article_citation.short_description = "3: Generate citation"
 
 
 class AbstractAdmin(admin.ModelAdmin):
@@ -29,7 +37,7 @@ class AbstractAdmin(admin.ModelAdmin):
 class ArticleAdmin(admin.ModelAdmin):
     list_display = ['abstract_pid', 'issue', 'abstract_title', 'status']
     list_filter = ('issue', 'status')
-    actions = [save_notebook_fingerprint, save_notebook_specific_cell]
+    actions = [save_notebook_fingerprint, save_notebook_specific_cell, save_article_citation]
 
     def abstract_pid(self, obj):
         return obj.abstract.pid

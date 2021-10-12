@@ -105,7 +105,7 @@ def get_notebook_stats(raw_url):
 
 
 def get_notebook_specifics_tags(raw_url):
-    selected_tags = ['title', 'abstract', 'contributor', 'keywords']
+    selected_tags = ['title', 'abstract', 'contributor', 'keywords', 'collaborators']
     countTagsFound = 0
     notebook = get_notebook_from_raw_github(raw_url=raw_url)
     logger.info(f'get_notebook_specifics_tags - notebook loaded: {raw_url}')
@@ -120,18 +120,20 @@ def get_notebook_specifics_tags(raw_url):
             if tag in selected_tags:
                 countTagsFound += 1
                 source = cell.get('source', [])
-                logger.info(
-                    f'celltagged {tag} : {source[0]}'
-                )
+                logger.info(f'number element {len(source)}')
                 if not source:
                     continue
+                sourceStr = ' '.join([str(elem) for elem in source])
+                logger.info(
+                    f'celltagged {tag} : {sourceStr}'
+                )
                 if tag in result:
                     logger.info(
                         f'already one {tag} in {result}'
                     )
-                    result[tag].append(source)
+                    result[tag].append(sourceStr)
                 else:
-                    result[tag] = source
+                    result[tag] = [sourceStr]
     if countTagsFound < len(selected_tags):
         logger.error(f'get_notebook_specifics_tags - MISSING TAG in notebook: {raw_url}')
         try:
@@ -140,4 +142,10 @@ def get_notebook_specifics_tags(raw_url):
             send_mail("Missing tags in notebooks", body, 'jdh.admin@uni.lu', ['jdh.admin@uni.lu'], fail_silently=False,)
         except Exception as e:  # catch *all* exceptions
             logger.error(f'send_confirmation exception:{e}')
+    return result
+
+
+def get_citation(raw_url, article):
+    # output
+    result = {"test": "coucou"}
     return result

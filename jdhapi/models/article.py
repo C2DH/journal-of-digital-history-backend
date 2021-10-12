@@ -27,6 +27,7 @@ class Article(models.Model):
         max_length=22, default='', help_text='store the git hash', blank=True)
     notebook_path = models.CharField(max_length=254, null=True, blank=True)
     binder_url = models.URLField(max_length=254, null=True, blank=True)
+    doi = models.CharField(max_length=254, null=True, blank=True)
     status = models.CharField(
         max_length=15,
         choices=Status.choices,
