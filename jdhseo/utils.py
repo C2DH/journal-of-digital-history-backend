@@ -9,6 +9,8 @@ from citeproc import CitationItem
 from citeproc import CitationStylesStyle
 from citeproc import CitationStylesBibliography
 from citeproc.source.json import CiteProcJSON
+from django.utils.html import strip_tags
+
 
 logger = logging.getLogger(__name__)
 
@@ -72,7 +74,9 @@ def parseJupyterNotebook(notebook):
 
     return {
         'title': title,
+        'title_plain': strip_tags(''.join(title)),
         'abstract': abstract,
+        'abstract_plain': strip_tags(''.join(abstract)),
         'contributor': contributor,
         'disclaimer': disclaimer,
         'paragraphs': paragraphs,
@@ -91,7 +95,7 @@ def generate_qrcode(pid):
         box_size=10,
         border=5)
 
-    qr.add_data(input_data)
+    qr.add_data(input_data + pid)
     qr.make(fit=True)
     # code hex 00F5D4
     img = qr.make_image(back_color=(255, 255, 255), fill_color=(0, 245, 212))

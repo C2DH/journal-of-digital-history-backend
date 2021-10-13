@@ -7,7 +7,6 @@ from django.shortcuts import render
 from jdhapi.models import Article
 from django.conf import settings
 from .utils import parseJupyterNotebook, generate_qrcode
-from django.views.generic import View
 
 
 logger = logging.getLogger(__name__)
@@ -29,7 +28,10 @@ def ArticleDetail(request, pid):
     # fill the context for the template file.
     context = {
         'article': article,
-        'qr_code': qrCodebase64
+        'article_absolute_url':
+            f"https://journalofdigitalhistory.org/en/article/{article.abstract.pid}",
+        'qr_code': qrCodebase64,
+        'media_url': settings.MEDIA_URL
     }
     # check if it is a github url
 
