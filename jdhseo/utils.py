@@ -95,7 +95,7 @@ def generate_qrcode(pid):
         box_size=10,
         border=5)
 
-    qr.add_data(input_data)
+    qr.add_data(input_data + pid)
     qr.make(fit=True)
     # code hex 00F5D4
     img = qr.make_image(back_color=(255, 255, 255), fill_color=(0, 245, 212))
