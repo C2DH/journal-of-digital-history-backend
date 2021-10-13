@@ -5,6 +5,13 @@
 {% endblock %}
 
 {% block head %}
+<meta property="og:title" content="{{nb.title_plain}}" />
+<meta property="og:description" content="{{nb.abstract_plain}}" />
+<meta property="og:type" content="article" />
+<meta property="og:image" content="https://journalofdigitalhistory.org{{ media_url }}{{ article.abstract.pid }}.png" />
+<meta property="og:url" content="{{ article_absolute_url }}"" />
+<meta name="twitter:card" content="summary"></meta>
+<meta name="twitter:site" content="@Journal_DigHist"></meta>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;700&family=Fira+Sans:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
@@ -22,12 +29,22 @@
     font-family: 'Fira Code', monospace;
     font-weight: bold;
   }
+  a{
+    color: black;
+  }
+  .collaborators a{
+    text-decoration: none;
+    font-weight: bold;
+  }
   p{
     margin: 0;
   }
   @page {
     size: A4;
     margin: 1cm;
+  }
+  .position-relative{
+    position: relative;
   }
   @media print {
 
@@ -82,6 +99,9 @@
     .mb10{
       margin-bottom: 10mm;
     }
+    .mt5{
+      margin-top: 5mm;
+    }
     .mt10{
       margin-top: 10mm;
     }
@@ -90,6 +110,9 @@
     }
     .mt20{
       margin-top: 20mm;
+    }
+    .mt25{
+      margin-top: 25mm;
     }
     .contributors{
       display: flex;
@@ -107,13 +130,17 @@
 {% block content %}
 {% autoescape off %}
 <section class="sheet padding-20mm">
-For optimized experience read this article via this link:
-<br>
-<a href="https://journalofdigitalhistory.org/en/">https://journalofdigitalhistory.org/en/</a><br>
-Send yourself a link of this article for a later read:
-<img src={{ qr_code }}>
-  <article>
-    <div class="title mt20 mb10">
+  <article class="position-relative">
+    <img src="{{ qr_code }}" style="width:20mm; position: absolute; right:0; top:-20mm">
+    <p style="position: absolute; left:0; top:-20mm; font-size:8pt; line-height:12pt">
+      For optimized experience read this article using <a href="{{ article_absolute_url }}">this link</a>.
+      <br>
+      You can also
+      <a href="mailto:?subject=Read%20on%20JDH%20%22{{nb.title_plain}}%22&body=Hello!%0D%0AHere%20is%20your%20reminder%20as%20requested%0D%0A%0D%0ALink%3A%20{{ article_absolute_url }}">
+        send yourself a link to this article
+      </a> for a later, more comfortable read.
+    </p>
+    <div class="title mt25 mb5">
     {% for t in nb.title %}
       {{ t }}
     {% endfor %}
@@ -125,12 +152,12 @@ Send yourself a link of this article for a later read:
         </div>
       {% endfor %}
     </div>
-    <div class="collaborators mb5">
+    <div class="collaborators mb10">
       {% for t in nb.collaborators %}
         {{ t }}
       {% endfor %}
     </div>
-    <div class="keywords mb5 mt20">
+    <div class="keywords mb5 mt5">
       {% for t in nb.keywords %}
         {{ t }}
       {% endfor %}
