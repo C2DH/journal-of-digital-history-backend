@@ -29,7 +29,8 @@ def ArticleDetail(request, pid):
     context = {
         'article': article,
         'article_absolute_url':
-            f"https://journalofdigitalhistory.org/en/article/{article.abstract.pid}",
+            f"https://journalofdigitalhistory.org/en/article/"
+            f"{article.abstract.pid}",
         'qr_code': qrCodebase64,
         'media_url': settings.MEDIA_URL
     }
@@ -47,7 +48,9 @@ def ArticleDetail(request, pid):
             # add NB paragraphs to context
             context.update({'nb': parseJupyterNotebook(res.json())})
         except Exception as e:
-            logger.error(f'Error occurred on article pk={article.pk} notebook')
+            logger.error(
+                f'Error occurred on article pk={article.pk}'
+                f' notebook remote_url={remote_url}')
             logger.exception(e)
             raise Http404("Article Notebook file not found (or not valid)")
     else:
