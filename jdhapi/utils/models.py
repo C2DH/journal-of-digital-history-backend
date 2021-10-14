@@ -152,7 +152,7 @@ def get_notebook_specifics_tags(raw_url):
 def get_citation(raw_url, article):
     # output
     # logger.info("title marko" + marko.convert(article.data["title"]))
-    titleEscape = strip_tags(''.join(marko.convert((article.data["title"][0]))))
+    titleEscape = strip_tags(''.join(marko.convert((article.data["title"][0])))).rstrip()
     authors = []
     """ mainAuthor = {
         "given": article.abstract.contact_firstname,
@@ -168,7 +168,8 @@ def get_citation(raw_url, article):
         }
         authors.append(contrib)
     return ({
-        "DOI": article.doi,
+        # DO NOT DISPLAYED THE DOI FOR THE MOMENT
+        # "DOI": article.doi,
         "URL": "https://journalofdigitalhistory.org/en/article/" + article.abstract.pid,
         "type": "article-journal",
         "issue": article.issue.pid,
