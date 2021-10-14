@@ -5,6 +5,10 @@ from django.core.mail import send_mail
 import re
 import logging
 from django.conf import settings  # import the settings file
+from django.utils.html import strip_tags
+import marko
+from django.shortcuts import render, get_object_or_404
+from jdhapi.models import Author
 
 logger = logging.getLogger(__name__)
 
@@ -147,5 +151,33 @@ def get_notebook_specifics_tags(raw_url):
 
 def get_citation(raw_url, article):
     # output
-    result = {"test": "coucou"}
-    return result
+    # logger.info("title marko" + marko.convert(article.data["title"]))
+    titleEscape = strip_tags(''.join(marko.convert((article.data["title"][0]))))
+    authors = []
+    """ mainAuthor = {
+        "given": article.abstract.contact_firstname,
+        "family": article.abstract.contact_lastname
+    }
+    authors.append(mainAuthor) """
+    authorIds = article.abstract.authors.all()
+    for contrib in authorIds:
+        contributor = get_object_or_404(Author, lastname=contrib)
+        contrib = {
+            "given": contributor.firstname,
+            "family": contributor.lastname
+        }
+        authors.append(contrib)
+    return ({
+        "DOI": article.doi,
+        "URL": "https://journalofdigitalhistory.org/en/article/" + article.abstract.pid,
+        "type": "article-journal",
+        "issue": article.issue.pid,
+        "title": titleEscape,
+        "author": authors,
+        "issued": {
+            "year": article.issue.creation_date.strftime("%Y")
+        },
+        # "volume": "1",
+        "container-title": "Journal of Digital History",
+        "container-title-short": "JDH"
+    })

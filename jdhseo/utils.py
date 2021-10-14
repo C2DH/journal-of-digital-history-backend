@@ -74,9 +74,9 @@ def parseJupyterNotebook(notebook):
 
     return {
         'title': title,
-        'title_plain': strip_tags(''.join(title)),
+        'title_plain': strip_tags(''.join(title)).strip(),
         'abstract': abstract,
-        'abstract_plain': strip_tags(''.join(abstract)),
+        'abstract_plain': strip_tags(''.join(abstract)).strip(),
         'contributor': contributor,
         'disclaimer': disclaimer,
         'paragraphs': paragraphs,
