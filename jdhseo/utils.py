@@ -1,4 +1,5 @@
 import marko
+import re
 import logging
 import base64
 import qrcode
@@ -15,10 +16,30 @@ from django.utils.html import strip_tags
 logger = logging.getLogger(__name__)
 
 
+def getAuthorDateFromReference(ref):
+    year = ''
+    author = ''
+    if ref.get('issued', None) is not None:
+        if ref.get('issued').get('year', None) is not None:
+            year = ref['issued']['year']
+        elif ref.get('issued').get('literal', None) is not None:
+            year = ref['issued']['literal']
+    elif ref.get('accessed', None) is not None:
+        if ref.get('accessed').get('year', None) is not None:
+            year = ref['accessed']['year']
+    if isinstance(ref.get('author', None), list):
+        authors = [x['family'] for x in ref['author']]
+        # TODO
+        # it is possible to limit the number of authors, add "et al."
+        author = ', '.join(authors)
+    return f' *{author} {year}* '
+
+
 def getReferencesFromJupyterNotebook(notebook):
     metadata = notebook.get('metadata')
     references = []
     bibliography = []
+    inline_references_table = dict()
     try:
         references = metadata.get('cite2c').get('citations')
         bib_source = CiteProcJSON(references.values())
@@ -34,10 +55,13 @@ def getReferencesFromJupyterNotebook(notebook):
             bib.register(Citation([CitationItem(key)]))
         for item in bib.bibliography():
             bibliography.append(str(item))
+        for k, entry in references.items():
+            inline_references_table[k] = getAuthorDateFromReference(entry)
     except Exception as e:
         logger.exception(e)
         pass
-    return references, bibliography
+
+    return references, bibliography, inline_references_table
 
 
 def parseJupyterNotebook(notebook):
@@ -49,12 +73,21 @@ def parseJupyterNotebook(notebook):
     paragraphs = []
     collaborators = []
     keywords = []
-    references, bibliography = getReferencesFromJupyterNotebook(notebook)
+    references, bibliography, refs = getReferencesFromJupyterNotebook(notebook)
+
+    def formatInlineCitations(m):
+        parsed_ref = refs.get(m[1], None)
+        if parsed_ref is None:
+            return f'{m[1]}'
+        return parsed_ref
 
     for cell in cells:
         # check cell metadata
         tags = cell.get('metadata', {}).get('tags', [])
         source = ''.join(cell.get('source', ''))
+        source = re.sub(
+            r'<cite\s+data-cite=.([/\dA-Z]+).>([^<]*)</cite>',
+            formatInlineCitations, source)
         if 'hidden' in tags:
             continue
         if 'title' in tags:
