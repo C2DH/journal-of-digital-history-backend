@@ -32,7 +32,7 @@ def getAuthorDateFromReference(ref):
         # TODO
         # it is possible to limit the number of authors, add "et al."
         author = ', '.join(authors)
-    return f'*{author} {year}*'
+    return f' *{author} {year}* '
 
 
 def getReferencesFromJupyterNotebook(notebook):
