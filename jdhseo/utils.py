@@ -55,6 +55,11 @@ def getReferencesFromJupyterNotebook(notebook):
     inline_references_table = dict()
     try:
         references = metadata.get('cite2c').get('citations')
+        # exclude "id": "undefined"
+        for key, value in references.items():
+            if key =! "id" and value =! "undefined":
+                newDict[key] = value
+        logger.info("Loging references ---> {0}".format(references))
         bib_source = CiteProcJSON(references.values())
         bib_style = CitationStylesStyle(
             'jdhseo/styles/modern-language-association.csl', validate=False)
@@ -74,7 +79,7 @@ def getReferencesFromJupyterNotebook(notebook):
         logger.exception(e)
         pass
 
-    return references, bibliography, inline_references_table
+    return references, sorted(bibliography), inline_references_table
 
 
 def parseJupyterNotebook(notebook):
