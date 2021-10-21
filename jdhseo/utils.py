@@ -48,6 +48,7 @@ def getAuthorDateFromReference(ref):
             return f'*{container} {year}*'
 
 
+
 def getReferencesFromJupyterNotebook(notebook):
     metadata = notebook.get('metadata')
     references = []
@@ -66,8 +67,6 @@ def getReferencesFromJupyterNotebook(notebook):
         for key, entry in bib_source.items():
             # exclude  "undefined" due to bug cite2c
             if key != "undefined":
-            # for name, value in entry.items():
-            #     print('   {}: {}'.format(name, value))
                 bib.register(Citation([CitationItem(key)]))
         for item in bib.bibliography():
             bibliography.append(str(item))
@@ -76,9 +75,9 @@ def getReferencesFromJupyterNotebook(notebook):
     except Exception as e:
         logger.exception(e)
         pass
-
-    return references, sorted(bibliography), inline_references_table
-
+    # caseless matching
+    #return references, sorted(bibliography, key=str.casefold), inline_references_table
+    return references, sorted(bibliography, key=lambda x: re.sub('[^A-Za-z]+', '', x).lower()), inline_references_table
 
 def parseJupyterNotebook(notebook):
     cells = notebook.get('cells')
