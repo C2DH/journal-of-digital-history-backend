@@ -52,6 +52,7 @@ def getReferencesFromJupyterNotebook(notebook):
     metadata = notebook.get('metadata')
     references = []
     bibliography = []
+    filterReferences = []
     inline_references_table = dict()
     try:
         references = metadata.get('cite2c').get('citations')
@@ -63,10 +64,11 @@ def getReferencesFromJupyterNotebook(notebook):
             bib_style, bib_source, formatter.html)
         # register citation
         for key, entry in bib_source.items():
-            # print(key)
+            # exclude  "undefined" due to bug cite2c
+            if key != "undefined":
             # for name, value in entry.items():
             #     print('   {}: {}'.format(name, value))
-            bib.register(Citation([CitationItem(key)]))
+                bib.register(Citation([CitationItem(key)]))
         for item in bib.bibliography():
             bibliography.append(str(item))
         for k, entry in references.items():
