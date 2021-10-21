@@ -18,7 +18,8 @@ logger = logging.getLogger(__name__)
 
 def getAuthorDateFromReference(ref):
     year = ''
-    author = ''
+    author = None
+    editor = None
     if ref.get('issued', None) is not None:
         if ref.get('issued').get('year', None) is not None:
             year = ref['issued']['year']
@@ -32,7 +33,19 @@ def getAuthorDateFromReference(ref):
         # TODO
         # it is possible to limit the number of authors, add "et al."
         author = ', '.join(authors)
-    return f' *{author} {year}* '
+    if isinstance(ref.get('editor', None), list):
+        editors = [x['family'] for x in ref['editor']]
+        editor = ', '.join(editors)
+    if author is None and editor is not None:
+        return f'*{editor} {year}*'
+    if editor is None and author is not None:
+        return f'*{author} {year}*'
+    if editor is not None and author is not None:
+        return f'*{author} {year}*'
+    else:
+        if ref.get('container-title', None) is not None:
+            container = ref['container-title']
+            return f'*{container} {year}*'
 
 
 def getReferencesFromJupyterNotebook(notebook):
