@@ -48,7 +48,6 @@ def getAuthorDateFromReference(ref):
             return f'*{container} {year}*'
 
 
-
 def getReferencesFromJupyterNotebook(notebook):
     metadata = notebook.get('metadata')
     references = []
@@ -78,6 +77,7 @@ def getReferencesFromJupyterNotebook(notebook):
     # caseless matching
     #return references, sorted(bibliography, key=str.casefold), inline_references_table
     return references, sorted(bibliography, key=lambda x: re.sub('[^A-Za-z]+', '', x).lower()), inline_references_table
+
 
 def parseJupyterNotebook(notebook):
     cells = notebook.get('cells')

@@ -46,13 +46,30 @@
   p{
     margin: 0;
   }
-  @page {
+{% comment %}   @page {
     size: A4;
     margin: 1cm;
   }
   .position-relative{
     position: relative;
-  }
+  } {% endcomment %}
+
+@page {
+		size: a4 portrait;
+		@frame header_frame {           /* Static Frame */
+		-pdf-frame-content: header_content;
+		left: 50pt; width: 512pt; top: 50pt; height: 40pt;
+		}
+		@frame content_frame {          /* Content Frame */
+		left: 50pt; width: 512pt; top: 90pt; height: 632pt;
+		}
+		@frame footer_frame {           /* Another static Frame */
+		-pdf-frame-content: footer_content;
+		left: 50pt; width: 512pt; top: 772pt; height: 20pt;
+		}
+		}
+
+
   @media print {
 
     blockquote{
@@ -210,5 +227,11 @@
     </div>
   {% endfor %}
 </section>
+<!-- Content for Static Frame 'footer_frame' -->
+    <div id="footer_content">(c) - page <pdf:pagenumber>
+        of <pdf:pagecount>
+For optimized experience read this article via this link:
+<a href="{{ article_absolute_url }}"</a>
+    </div>
 {% endautoescape %}
 {% endblock %}
