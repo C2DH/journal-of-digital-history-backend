@@ -4,9 +4,10 @@ import requests
 import urllib.parse
 from django.http import Http404
 from django.shortcuts import render
-from jdhapi.models import Article
+from jdhapi.models import Article, Issue
 from django.conf import settings
 from .utils import parseJupyterNotebook, generate_qrcode
+from .utils import getPlainMetadataFromArticle
 
 
 logger = logging.getLogger(__name__)
@@ -60,3 +61,26 @@ def ArticleDetail(request, pid):
     # get content from notebook_url using our proxy
     # r = requests.get('https://api.github.com/user')
     return render(request, 'jdhseo/article_detail.html', context)
+
+
+def IssueDetail(request, pid):
+    try:
+        issue = Issue.objects.get(
+            pid=pid,
+            status=Issue.Status.PUBLISHED)
+    except Article.DoesNotExist:
+        raise Http404("Issue does not exist")
+
+    articles = Article.objects.filter(
+        issue__pid=pid,
+        status=Article.Status.PUBLISHED)
+    context = {
+        'site_base_url': 'https://journalofdigitalhistory.org',
+        'issue': issue,
+        'count_articles': articles.count(),
+        'plain_articles': [
+            getPlainMetadataFromArticle(article=a)
+            for a in articles
+        ]
+    }
+    return render(request, 'jdhseo/issue_detail.html', context)
