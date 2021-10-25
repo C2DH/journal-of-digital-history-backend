@@ -135,6 +135,23 @@ def parseJupyterNotebook(notebook):
     }
 
 
+def getPlainMetadataFromArticle(article):
+    # Given an `Article` instance,
+    # get a dict cotaining flatten down metadata for the
+    # article: title, contributors etc.
+    title = marko.convert(''.join(article.data.get('title', '')))
+    abstract = marko.convert(''.join(article.data.get('abstract', '')))
+    contributor = marko.convert(''.join(article.data.get('contributor', '')))
+    return {
+        'pid': article.abstract.pid,
+        'contributor': strip_tags(contributor).strip(),
+        'title': strip_tags(title).strip(),
+        'abstract': strip_tags(abstract).strip(),
+        'keywords': article.data.get('keywords', []),
+        'data': article.data
+    }
+
+
 def generate_qrcode(pid):
     buffer = BytesIO()
     input_data = "https://journalofdigitalhistory.org/en/article/"
