@@ -5,11 +5,16 @@
 {% block head %}
 <meta property="og:title" content="{{nb.title_plain}}" />
 <meta property="og:description" content="{{nb.abstract_plain}}" />
+<meta property="og:site_name" content="Journal of Digital History" />
 <meta property="og:type" content="website" />
-<meta property="og:image" content="https://journalofdigitalhistory.org{{ media_url }}{{ article.abstract.pid }}.png" />
+<meta property="og:image" content="https://journalofdigitalhistory.org/img/articles/{{ article.abstract.pid }}.png" />
 <meta property="og:url" content="{{ article_absolute_url }}" />
 <meta name="twitter:card" content="summary" />
 <meta name="twitter:site" content="@Journal_DigHist" />
+<meta name="twitter:title" content="{{nb.title_plain}}" />
+<meta name="twitter:description" content="{{nb.abstract_plain}}" />
+<meta name="twitter:image" content="https://journalofdigitalhistory.org/img/articles/{{ article.abstract.pid }}.png" />
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;700&family=Fira+Sans:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
