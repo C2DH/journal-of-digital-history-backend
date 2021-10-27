@@ -18,7 +18,8 @@ logger = logging.getLogger(__name__)
 
 def getAuthorDateFromReference(ref):
     year = ''
-    author = ''
+    author = None
+    editor = None
     if ref.get('issued', None) is not None:
         if ref.get('issued').get('year', None) is not None:
             year = ref['issued']['year']
@@ -32,16 +33,30 @@ def getAuthorDateFromReference(ref):
         # TODO
         # it is possible to limit the number of authors, add "et al."
         author = ', '.join(authors)
-    return f' *{author} {year}* '
+    if isinstance(ref.get('editor', None), list):
+        editors = [x['family'] for x in ref['editor']]
+        editor = ', '.join(editors)
+    if author is None and editor is not None:
+        return f'*{editor} {year}*'
+    if editor is None and author is not None:
+        return f'*{author} {year}*'
+    if editor is not None and author is not None:
+        return f'*{author} {year}*'
+    else:
+        if ref.get('container-title', None) is not None:
+            container = ref['container-title']
+            return f'*{container} {year}*'
 
 
 def getReferencesFromJupyterNotebook(notebook):
     metadata = notebook.get('metadata')
     references = []
     bibliography = []
+    filterReferences = []
     inline_references_table = dict()
     try:
         references = metadata.get('cite2c').get('citations')
+        # logger.info("Loging references ---> {0}".format(references))
         bib_source = CiteProcJSON(references.values())
         bib_style = CitationStylesStyle(
             'jdhseo/styles/modern-language-association.csl', validate=False)
@@ -49,10 +64,9 @@ def getReferencesFromJupyterNotebook(notebook):
             bib_style, bib_source, formatter.html)
         # register citation
         for key, entry in bib_source.items():
-            # print(key)
-            # for name, value in entry.items():
-            #     print('   {}: {}'.format(name, value))
-            bib.register(Citation([CitationItem(key)]))
+            # exclude  "undefined" due to bug cite2c
+            if key != "undefined":
+                bib.register(Citation([CitationItem(key)]))
         for item in bib.bibliography():
             bibliography.append(str(item))
         for k, entry in references.items():
@@ -60,8 +74,9 @@ def getReferencesFromJupyterNotebook(notebook):
     except Exception as e:
         logger.exception(e)
         pass
-
-    return references, bibliography, inline_references_table
+    # caseless matching
+    #return references, sorted(bibliography, key=str.casefold), inline_references_table
+    return references, sorted(bibliography, key=lambda x: re.sub('[^A-Za-z]+', '', x).lower()), inline_references_table
 
 
 def parseJupyterNotebook(notebook):
@@ -117,6 +132,23 @@ def parseJupyterNotebook(notebook):
         'keywords': keywords,
         'references': references,
         'bibliography': bibliography
+    }
+
+
+def getPlainMetadataFromArticle(article):
+    # Given an `Article` instance,
+    # get a dict cotaining flatten down metadata for the
+    # article: title, contributors etc.
+    title = marko.convert(''.join(article.data.get('title', '')))
+    abstract = marko.convert(''.join(article.data.get('abstract', '')))
+    contributor = marko.convert(''.join(article.data.get('contributor', '')))
+    return {
+        'pid': article.abstract.pid,
+        'contributor': strip_tags(contributor).strip(),
+        'title': strip_tags(title).strip(),
+        'abstract': strip_tags(abstract).strip(),
+        'keywords': article.data.get('keywords', []),
+        'data': article.data
     }
 
 

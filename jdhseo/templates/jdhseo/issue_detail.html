@@ -1,0 +1,68 @@
+{% extends "jdhseo/default.html" %}
+
+{% block title %}{{nb.title_plain}} - Journal of Digital History{% endblock %}
+
+{% block head %}
+<meta property="og:title" content="{{ issue.name }}" />
+<meta property="og:description" content="{{ issue.description }}" />
+<meta property="og:site_name" content="Journal of Digital History" />
+<meta property="og:type" content="website" />
+<meta property="og:image" content="{{ site_base_url }}/img/issues/{{ issue.pid }}.png" />
+<meta property="og:url" content="{{ site_base_url }}/en/issue/{{ issue.pid }}" />
+<meta name="twitter:card" content="summary" />
+<meta name="twitter:site" content="@Journal_DigHist" />
+<meta name="twitter:title" content="{{ issue.name }}" />
+<meta name="twitter:description" content="{{ issue.description }}" />
+<meta name="twitter:image" content="{{ site_base_url }}/img/issues/{{ issue.pid }}.png" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;700&family=Fira+Sans:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/paper-css/0.3.0/paper.css">
+<style>
+  body{
+    font-family: 'Fira Sans', sans-serif;
+    font-size: 10pt;
+    line-height: 1.5em;
+  }
+  .code, code, pre{
+    font-family: 'Fira Code', monospace;
+  }
+  .abstract p:first-child:first-letter {
+    font-family: 'Fira Code', monospace;
+    font-weight: bold;
+  }
+  a{
+    color: black;
+  }
+  .collaborators a{
+    text-decoration: none;
+    font-weight: bold;
+  }
+</style>
+{% endblock %}
+
+
+{% block content %}
+{% autoescape off %}
+<h1>{{issue.name}}</h1>
+<p>{{issue.creation_date}} &mdash; {{count_articles}} articles </p>
+<p>{{issue.description}}</p>
+
+<ul>
+  {% for article in plain_articles %}
+  <li>
+    <h2><a href="{{ site_base_url }}/en/article/{{ article.pid }}">{{article.title}}</a></h2>
+    <p>keywords:
+    {% for keyword in article.keywords %}
+      {{ keyword }}
+    {% endfor %}
+    </p>
+    <blockquote cite="http://">
+        {{article.abstract}}
+    </blockquote>
+    {{ article.data}}
+  {% endfor %}
+</ul>
+{% endautoescape %}
+{% endblock %}
