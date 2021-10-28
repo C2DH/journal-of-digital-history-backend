@@ -1,8 +1,9 @@
 from django.urls import path, include
 from jdhapi import views
+
 from rest_framework.urlpatterns import format_suffix_patterns
-from rest_framework.routers import DefaultRouter
-from rest_framework import routers
+# from rest_framework.routers import DefaultRouter
+# from rest_framework import routers
 
 
 urlpatterns = [
@@ -21,6 +22,7 @@ urlpatterns = [
     path('api/issues/', views.IssueList.as_view(), name='issue-list'),
     path('api/issues/<str:pid>/', views.IssueDetail.as_view(), name='issue-detail'),
     path('api/submit-abstract/', views.SubmitAbstract),
-    path('api/generate-notebook/<str:pid>', views.GenerateNotebook)
+    path('api/generate-notebook/<str:pid>', views.GenerateNotebook),
+    path('api/search/', views.ArticleSearch),
 ]
 urlpatterns = format_suffix_patterns(urlpatterns)

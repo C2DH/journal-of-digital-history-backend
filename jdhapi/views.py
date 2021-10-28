@@ -31,8 +31,9 @@ from django.core.mail import send_mail
 from jdh.validation import JSONSchema
 from jsonschema.exceptions import SchemaError
 from jsonschema.exceptions import ValidationError
-from django.shortcuts import render, get_object_or_404
-
+from django.shortcuts import get_object_or_404
+from django.conf import settings
+from algoliasearch.search_client import SearchClient
 
 document_json_schema = JSONSchema(filepath='submit-abstract.json')
 logger = logging.getLogger(__name__)
@@ -259,3 +260,20 @@ class RoleList(generics.ListCreateAPIView):
 class RoleDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Issue.objects.all()
     serializer_class = RoleSerializer
+
+
+@api_view(['GET'])
+def ArticleSearch(request):
+    if 'q' not in request.query_params:
+        return Response({
+            'error': 'ValidationError',
+            'message': 'q param is required'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    client = SearchClient.create(
+        settings.JDHTASKS_ALGOLIA_APPID,
+        settings.JDHTASKS_ALGOLIA_CLIENT_APIKEY)
+    index = client.init_index(settings.JDHTASKS_ALGOLIA_INDEX_NAME)
+    results = index.search(request.query_params.get('q'))
+    return Response({
+        'results': results
+    })
