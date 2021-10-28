@@ -45,6 +45,7 @@ traitlets = "==5.0.5"
 urllib3 = "==1.26.6"
 ipython_genutils = "==0.2.0"
 citeproc-py = "*"
+algoliasearch = ">=2.0,<3.0"
 
 [requires]
 python_version = "3.8"
