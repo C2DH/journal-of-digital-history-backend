@@ -215,3 +215,16 @@ JDHSEO_PROXY_HOST = get_env_variable(
     'JDHSEO_PROXY_HOST', 'https://journalofdigitalhistory.org/')
 JDHSEO_PROXY_PATH_GITHUB = get_env_variable(
     'JDHSEO_PROXY_PATH_GITHUB', '/proxy-githubusercontent')
+
+# search engine
+JDHTASKS_ALGOLIA_APPID = get_env_variable(
+    'JDHSEO_ALGOLIA_APPID',
+    'xxx')
+JDHTASKS_ALGOLIA_ADMIN_APIKEY = get_env_variable(
+    'JDHTASKS_ALGOLIA_ADMIN_APIKEY',
+    'xxx')
+JDHTASKS_ALGOLIA_CLIENT_APIKEY = get_env_variable(
+    'JDHTASKS_ALGOLIA_CLIENT_APIKEY',
+    'xxx')
+JDHTASKS_ALGOLIA_INDEX_NAME = get_env_variable(
+    'JDHTASKS_ALGOLIA_INDEX_NAME', 'test')
