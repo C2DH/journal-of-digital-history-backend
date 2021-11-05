@@ -50,7 +50,12 @@ INSTALLED_APPS = [
     'crispy_forms',
     'drf_recaptcha',
     'django_filters',
+    'django.contrib.sitemaps',
+    'django.contrib.sites'
 ]
+
+
+SITE_ID = 1
 
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
