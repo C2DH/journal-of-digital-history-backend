@@ -65,6 +65,7 @@ def get_notebook_stats(raw_url):
         if 'contributor' in tags:
             countContributors += 1
         c['countChars'] = len(''.join(source))
+        c['firstWords'] = ' '.join(source[0].split()[:5])
         c['isMetadata'] = any(tag in [
             'title', 'abstract', 'contributor', 'disclaimer', 'keywords'
         ] for tag in tags)
