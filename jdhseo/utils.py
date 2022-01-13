@@ -95,7 +95,7 @@ def parseJupyterNotebook(notebook):
         if parsed_ref is None:
             return f'{m[1]}'
         return parsed_ref
-
+    num = 0
     for cell in cells:
         # check cell metadata
         tags = cell.get('metadata', {}).get('tags', [])
@@ -117,8 +117,13 @@ def parseJupyterNotebook(notebook):
             collaborators.append(marko.convert(source))
         elif 'keywords' in tags:
             keywords.append(marko.convert(source))
-        elif cell.get('cell_type') == 'markdown':
-            paragraphs.append(marko.convert(source))
+        else:
+            if cell.get('cell_type') == 'markdown':
+                num = num + 1
+                paragraphs.append({"num": num, "source": marko.convert(source)})
+            elif cell.get('cell_type') == 'code':
+                num = num + 1
+                paragraphs.append({"numCode": num, "code": marko.convert(source)})
 
     return {
         'title': title,

@@ -7,13 +7,13 @@
 <meta property="og:description" content="{{nb.abstract_plain}}" />
 <meta property="og:site_name" content="Journal of Digital History" />
 <meta property="og:type" content="website" />
-<meta property="og:image" content="https://journalofdigitalhistory.org/img/articles/{{ article.abstract.pid }}.png" />
+<meta property="og:image" content="{{ article.data.socialmediacover }}" />
 <meta property="og:url" content="{{ article_absolute_url }}" />
 <meta name="twitter:card" content="summary" />
 <meta name="twitter:site" content="@Journal_DigHist" />
 <meta name="twitter:title" content="{{nb.title_plain}}" />
 <meta name="twitter:description" content="{{nb.abstract_plain}}" />
-<meta name="twitter:image" content="https://journalofdigitalhistory.org/img/articles/{{ article.abstract.pid }}.png" />
+<meta name="twitter:image" content="{{ article.data.socialmediacover }}" />
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -50,6 +50,13 @@
   }
   p{
     margin: 0;
+  }
+  .paragraph_num {
+    position: absolute;
+    left: 40px;
+    color: gray;
+    font-weight: bold;
+    font-size: 12px;
   }
 
 @page {
@@ -207,7 +214,8 @@
   <article>
   {% for t in nb.paragraphs %}
     <div class="paragraph mb5">
-    {{ t }}
+      <div class="paragraph_num">{{ t.num }}</div>
+      <div>{{ t.source }}</div>
     </div>
   {% endfor %}
   </article>
