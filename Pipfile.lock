@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "e501e534f8bbbd4d3bfb364526a7f7fd5a470450caaae996f5f45af514df02be"
+            "sha256": "8a40733c295cbbcf0eafdecc950d081fe8aea31dcfbcd2e0833cbffa30c5b806"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -16,6 +16,14 @@
         ]
     },
     "default": {
+        "algoliasearch": {
+            "hashes": [
+                "sha256:3c6ecf88fc4ab319d93857dbf334c368a3f6b6242d4e1e5729031163ad515786",
+                "sha256:f4c115fc27589d097de617ddcbf2ed83efac47d180523e54e42d54fd6a658eb4"
+            ],
+            "index": "pypi",
+            "version": "==2.6.0"
+        },
         "amqp": {
             "hashes": [
                 "sha256:5b9062d5c0812335c75434bf17ce33d7a20ecfedaa0733faec7379868eb4068a",
