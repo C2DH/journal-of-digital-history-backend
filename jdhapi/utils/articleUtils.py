@@ -236,7 +236,9 @@ def read_libraries(article):
                 package_name = req.split('==')[0]
                 if package_name != 'jupyter-contrib-nbextensions':
                     pypi_data = get_pypi_info(package_name)
-                    tag, created = Tag.objects.get_or_create(name=package_name, category=Tag.TOOL, data=pypi_data)
+                    tag, created = Tag.objects.get_or_create(name=package_name, category=Tag.TOOL)
+                    tag.data = pypi_data
+                    tag.save()
                     article.tags.add(tag)
             return str(len(reqs)) + " libraries tags created"
         else:
@@ -256,7 +258,7 @@ def generate_narrative_tags(article):
     keywords = article.data['keywords']
     array_keys = keywords[0].split(',')
     for key in array_keys:
-        tag, created = Tag.objects.get_or_create(name=key, category=Tag.NARRATIVE, data={})
+        tag, created = Tag.objects.get_or_create(name=key, category=Tag.NARRATIVE)
         article.tags.add(tag)
     return str(len(array_keys)) + " narrative tags created"
 
