@@ -188,10 +188,6 @@ LOGGING = {
             'formatter': 'verbose'
         },
     },
-    'root': {
-        'handlers': ['console'],
-        'level': 'INFO',
-    },
     'formatters': {
         'verbose': {
             # 'format': '%(levelname)s %(asctime)s %(module)s %(process)d

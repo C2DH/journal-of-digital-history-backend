@@ -1,7 +1,7 @@
 import json
 from django.core.management.base import BaseCommand, CommandError
 from jdhapi.models import Article
-from jdhapi.utils.models import get_notebook_stats
+from jdhapi.utils.articleUtils import get_notebook_stats
 
 
 class Command(BaseCommand):
