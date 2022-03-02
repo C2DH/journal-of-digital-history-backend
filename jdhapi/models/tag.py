@@ -25,7 +25,7 @@ class Tag(models.Model):
         return self.name
 
     class Meta:
-        unique_together = ('name', 'category')
+        unique_together = ('name', 'category', 'data')
 
     def __unicode__(self):
         return f'{self.name}({self.category})'

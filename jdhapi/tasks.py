@@ -5,7 +5,7 @@ from jdhapi.models import Abstract
 from django.core.mail import send_mail
 from celery.utils.log import get_task_logger
 from .models import Article
-from jdhapi.utils.models import get_notebook_stats, get_notebook_specifics_tags, get_citation
+from jdhapi.utils.articleUtils import get_notebook_stats, get_notebook_specifics_tags, get_citation, get_libraries
 
 logger = get_task_logger(__name__)
 
@@ -72,3 +72,13 @@ def save_citation(article_id):
     citation = get_citation(raw_url=article.notebook_ipython_url, article=article)
     article.citation = citation
     article.save()
+
+
+@shared_task
+def save_libraries(article_id):
+    logger.info(f'save_article_libraries:{article_id}')
+    try:
+        article = Article.objects.get(pk=article_id)
+    except Article.DoesNotExist:
+        logger.error(f'save_article_citation:{article_id} not found')
+    logger.info(get_libraries(article=article))

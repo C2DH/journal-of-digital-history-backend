@@ -2,7 +2,7 @@ import os
 from django.contrib import admin
 from django.utils.safestring import mark_safe
 from .models import Author, Abstract, Dataset, Article, Issue, Tag, Role
-from .tasks import save_article_fingerprint, save_article_specific_content, save_citation
+from .tasks import save_article_fingerprint, save_article_specific_content, save_citation, save_libraries
 
 
 def save_notebook_fingerprint(modeladmin, request, queryset):
@@ -29,6 +29,14 @@ def save_article_citation(modeladmin, request, queryset):
 save_article_citation.short_description = "3: Generate citation"
 
 
+def save_article_package(modeladmin, request, queryset):
+    for article in queryset:
+        save_libraries.delay(article_id=article.pk)
+
+
+save_article_package.short_description = "4: Generate tags LIBRARIES"
+
+
 class AbstractAdmin(admin.ModelAdmin):
     list_display = ['title', 'status']
     list_filter = ('status',)
@@ -37,7 +45,7 @@ class AbstractAdmin(admin.ModelAdmin):
 class ArticleAdmin(admin.ModelAdmin):
     list_display = ['abstract_pid', 'issue', 'abstract_title', 'status']
     list_filter = ('issue', 'status')
-    actions = [save_notebook_fingerprint, save_notebook_specific_cell, save_article_citation]
+    actions = [save_notebook_fingerprint, save_notebook_specific_cell, save_article_citation, save_article_package]
 
     def abstract_pid(self, obj):
         return obj.abstract.pid
