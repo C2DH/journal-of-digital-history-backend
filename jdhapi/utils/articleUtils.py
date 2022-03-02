@@ -109,7 +109,7 @@ def get_notebook_stats(raw_url):
     return result
 
 
-def get_notebook_specifics_tags(raw_url):
+def get_notebook_specifics_tags(article, raw_url):
     selected_tags = ['title', 'abstract', 'contributor', 'keywords', 'collaborators']
     countTagsFound = 0
     notebook = get_notebook_from_raw_github(raw_url=raw_url)
@@ -155,11 +155,6 @@ def get_citation(raw_url, article):
     # logger.info("title marko" + marko.convert(article.data["title"]))
     titleEscape = strip_tags(''.join(marko.convert((article.data["title"][0])))).rstrip()
     authors = []
-    """ mainAuthor = {
-        "given": article.abstract.contact_firstname,
-        "family": article.abstract.contact_lastname
-    }
-    authors.append(mainAuthor) """
     authorIds = article.abstract.authors.all()
     for contrib in authorIds:
         contributor = get_object_or_404(Author, lastname=contrib)
@@ -203,7 +198,7 @@ def get_requirement_from_github(
     # and exclude the `/blob/` part of the url if any.
     # then extract the gighub username nd the filepath to download
     # conveniently from githubusercontent server.
-    logger.info(f'get_notebook_from_github - requesting raw_url: {raw_url}...')
+    logger.info(f'get_requirement_from_github - requesting raw_url: {raw_url}...')
     return raw_url
 
 
@@ -232,9 +227,6 @@ def get_pypi_info(package_name):
 
 
 def read_libraries(article):
-    logger.info("*******************inside read_libraries*********************")
-    # raw_url = 'https://raw.githubusercontent.com/jdh-observer/jdh001-33pRxE2dtUHP/main/requirements.txt'
-    # raw_url = "https://raw.githubusercontent.com/jdh-observer/jdh002-VeaK58WBs82C/main/requirements.txt"
     raw_url = get_requirement_from_github(article.repository_url + "/blob/main/requirements.txt")
     r = requests.get(raw_url)
     if r.status_code == 200:
@@ -246,14 +238,30 @@ def read_libraries(article):
                     pypi_data = get_pypi_info(package_name)
                     tag, created = Tag.objects.get_or_create(name=package_name, category=Tag.TOOL, data=pypi_data)
                     article.tags.add(tag)
-            return str(len(reqs)) + "libraries tags created"
+            return str(len(reqs)) + " libraries tags created"
         else:
             return "0 libraries defined"
     else:
         return f"status code request requirements.txt {r.status_code}"
 
 
-def get_libraries(article):
+def generate_narrative_tags(article):
+    # GENERATE TAGS NARRATIVE FROM KEYWORDS
+    # remove existing tags TOOL if exist
+    initial_set = article.tags.all()
+    if initial_set:
+        for initial in initial_set:
+            if initial.category == Tag.NARRATIVE:
+                article.tags.remove(initial)
+    keywords = article.data['keywords']
+    array_keys = keywords[0].split(',')
+    for key in array_keys:
+        tag, created = Tag.objects.get_or_create(name=key, category=Tag.NARRATIVE, data={})
+        article.tags.add(tag)
+    return str(len(array_keys)) + " narrative tags created"
+
+
+def generate_tags(article):
     # remove existing tags TOOL if exist
     initial_set = article.tags.all()
     if initial_set:

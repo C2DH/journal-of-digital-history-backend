@@ -34,7 +34,7 @@ def save_article_package(modeladmin, request, queryset):
         save_libraries.delay(article_id=article.pk)
 
 
-save_article_package.short_description = "4: Generate tags LIBRARIES"
+save_article_package.short_description = "4: Generate tags TOOL/NARRATIVE"
 
 
 class AbstractAdmin(admin.ModelAdmin):
