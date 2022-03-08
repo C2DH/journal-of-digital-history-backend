@@ -45,8 +45,8 @@ class AbstractAdmin(admin.ModelAdmin):
 
 class TagAdmin(admin.ModelAdmin):
     list_display = ['name', 'category']
-    # list_filter = ('category', LanguageTagFilter,)
-    list_filter = ('category',)
+    list_filter = ('category', LanguageTagFilter,)
+    # list_filter = ('category',)
 
 
 class ArticleAdmin(admin.ModelAdmin):
