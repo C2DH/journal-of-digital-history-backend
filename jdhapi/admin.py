@@ -2,6 +2,7 @@ import os
 from django.contrib import admin
 from django.utils.safestring import mark_safe
 from .models import Author, Abstract, Dataset, Article, Issue, Tag, Role
+from .filter.languagetagfilter import LanguageTagFilter
 from .tasks import save_article_fingerprint, save_article_specific_content, save_citation, save_libraries
 
 
@@ -44,7 +45,7 @@ class AbstractAdmin(admin.ModelAdmin):
 
 class TagAdmin(admin.ModelAdmin):
     list_display = ['name', 'category']
-    list_filter = ('category',)
+    list_filter = ('category', LanguageTagFilter,)
 
 
 class ArticleAdmin(admin.ModelAdmin):
