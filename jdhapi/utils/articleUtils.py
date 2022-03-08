@@ -286,6 +286,10 @@ def generate_narrative_tags(article):
         array_keys = article.data['keywords'][0].replace(';', ',').split(',')
         for key in array_keys:
             tag, created = Tag.objects.get_or_create(name=key.lower().strip(), category=Tag.NARRATIVE)
+            tag.data = {
+                'language': "",
+            }
+            tag.save()
             article.tags.add(tag)
         return str(len(array_keys)) + " narrative tags created"
     else:
