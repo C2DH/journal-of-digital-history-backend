@@ -42,6 +42,11 @@ class AbstractAdmin(admin.ModelAdmin):
     list_filter = ('status',)
 
 
+class TagAdmin(admin.ModelAdmin):
+    list_display = ['name', 'category']
+    list_filter = ('category',)
+
+
 class ArticleAdmin(admin.ModelAdmin):
     list_display = ['abstract_pid', 'issue', 'abstract_title', 'status']
     list_filter = ('issue', 'status')
@@ -62,7 +67,7 @@ admin.site.register(Dataset)
 admin.site.register(Author)
 admin.site.register(Article, ArticleAdmin)
 admin.site.register(Issue)
-admin.site.register(Tag)
+admin.site.register(Tag, TagAdmin)
 admin.site.register(Role)
 admin.site.site_url = "/dashboard"
 admin.site.site_header = mark_safe(
