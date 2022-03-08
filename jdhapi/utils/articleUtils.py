@@ -180,13 +180,13 @@ def get_citation(raw_url, article):
     })
 
 
-def get_requirement_from_github(
-    repository_url, host='https://raw.githubusercontent.com'
+def get_raw_from_github(
+    repository_url, file_type, host='https://raw.githubusercontent.com'
 ):
     logger.info(
-        f'get_requirement_from_github - parsing repository_url: {repository_url}')
+        f'get_raw_from_github - parsing repository_url: {repository_url}')
     result = re.search(
-        r'github\.com\/([^\/]+)\/([^\/]+)\/(blob\/)?(.*\.txt$)',
+        r'github\.com\/([^\/]+)\/([^\/]+)\/(blob\/)?(.*\.' + file_type + '$)',
         repository_url
     )
     github_user = result.group(1)
@@ -198,7 +198,7 @@ def get_requirement_from_github(
     # and exclude the `/blob/` part of the url if any.
     # then extract the gighub username nd the filepath to download
     # conveniently from githubusercontent server.
-    logger.info(f'get_requirement_from_github - requesting raw_url: {raw_url}...')
+    logger.info(f'get_raw_from_github - requesting raw_url: {raw_url}')
     return raw_url
 
 
@@ -206,17 +206,18 @@ def get_pypi_info(package_name):
     # we go to use the JSON information about packages https://wiki.python.org/moin/PyPIJSON https://pypi.python.org/pypi/<package_name>/json
     URL = "https://pypi.org/pypi/"
     JSON = "/json"
+    data = {
+        'language': "python",
+        'info': {
+            'summary': "",
+            'url': "",
+        }
+    }
     try:
         response = requests.get(URL + package_name + JSON)
         response.raise_for_status()
         # access JSON content
         jsonResponse = response.json()
-        data = {
-            'info': {
-                'summary': "",
-                'url': ""
-            }
-        }
         data["info"]["summary"] = jsonResponse["info"]["summary"]
         data["info"]["package_url"] = jsonResponse["info"]["package_url"]
     except HTTPError as http_err:
@@ -227,11 +228,13 @@ def get_pypi_info(package_name):
 
 
 def read_libraries(article):
-    raw_url = get_requirement_from_github(article.repository_url + "/blob/main/requirements.txt")
-    r = requests.get(raw_url)
+    # check for requirements.txt
+    py_raw_url = get_raw_from_github(article.repository_url + "/blob/main/requirements.txt", "txt")
+    r = requests.get(py_raw_url)
     if r.status_code == 200:
         reqs = r.text.split()
         if len(reqs) != 0:
+            i = 0
             for req in reqs:
                 package_name = req.split('==')[0]
                 if package_name != 'jupyter-contrib-nbextensions':
@@ -240,11 +243,35 @@ def read_libraries(article):
                     tag.data = pypi_data
                     tag.save()
                     article.tags.add(tag)
-            return str(len(reqs)) + " libraries tags created"
+                    i = i + 1
+            return str(i) + " libraries Python tags created"
         else:
             return "0 libraries defined"
-    else:
-        return f"status code request requirements.txt {r.status_code}"
+    elif r.status_code == 404:
+        try:
+            # check for install.R
+            r_raw_url = get_raw_from_github(article.repository_url + "/blob/main/install.R", "R")
+            response = requests.get(r_raw_url)
+            if response.status_code == 200:
+                reqs = response.text
+                if len(reqs) != 0:
+                    founds = re.findall(r'\"(.*?)\"', reqs)
+                    i = 0
+                    for found in founds:
+                        tag, created = Tag.objects.get_or_create(name=found, category=Tag.TOOL)
+                        tag.data = {
+                            'language': "R",
+                        }
+                        tag.save()
+                        article.tags.add(tag)
+                        i = i + 1
+                    return str(i) + " libraries R tags created"
+            else:
+                return f"no requiremnts.txt - no install.R"
+        except HTTPError as http_err:
+            logger.error(f'HTTP error occurred: {http_err}')
+        except Exception as err:
+            logger.error(f'Other error occurred: {err}')
 
 
 def generate_narrative_tags(article):
@@ -255,12 +282,14 @@ def generate_narrative_tags(article):
         for initial in initial_set:
             if initial.category == Tag.NARRATIVE:
                 article.tags.remove(initial)
-    keywords = article.data['keywords']
-    array_keys = keywords[0].split(',')
-    for key in array_keys:
-        tag, created = Tag.objects.get_or_create(name=key, category=Tag.NARRATIVE)
-        article.tags.add(tag)
-    return str(len(array_keys)) + " narrative tags created"
+    if 'keywords' in article.data:
+        array_keys = article.data['keywords'][0].replace(';', ',').split(',')
+        for key in array_keys:
+            tag, created = Tag.objects.get_or_create(name=key.lower().strip(), category=Tag.NARRATIVE)
+            article.tags.add(tag)
+        return str(len(array_keys)) + " narrative tags created"
+    else:
+        return f'generate task preload information for keywords first: {article.abstract.title}'
 
 
 def generate_tags(article):
@@ -270,5 +299,5 @@ def generate_tags(article):
         for initial in initial_set:
             if initial.category == Tag.TOOL:
                 article.tags.remove(initial)
-    # parse requirements.txt
+    # parse requirements.txt or install.R
     return read_libraries(article)
