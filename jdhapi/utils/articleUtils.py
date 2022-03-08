@@ -1,4 +1,5 @@
 import json
+from operator import truediv
 import requests
 from django.core.mail import send_mail
 import re
@@ -9,8 +10,11 @@ import marko
 from django.shortcuts import render, get_object_or_404
 from jdhapi.models import Author, Tag
 from requests.exceptions import HTTPError
+import os
 
 logger = logging.getLogger(__name__)
+
+METADATA_TAGS = ['title', 'abstract', 'contributor', 'disclaimer', 'keywords', 'copyright']
 
 
 def get_notebook_from_raw_github(raw_url):
@@ -42,6 +46,7 @@ def get_notebook_from_github(
     return get_notebook_from_raw_github(raw_url)
 
 
+# Method to use to generate the fingerprint datas
 def get_notebook_stats(raw_url):
     notebook = get_notebook_from_raw_github(raw_url=raw_url)
     logger.info(f'get_notebook_stats - notebook loaded: {raw_url}')
@@ -65,10 +70,11 @@ def get_notebook_stats(raw_url):
         if 'contributor' in tags:
             countContributors += 1
         c['countChars'] = len(''.join(source))
-        c['firstWords'] = ' '.join(source[0].split()[:5])
-        c['isMetadata'] = any(tag in [
-            'title', 'abstract', 'contributor', 'disclaimer', 'keywords'
-        ] for tag in tags)
+        initialWords = ' '.join(source[0].split()[:int(settings.NUM_CHARS_FINGERPRINT)])
+        initialWordsEscape = strip_tags(''.join(marko.convert((initialWords)))).rstrip()
+        c['firstWords'] = initialWordsEscape
+        c['isMetadata'] = any(tag in METADATA_TAGS for tag in tags)
+        c['tags'] = tags
         c['isHermeneutic'] = any(tag in [
             'hermeneutics', 'hermeneutics-step'
         ] for tag in tags)
