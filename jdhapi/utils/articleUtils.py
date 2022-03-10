@@ -1,5 +1,5 @@
-# function that can be used in models live here
 import json
+from operator import truediv
 import requests
 from django.core.mail import send_mail
 import re
@@ -8,9 +8,13 @@ from django.conf import settings  # import the settings file
 from django.utils.html import strip_tags
 import marko
 from django.shortcuts import render, get_object_or_404
-from jdhapi.models import Author
+from jdhapi.models import Author, Tag
+from requests.exceptions import HTTPError
+import os
 
 logger = logging.getLogger(__name__)
+
+METADATA_TAGS = ['title', 'abstract', 'contributor', 'disclaimer', 'keywords', 'copyright']
 
 
 def get_notebook_from_raw_github(raw_url):
@@ -42,6 +46,7 @@ def get_notebook_from_github(
     return get_notebook_from_raw_github(raw_url)
 
 
+# Method to use to generate the fingerprint datas
 def get_notebook_stats(raw_url):
     notebook = get_notebook_from_raw_github(raw_url=raw_url)
     logger.info(f'get_notebook_stats - notebook loaded: {raw_url}')
@@ -65,10 +70,11 @@ def get_notebook_stats(raw_url):
         if 'contributor' in tags:
             countContributors += 1
         c['countChars'] = len(''.join(source))
-        c['firstWords'] = ' '.join(source[0].split()[:5])
-        c['isMetadata'] = any(tag in [
-            'title', 'abstract', 'contributor', 'disclaimer', 'keywords'
-        ] for tag in tags)
+        initialWords = ' '.join(source[0].split()[:int(settings.NUM_CHARS_FINGERPRINT)])
+        initialWordsEscape = strip_tags(''.join(marko.convert((initialWords)))).rstrip()
+        c['firstWords'] = initialWordsEscape
+        c['isMetadata'] = any(tag in METADATA_TAGS for tag in tags)
+        c['tags'] = tags
         c['isHermeneutic'] = any(tag in [
             'hermeneutics', 'hermeneutics-step'
         ] for tag in tags)
@@ -109,7 +115,7 @@ def get_notebook_stats(raw_url):
     return result
 
 
-def get_notebook_specifics_tags(raw_url):
+def get_notebook_specifics_tags(article, raw_url):
     selected_tags = ['title', 'abstract', 'contributor', 'keywords', 'collaborators']
     countTagsFound = 0
     notebook = get_notebook_from_raw_github(raw_url=raw_url)
@@ -155,11 +161,6 @@ def get_citation(raw_url, article):
     # logger.info("title marko" + marko.convert(article.data["title"]))
     titleEscape = strip_tags(''.join(marko.convert((article.data["title"][0])))).rstrip()
     authors = []
-    """ mainAuthor = {
-        "given": article.abstract.contact_firstname,
-        "family": article.abstract.contact_lastname
-    }
-    authors.append(mainAuthor) """
     authorIds = article.abstract.authors.all()
     for contrib in authorIds:
         contributor = get_object_or_404(Author, lastname=contrib)
@@ -183,3 +184,130 @@ def get_citation(raw_url, article):
         "container-title": "Journal of Digital History",
         "container-title-short": "JDH"
     })
+
+
+def get_raw_from_github(
+    repository_url, file_type, host='https://raw.githubusercontent.com'
+):
+    logger.info(
+        f'get_raw_from_github - parsing repository_url: {repository_url}')
+    result = re.search(
+        r'github\.com\/([^\/]+)\/([^\/]+)\/(blob\/)?(.*\.' + file_type + '$)',
+        repository_url
+    )
+    github_user = result.group(1)
+    github_repo = result.group(2)
+    github_filepath = result.group(4)
+    raw_url = f'{host}/{github_user}/{github_repo}/{github_filepath}'
+    # https://raw.githubusercontent.com/jdh-observer/jdh001-WBqfZzfi7nHK/blob/8315a108416f4a5e9e6da0c5e9f18b5e583ed825/scripts/Digital_epigraphy_cite2c_biblio.ipynb
+    # Match github.com/<github_user abc>/<github_filepath XXX/yyy/zzz.ipynb>
+    # and exclude the `/blob/` part of the url if any.
+    # then extract the gighub username nd the filepath to download
+    # conveniently from githubusercontent server.
+    logger.info(f'get_raw_from_github - requesting raw_url: {raw_url}')
+    return raw_url
+
+
+def get_pypi_info(package_name):
+    # we go to use the JSON information about packages https://wiki.python.org/moin/PyPIJSON https://pypi.python.org/pypi/<package_name>/json
+    URL = "https://pypi.org/pypi/"
+    JSON = "/json"
+    data = {
+        'language': "python",
+        'info': {
+            'summary': "",
+            'url': "",
+        }
+    }
+    try:
+        response = requests.get(URL + package_name + JSON)
+        response.raise_for_status()
+        # access JSON content
+        jsonResponse = response.json()
+        data["info"]["summary"] = jsonResponse["info"]["summary"]
+        data["info"]["package_url"] = jsonResponse["info"]["package_url"]
+    except HTTPError as http_err:
+        logger.error(f'HTTP error occurred: {http_err}')
+    except Exception as err:
+        logger.error(f'Other error occurred: {err}')
+    return data
+
+
+def read_libraries(article):
+    # check for requirements.txt
+    py_raw_url = get_raw_from_github(article.repository_url + "/blob/main/requirements.txt", "txt")
+    r = requests.get(py_raw_url)
+    if r.status_code == 200:
+        reqs = r.text.split()
+        if len(reqs) != 0:
+            i = 0
+            for req in reqs:
+                package_name = req.split('==')[0]
+                if package_name != 'jupyter-contrib-nbextensions':
+                    pypi_data = get_pypi_info(package_name)
+                    tag, created = Tag.objects.get_or_create(name=package_name, category=Tag.TOOL)
+                    tag.data = pypi_data
+                    tag.save()
+                    article.tags.add(tag)
+                    i = i + 1
+            return str(i) + " libraries Python tags created"
+        else:
+            return "0 libraries defined"
+    elif r.status_code == 404:
+        try:
+            # check for install.R
+            r_raw_url = get_raw_from_github(article.repository_url + "/blob/main/install.R", "R")
+            response = requests.get(r_raw_url)
+            if response.status_code == 200:
+                reqs = response.text
+                if len(reqs) != 0:
+                    founds = re.findall(r'\"(.*?)\"', reqs)
+                    i = 0
+                    for found in founds:
+                        tag, created = Tag.objects.get_or_create(name=found, category=Tag.TOOL)
+                        tag.data = {
+                            'language': "R",
+                        }
+                        tag.save()
+                        article.tags.add(tag)
+                        i = i + 1
+                    return str(i) + " libraries R tags created"
+            else:
+                return f"no requiremnts.txt - no install.R"
+        except HTTPError as http_err:
+            logger.error(f'HTTP error occurred: {http_err}')
+        except Exception as err:
+            logger.error(f'Other error occurred: {err}')
+
+
+def generate_narrative_tags(article):
+    # GENERATE TAGS NARRATIVE FROM KEYWORDS
+    # remove existing tags TOOL if exist
+    initial_set = article.tags.all()
+    if initial_set:
+        for initial in initial_set:
+            if initial.category == Tag.NARRATIVE:
+                article.tags.remove(initial)
+    if 'keywords' in article.data:
+        array_keys = article.data['keywords'][0].replace(';', ',').split(',')
+        for key in array_keys:
+            tag, created = Tag.objects.get_or_create(name=key.lower().strip(), category=Tag.NARRATIVE)
+            tag.data = {
+                'language': "",
+            }
+            tag.save()
+            article.tags.add(tag)
+        return str(len(array_keys)) + " narrative tags created"
+    else:
+        return f'generate task preload information for keywords first: {article.abstract.title}'
+
+
+def generate_tags(article):
+    # remove existing tags TOOL if exist
+    initial_set = article.tags.all()
+    if initial_set:
+        for initial in initial_set:
+            if initial.category == Tag.TOOL:
+                article.tags.remove(initial)
+    # parse requirements.txt or install.R
+    return read_libraries(article)

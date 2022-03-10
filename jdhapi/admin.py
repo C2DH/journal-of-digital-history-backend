@@ -2,7 +2,8 @@ import os
 from django.contrib import admin
 from django.utils.safestring import mark_safe
 from .models import Author, Abstract, Dataset, Article, Issue, Tag, Role
-from .tasks import save_article_fingerprint, save_article_specific_content, save_citation
+from .filter.languagetagfilter import LanguageTagFilter
+from .tasks import save_article_fingerprint, save_article_specific_content, save_citation, save_libraries
 
 
 def save_notebook_fingerprint(modeladmin, request, queryset):
@@ -29,15 +30,29 @@ def save_article_citation(modeladmin, request, queryset):
 save_article_citation.short_description = "3: Generate citation"
 
 
+def save_article_package(modeladmin, request, queryset):
+    for article in queryset:
+        save_libraries.delay(article_id=article.pk)
+
+
+save_article_package.short_description = "4: Generate tags TOOL/NARRATIVE"
+
+
 class AbstractAdmin(admin.ModelAdmin):
     list_display = ['title', 'status']
     list_filter = ('status',)
 
 
+class TagAdmin(admin.ModelAdmin):
+    list_display = ['name', 'category']
+    list_filter = ('category', LanguageTagFilter,)
+    # list_filter = ('category',)
+
+
 class ArticleAdmin(admin.ModelAdmin):
     list_display = ['abstract_pid', 'issue', 'abstract_title', 'status']
     list_filter = ('issue', 'status')
-    actions = [save_notebook_fingerprint, save_notebook_specific_cell, save_article_citation]
+    actions = [save_notebook_fingerprint, save_notebook_specific_cell, save_article_citation, save_article_package]
 
     def abstract_pid(self, obj):
         return obj.abstract.pid
@@ -54,7 +69,7 @@ admin.site.register(Dataset)
 admin.site.register(Author)
 admin.site.register(Article, ArticleAdmin)
 admin.site.register(Issue)
-admin.site.register(Tag)
+admin.site.register(Tag, TagAdmin)
 admin.site.register(Role)
 admin.site.site_url = "/dashboard"
 admin.site.site_header = mark_safe(

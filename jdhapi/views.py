@@ -9,6 +9,7 @@ from jdhapi.models import Author
 from jdhapi.models import Dataset
 from jdhapi.models import Article
 from jdhapi.models import Issue
+from jdhapi.models import Tag
 from jdhapi.serializers.abstract import CreateAbstractSerializer
 from jdhapi.serializers.abstract import AbstractSerializer
 from jdhapi.serializers.abstract import AbstractSlimSerializer
@@ -17,6 +18,7 @@ from jdhapi.serializers.role import RoleSerializer
 from jdhapi.serializers.dataset import DatasetSlimSerializer
 from jdhapi.serializers.article import ArticleSerializer
 from jdhapi.serializers.issue import IssueSerializer
+from jdhapi.serializers.tag import TagSerializer
 from rest_framework import permissions
 from rest_framework import status
 from rest_framework.decorators import api_view
@@ -64,8 +66,8 @@ def api_root(request, format=None):
         'datasets': reverse('dataset-list', request=request, format=format),
         'abstracts': reverse('abstract-list', request=request, format=format),
         'articles': reverse('article-list', request=request, format=format),
-        'roles': reverse('role-list', request=request, format=format),
-        'issues': reverse('issue-list', request=request, format=format)
+        'issues': reverse('issue-list', request=request, format=format),
+        'tags': reverse('tag-list', request=request, format=format),
     })
 
 
@@ -259,3 +261,15 @@ class RoleList(generics.ListCreateAPIView):
 class RoleDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Issue.objects.all()
     serializer_class = RoleSerializer
+
+
+class TagList(generics.ListCreateAPIView):
+    queryset = Tag.objects.all()
+    serializer_class = TagSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ["id", "category", "name"]
+
+
+class TagDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Tag.objects.all()
+    serializer_class = TagSerializer

@@ -175,6 +175,9 @@ EMAIL_HOST = get_env_variable('EMAIL_HOST', 'smtp.')
 # Port for sending e-mail.
 EMAIL_PORT = get_env_variable('EMAIL_PORT', 0)
 
+# Number of words to take into account for the fingerprint
+NUM_CHARS_FINGERPRINT = get_env_variable('NUM_CHARS_FINGERPRINT', 5)
+
 # in settings, no request to Google, no warnings,
 DRF_RECAPTCHA_TESTING = get_env_variable('DRF_RECAPTCHA_TESTING', 'False') == 'True'
 
@@ -187,10 +190,6 @@ LOGGING = {
             'class': 'logging.StreamHandler',
             'formatter': 'verbose'
         },
-    },
-    'root': {
-        'handlers': ['console'],
-        'level': 'INFO',
     },
     'formatters': {
         'verbose': {

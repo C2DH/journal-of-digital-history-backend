@@ -8,8 +8,6 @@ from rest_framework import routers
 urlpatterns = [
     path('api/', views.api_root),
     path('api-auth/', include('rest_framework.urls')),
-    path('api/roles/', views.RoleList.as_view(), name='role-list'),
-    path('api/roles/<int:pk>/', views.RoleDetail.as_view(), name='role-detail'),
     path('api/authors/', views.AuthorList.as_view(), name='author-list'),
     path('api/authors/<int:pk>/', views.AuthorDetail.as_view(), name='author-detail'),
     path('api/datasets/', views.DatasetList.as_view(), name='dataset-list'),
@@ -21,6 +19,8 @@ urlpatterns = [
     path('api/issues/', views.IssueList.as_view(), name='issue-list'),
     path('api/issues/<str:pid>/', views.IssueDetail.as_view(), name='issue-detail'),
     path('api/submit-abstract/', views.SubmitAbstract),
-    path('api/generate-notebook/<str:pid>', views.GenerateNotebook)
+    path('api/generate-notebook/<str:pid>', views.GenerateNotebook),
+    path('api/tags/', views.TagList.as_view(), name='tag-list'),
+    path('api/tags/<int:pk>/', views.TagDetail.as_view(), name='tag-detail'),
 ]
 urlpatterns = format_suffix_patterns(urlpatterns)

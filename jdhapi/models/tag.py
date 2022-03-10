@@ -5,10 +5,15 @@ from django.db import models
 class Tag(models.Model):
     KEYWORD = 'keyword'  # i.e, no special category at all
     TOOL = 'tool'
+    NARRATIVE = 'narrative'
+    HERMENEUTIC = 'hermeneutic'
     CATEGORY_CHOICES = (
         (KEYWORD, 'keyword'),
-        (TOOL, 'tool'),
+        (TOOL, 'requirement'),
+        (NARRATIVE, 'narrative'),
+        (HERMENEUTIC, 'hermeneutic')
     )
+
     data = models.JSONField(verbose_name=u'data contents', help_text='JSON format', default=dict, blank=True)
     # e.g. 'Mr. E. Smith'
     name = models.CharField(max_length=100)
