@@ -50,68 +50,75 @@ def get_notebook_from_github(
 def get_notebook_stats(raw_url):
     notebook = get_notebook_from_raw_github(raw_url=raw_url)
     logger.info(f'get_notebook_stats - notebook loaded: {raw_url}')
+    try:
+        cells = notebook.get('cells')
+        # output
+        cells_stats = []
+        countContributors = 0
+        # loop through cells and save relevant informations
+        for cell in cells:
+            c = {'type': cell['cell_type']}
+            # just skip if it's empty
+            source = cell.get('source', [])
+            if not source:
+                continue
+            contents = ''.join(cell.get('source'))
+            # check cell metadata
+            tags = cell.get('metadata').get('tags', [])
+            if 'hidden' in tags:
+                continue
+            if 'contributor' in tags:
+                countContributors += 1
+            c['countChars'] = len(''.join(source))
+            if cell['cell_type'] == "markdown":
+                initialWords = ' '.join(source[0].split()[:int(settings.NUM_CHARS_FINGERPRINT)])
+                initialWordsEscape = strip_tags(''.join(marko.convert((initialWords)))).rstrip()
+            # for code cell - don't use markdown parser and gettwo first line of code
+            else:
+                initialWords = ' '.join(source[:2])
+                initialWordsEscape = initialWords
+                logger.info(f'notebook code: {initialWordsEscape}')
+            c['firstWords'] = initialWordsEscape
+            c['isMetadata'] = any(tag in METADATA_TAGS for tag in tags)
+            c['tags'] = tags
+            c['isHermeneutic'] = any(tag in [
+                'hermeneutics', 'hermeneutics-step'
+            ] for tag in tags)
+            c['isFigure'] = any(tag.startswith('figure-') for tag in tags)
+            c['isTable'] = any(tag.startswith('table-') for tag in tags)
+            c['isHeading'] = cell['cell_type'] == 'markdown' and re.match(
+                r'\s*#+\s', contents) is not None
+            cells_stats.append(c)
+            # does it contains a cite2c marker?
+            markers = re.findall(r'data-cite=[\'"][^\'"]+[\'"]', contents)
+            c['countRefs'] = len(markers)
 
-    cells = notebook.get('cells')
-    # output
-    cells_stats = []
-    countContributors = 0
-    # loop through cells and save relevant informations
-    for cell in cells:
-        c = {'type': cell['cell_type']}
-        # just skip if it's empty
-        source = cell.get('source', [])
-        if not source:
-            continue
-        contents = ''.join(cell.get('source'))
-        # check cell metadata
-        tags = cell.get('metadata').get('tags', [])
-        if 'hidden' in tags:
-            continue
-        if 'contributor' in tags:
-            countContributors += 1
-        c['countChars'] = len(''.join(source))
-        initialWords = ' '.join(source[0].split()[:int(settings.NUM_CHARS_FINGERPRINT)])
-        initialWordsEscape = strip_tags(''.join(marko.convert((initialWords)))).rstrip()
-        c['firstWords'] = initialWordsEscape
-        c['isMetadata'] = any(tag in METADATA_TAGS for tag in tags)
-        c['tags'] = tags
-        c['isHermeneutic'] = any(tag in [
-            'hermeneutics', 'hermeneutics-step'
-        ] for tag in tags)
-        c['isFigure'] = any(tag.startswith('figure-') for tag in tags)
-        c['isTable'] = any(tag.startswith('table-') for tag in tags)
-        c['isHeading'] = cell['cell_type'] == 'markdown' and re.match(
-            r'\s*#+\s', contents) is not None
-        cells_stats.append(c)
-        # does it contains a cite2c marker?
-        markers = re.findall(r'data-cite=[\'"][^\'"]+[\'"]', contents)
-        c['countRefs'] = len(markers)
-
-    result = {
-        'stats': {
-            'countRefs': sum([
-                c['countRefs'] for c in cells_stats]),
-            # 'countLines': sum([c['countLines'] for c in cells_stats]),
-            'countChars': sum([
-                c['countChars'] for c in cells_stats]),
-            'countContributors': countContributors,
-            'countHeadings': sum([
-                c['isHeading'] for c in cells_stats]),
-            'countHermeneuticCells': sum([
-                c['isHermeneutic'] for c in cells_stats]),
-            'countCodeCells': sum([
-                c['type'] == 'code' for c in cells_stats]),
-            'countCells': len(cells_stats),
-            'extentChars': [
-                min([c['countChars'] for c in cells_stats]),
-                max([c['countChars'] for c in cells_stats])],
-            'extentRefs': [
-                min([c['countRefs'] for c in cells_stats]),
-                max([c['countRefs'] for c in cells_stats])]
-        },
-        'cells': cells_stats
-    }
-
+        result = {
+            'stats': {
+                'countRefs': sum([
+                    c['countRefs'] for c in cells_stats]),
+                # 'countLines': sum([c['countLines'] for c in cells_stats]),
+                'countChars': sum([
+                    c['countChars'] for c in cells_stats]),
+                'countContributors': countContributors,
+                'countHeadings': sum([
+                    c['isHeading'] for c in cells_stats]),
+                'countHermeneuticCells': sum([
+                    c['isHermeneutic'] for c in cells_stats]),
+                'countCodeCells': sum([
+                    c['type'] == 'code' for c in cells_stats]),
+                'countCells': len(cells_stats),
+                'extentChars': [
+                    min([c['countChars'] for c in cells_stats]),
+                    max([c['countChars'] for c in cells_stats])],
+                'extentRefs': [
+                    min([c['countRefs'] for c in cells_stats]),
+                    max([c['countRefs'] for c in cells_stats])]
+            },
+            'cells': cells_stats
+        }
+    except Exception as err:
+        logger.error(f'Error occurred by generating fingerprint for {raw_url}: {err}')
     return result
 
 
