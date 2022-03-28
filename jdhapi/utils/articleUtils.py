@@ -77,7 +77,6 @@ def get_notebook_stats(raw_url):
             else:
                 initialWords = ' '.join(source[:2])
                 initialWordsEscape = initialWords
-                logger.info(f'notebook code: {initialWordsEscape}')
             c['firstWords'] = initialWordsEscape
             c['isMetadata'] = any(tag in METADATA_TAGS for tag in tags)
             c['tags'] = tags
