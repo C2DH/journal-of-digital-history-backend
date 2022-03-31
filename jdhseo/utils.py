@@ -77,7 +77,7 @@ def getReferencesFromJupyterNotebook(notebook):
         logger.exception(e)
         pass
     # caseless matching
-    #return references, sorted(bibliography, key=str.casefold), inline_references_table
+    # return references, sorted(bibliography, key=str.casefold), inline_references_table
     return references, sorted(bibliography, key=lambda x: re.sub('[^A-Za-z]+', '', x).lower()), inline_references_table
 
 
@@ -208,10 +208,30 @@ def get_affiliation(orcid):
                 for summaries in jsonResponse["affiliation-group"]:
                     for summary in summaries['summaries']:
                         if summary['education-summary']['end-date'] is None:
-                            #actual formation
+                            # actual formation
                             last = summary['education-summary']['organization']
                             return(f"{last['address']['city']} - {last['address']['country']}")
     except HTTPError as http_err:
         logger.error(f'HTTP error occurred: {http_err}')
     except Exception as err:
         logger.error(f'Other error occurred: {err}')
+
+
+# DOI 10.1515/JDH.2021.1006.R1
+# URL https://doi.org/10.1515/JDH-2021-1006
+# stops are replaced by hyphens and the Revision number is removed,
+def getDoiUrlDGFormatted(doi):
+    DOI_URL = "https://doi.org/"
+    doi_all = ""
+    doi_group = re.split('/', doi)
+    for index, element in enumerate(doi_group):
+        match = re.search('JDH', element)
+        if index == 0:
+            doi_all = DOI_URL + element
+        else:
+            if match:
+                hyphen = element.replace(".", "-")
+                doi_all = doi_all + "/" + hyphen.rsplit('-', 1)[0]
+                return doi_all
+            else:
+                return doi_all

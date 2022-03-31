@@ -6,7 +6,7 @@ from django.http import Http404
 from django.shortcuts import render
 from jdhapi.models import Article, Issue
 from django.conf import settings
-from .utils import parseJupyterNotebook, generate_qrcode
+from .utils import parseJupyterNotebook, generate_qrcode, getDoiUrlDGFormatted
 from .utils import getPlainMetadataFromArticle
 
 
@@ -23,6 +23,10 @@ def ArticleDetail(request, pid):
         raise Http404("Article does not exist")
     # generate qrcode
     qrCodebase64 = generate_qrcode(pid)
+    # get doi url format for DG
+    doi_url = getDoiUrlDGFormatted(article.doi)
+    # Publish online
+    published_date = article.publication_date.date()
     # decode notebook url
     notebook_url = urllib.parse.unquote(
         base64.b64decode(article.notebook_url).decode('utf-8'))
@@ -33,7 +37,9 @@ def ArticleDetail(request, pid):
             f"https://journalofdigitalhistory.org/en/article/"
             f"{article.abstract.pid}",
         'qr_code': qrCodebase64,
-        'media_url': settings.MEDIA_URL
+        'media_url': settings.MEDIA_URL,
+        'doi_url': doi_url,
+        'published_date': published_date
     }
     # check if it is a github url
 
