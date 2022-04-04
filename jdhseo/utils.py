@@ -3,6 +3,7 @@ import re
 import logging
 import base64
 import qrcode
+import requests
 from io import BytesIO
 from citeproc import formatter
 from citeproc import Citation
@@ -11,8 +12,9 @@ from citeproc import CitationStylesStyle
 from citeproc import CitationStylesBibliography
 from citeproc.source.json import CiteProcJSON
 from django.utils.html import strip_tags
-
-
+from requests.exceptions import HTTPError
+from requests.structures import CaseInsensitiveDict
+from django.conf import settings  # import the settings file
 logger = logging.getLogger(__name__)
 
 
@@ -75,11 +77,12 @@ def getReferencesFromJupyterNotebook(notebook):
         logger.exception(e)
         pass
     # caseless matching
-    #return references, sorted(bibliography, key=str.casefold), inline_references_table
+    # return references, sorted(bibliography, key=str.casefold), inline_references_table
     return references, sorted(bibliography, key=lambda x: re.sub('[^A-Za-z]+', '', x).lower()), inline_references_table
 
 
-def parseJupyterNotebook(notebook):
+def parseJupyterNotebook(notebook, contact_orcid):
+    affiliation = get_affiliation(contact_orcid)
     cells = notebook.get('cells')
     title = []
     abstract = []
@@ -110,7 +113,7 @@ def parseJupyterNotebook(notebook):
         elif 'abstract' in tags:
             abstract.append(marko.convert(source))
         elif 'contributor' in tags:
-            contributor.append(marko.convert(source))
+            contributor.append(marko.convert(source + ' - ' + affiliation))
         elif 'disclaimer' in tags:
             disclaimer.append(marko.convert(source))
         elif 'collaborators' in tags:
@@ -175,3 +178,61 @@ def generate_qrcode(pid):
     base64Encode = base64.b64encode(buffer.getvalue()).decode("utf-8")
     srcImage = typeEncode + base64Encode
     return srcImage
+
+
+def get_affiliation(orcid):
+    try:
+        TOKEN_ID = settings.JDH_ORCID_API_TOKEN
+        API_URL = "https://pub.orcid.org/v3.0"
+        headers = CaseInsensitiveDict()
+        headers["Content-Type"] = "application/orcid+json"
+        headers["Authorization"] = f"Bearer {TOKEN_ID}"
+        # first check employments
+        url = f"{API_URL}/{orcid}/" + "employments"
+        resp = requests.get(url, headers=headers)
+        resp.raise_for_status()
+        jsonResponse = resp.json()
+        if jsonResponse["affiliation-group"]:
+            for summaries in jsonResponse["affiliation-group"]:
+                for summary in summaries['summaries']:
+                    if summary['employment-summary']['end-date'] is None:
+                        # actual formation
+                        last = summary['employment-summary']['organization']
+                        return(f"{last['address']['city']} - {last['address']['country']}")
+        else:
+            # call the education's part
+            url = f"{API_URL}/{orcid}/" + "educations"
+            resp = requests.get(url, headers=headers)
+            resp.raise_for_status()
+            jsonResponse = resp.json()
+            if jsonResponse["affiliation-group"]:
+                for summaries in jsonResponse["affiliation-group"]:
+                    for summary in summaries['summaries']:
+                        if summary['education-summary']['end-date'] is None:
+                            # actual formation
+                            last = summary['education-summary']['organization']
+                            return(f"{last['address']['city']} - {last['address']['country']}")
+    except HTTPError as http_err:
+        logger.error(f'HTTP error occurred: {http_err}')
+    except Exception as err:
+        logger.error(f'Other error occurred: {err}')
+
+
+# DOI 10.1515/JDH.2021.1006.R1
+# URL https://doi.org/10.1515/JDH-2021-1006
+# stops are replaced by hyphens and the Revision number is removed,
+def getDoiUrlDGFormatted(doi):
+    DOI_URL = "https://doi.org/"
+    doi_all = ""
+    doi_group = re.split('/', doi)
+    for index, element in enumerate(doi_group):
+        match = re.search('JDH', element)
+        if index == 0:
+            doi_all = DOI_URL + element
+        else:
+            if match:
+                hyphen = element.replace(".", "-")
+                doi_all = doi_all + "/" + hyphen.rsplit('-', 1)[0]
+                return doi_all
+            else:
+                return doi_all

@@ -6,7 +6,7 @@ from django.http import Http404
 from django.shortcuts import render
 from jdhapi.models import Article, Issue
 from django.conf import settings
-from .utils import parseJupyterNotebook, generate_qrcode
+from .utils import parseJupyterNotebook, generate_qrcode, getDoiUrlDGFormatted
 from .utils import getPlainMetadataFromArticle
 
 
@@ -14,6 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 def ArticleDetail(request, pid):
+    published_date = ""
     # get ONLY published article matching the pid
     try:
         article = Article.objects.get(
@@ -23,9 +24,17 @@ def ArticleDetail(request, pid):
         raise Http404("Article does not exist")
     # generate qrcode
     qrCodebase64 = generate_qrcode(pid)
+    # get doi url format for DG
+    doi_url = getDoiUrlDGFormatted(article.doi)
+    # Publish online
+    if (article.publication_date):
+        published_date = article.publication_date.date()
     # decode notebook url
     notebook_url = urllib.parse.unquote(
         base64.b64decode(article.notebook_url).decode('utf-8'))
+    # contact_orcid
+    ORCID_URL = "https://orcid.org/"
+    contact_orcid = article.abstract.contact_orcid.partition(ORCID_URL)[2]
     # fill the context for the template file.
     context = {
         'article': article,
@@ -33,7 +42,9 @@ def ArticleDetail(request, pid):
             f"https://journalofdigitalhistory.org/en/article/"
             f"{article.abstract.pid}",
         'qr_code': qrCodebase64,
-        'media_url': settings.MEDIA_URL
+        'media_url': settings.MEDIA_URL,
+        'doi_url': doi_url,
+        'published_date': published_date
     }
     # check if it is a github url
 
@@ -47,7 +58,7 @@ def ArticleDetail(request, pid):
         try:
             res = requests.get(remote_url)
             # add NB paragraphs to context
-            context.update({'nb': parseJupyterNotebook(res.json())})
+            context.update({'nb': parseJupyterNotebook(res.json(), contact_orcid)})
         except Exception as e:
             logger.error(
                 f'Error occurred on article pk={article.pk}'
