@@ -81,7 +81,8 @@ def getReferencesFromJupyterNotebook(notebook):
     return references, sorted(bibliography, key=lambda x: re.sub('[^A-Za-z]+', '', x).lower()), inline_references_table
 
 
-def parseJupyterNotebook(notebook):
+def parseJupyterNotebook(notebook, contact_orcid):
+    affiliation = get_affiliation(contact_orcid)
     cells = notebook.get('cells')
     title = []
     abstract = []
@@ -112,7 +113,7 @@ def parseJupyterNotebook(notebook):
         elif 'abstract' in tags:
             abstract.append(marko.convert(source))
         elif 'contributor' in tags:
-            contributor.append(marko.convert(source + ' - ' + get_affiliation('0000-0002-0635-6935')))
+            contributor.append(marko.convert(source + ' - ' + affiliation))
         elif 'disclaimer' in tags:
             disclaimer.append(marko.convert(source))
         elif 'collaborators' in tags:

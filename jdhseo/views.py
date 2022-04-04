@@ -14,6 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 def ArticleDetail(request, pid):
+    published_date = ""
     # get ONLY published article matching the pid
     try:
         article = Article.objects.get(
@@ -26,10 +27,14 @@ def ArticleDetail(request, pid):
     # get doi url format for DG
     doi_url = getDoiUrlDGFormatted(article.doi)
     # Publish online
-    published_date = article.publication_date.date()
+    if (article.publication_date):
+        published_date = article.publication_date.date()
     # decode notebook url
     notebook_url = urllib.parse.unquote(
         base64.b64decode(article.notebook_url).decode('utf-8'))
+    # contact_orcid
+    ORCID_URL = "https://orcid.org/"
+    contact_orcid = article.abstract.contact_orcid.partition(ORCID_URL)[2]
     # fill the context for the template file.
     context = {
         'article': article,
@@ -53,7 +58,7 @@ def ArticleDetail(request, pid):
         try:
             res = requests.get(remote_url)
             # add NB paragraphs to context
-            context.update({'nb': parseJupyterNotebook(res.json())})
+            context.update({'nb': parseJupyterNotebook(res.json(), contact_orcid)})
         except Exception as e:
             logger.error(
                 f'Error occurred on article pk={article.pk}'
