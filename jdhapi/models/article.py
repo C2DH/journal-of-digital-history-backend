@@ -28,6 +28,7 @@ class Article(models.Model):
     notebook_path = models.CharField(max_length=254, null=True, blank=True)
     binder_url = models.URLField(max_length=254, null=True, blank=True)
     doi = models.CharField(max_length=254, null=True, blank=True)
+    publication_date = models.DateTimeField(blank=True, null=True)
     status = models.CharField(
         max_length=15,
         choices=Status.choices,

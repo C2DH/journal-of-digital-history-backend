@@ -178,6 +178,9 @@ EMAIL_PORT = get_env_variable('EMAIL_PORT', 0)
 # Number of words to take into account for the fingerprint
 NUM_CHARS_FINGERPRINT = get_env_variable('NUM_CHARS_FINGERPRINT', 5)
 
+# Token id to connect to the ORCID API for the user JDH JDH
+JDH_ORCID_API_TOKEN = get_env_variable('JDH_ORCID_API_TOKEN', 0)
+
 # in settings, no request to Google, no warnings,
 DRF_RECAPTCHA_TESTING = get_env_variable('DRF_RECAPTCHA_TESTING', 'False') == 'True'
 
