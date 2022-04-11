@@ -27,6 +27,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
 from rest_framework.decorators import permission_classes
 from rest_framework.decorators import authentication_classes
+from rest_framework import filters
 from drf_recaptcha.fields import ReCaptchaV2Field
 from rest_framework.serializers import Serializer
 from django.core.mail import send_mail
@@ -214,8 +215,10 @@ class AbstractDetail(generics.RetrieveUpdateDestroyAPIView):
 class ArticleList(generics.ListCreateAPIView):
     queryset = Article.objects.all()
     serializer_class = ArticleSerializer
-    filter_backends = [DjangoFilterBackend]
-    filterset_fields = ["abstract", "repository_url", "status", "repository_type", "notebook_url", "notebook_commit_hash", "tags", "issue", "authors"]
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    filterset_fields = ["issue", "abstract", "status", "tags", "authors"]
+    ordering_fields = ["issue__publication_date", "publication_date"]
+    ordering = ["-issue__publication_date", "-publication_date"]
 
     def get_queryset(self):
         """
