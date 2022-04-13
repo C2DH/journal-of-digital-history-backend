@@ -113,7 +113,10 @@ def parseJupyterNotebook(notebook, contact_orcid):
         elif 'abstract' in tags:
             abstract.append(marko.convert(source))
         elif 'contributor' in tags:
-            contributor.append(marko.convert(source + ' - ' + affiliation))
+            if affiliation:
+                contributor.append(marko.convert(source + ' - ' + affiliation))
+            else:
+                contributor.append(marko.convert(source))
         elif 'disclaimer' in tags:
             disclaimer.append(marko.convert(source))
         elif 'collaborators' in tags:
