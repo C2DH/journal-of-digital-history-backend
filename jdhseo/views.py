@@ -4,11 +4,11 @@ import requests
 import urllib.parse
 from django.http import Http404
 from django.shortcuts import render
-from jdhapi.models import Article, Issue
+from jdhapi.models import Article, Issue, Author
 from django.conf import settings
 from .utils import parseJupyterNotebook, generate_qrcode, getDoiUrlDGFormatted
 from .utils import getPlainMetadataFromArticle
-
+from django.http import HttpResponse
 
 logger = logging.getLogger(__name__)
 
@@ -95,3 +95,30 @@ def IssueDetail(request, pid):
         ]
     }
     return render(request, 'jdhseo/issue_detail.html', context)
+
+
+def ArticleXmlDG(request, pid):
+    try:
+        article = Article.objects.get(
+            abstract__pid=pid,
+            status=Article.Status.PUBLISHED)
+        nbauthors = article.abstract.authors.count()
+        logger.debug(f'Nb Authors(count={nbauthors}) for article {pid}')
+        authors = []
+        for author in article.abstract.authors.all():
+            contrib = {
+                "given_names": author.firstname,
+                "surname": author.lastname
+            }
+            authors.append(contrib)
+            logger.debug(f'authors {authors}')
+        context = {
+            'authors': authors,
+            'publisher_id': 'jdh',
+            'journal_code': 'jdh',
+            'doi_code': 'jdh',
+            'issn': '2747-5271'
+        }
+    except Article.DoesNotExist:
+        raise Http404("Article does not exist")
+    return render(request, 'jdhseo/dg_template.xml', context, content_type='text/xml')
