@@ -27,6 +27,8 @@ SECRET_KEY = get_env_variable('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = get_env_variable('DEBUG', 'True')
 
+DJANGO_LOG_LEVEL = get_env_variable('DJANGO_LOG_LEVEL', 'DEBUG')
+
 ALLOWED_HOSTS = get_env_variable('ALLOWED_HOSTS', 'localhost').split(',')
 
 DRF_RECAPTCHA_SECRET_KEY = get_env_variable('DRF_RECAPTCHA_SECRET_KEY')
@@ -200,7 +202,7 @@ LOGGING = {
         },
         'jdhseo.views': {
             'handlers': ['console'],
-            'level': 'DEBUG',
+            'level': get_env_variable('DJANGO_LOG_LEVEL', 'DEBUG'),
             'propagate': False,
         },
     },

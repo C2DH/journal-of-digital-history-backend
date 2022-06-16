@@ -19,7 +19,7 @@
 			<article-id pub-id-type="doi">10.1515/jdh-2021-1000</article-id>
 			<article-categories/>
 			<title-group>
-				<article-title>The Nameless Crowds: Using Quantitative Data and Digital Tools to Study the Ancient Vocabulary of the Crowd in Tacitus</article-title>
+				<article-title>{{ title }}</article-title>
 			</title-group>
 			<contrib-group>
 				{% for contrib in authors %}
@@ -56,22 +56,19 @@
 			<fpage>41</fpage>
 			<lpage>73</lpage>
 			<permissions>
-				<copyright-statement>© 2022 Louis Autin, published by Walter de Gruyter GmbH, Berlin/Boston</copyright-statement>
+				<copyright-statement>© 2022 {{ authorsList }}, published by Walter de Gruyter GmbH, Berlin/Boston</copyright-statement>
 				<copyright-year>2022</copyright-year>
-				<copyright-holder>Louis Autin, published by Walter de Gruyter GmbH, Berlin/Boston</copyright-holder>
-				<license license-type="open-access" specific-use="rights-object-archive-dnb" xlink:href="http://creativecommons.org/licenses/by-nc-nd/4.0">
-					<license-p>This work is licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International License.</license-p>
+				<copyright-holder>{{ authorsList }}, published by Walter de Gruyter GmbH, Berlin/Boston</copyright-holder>
+				<license license-type="open-access" specific-use="rights-object-archive-dnb" xlink:href="{{ copyrightJDHUrl }}">
+					<license-p>This work is licensed under the {{ copyrightJDH }}.</license-p>
 				</license>
 			</permissions>
 			<related-article related-article-type="pdf" xlink:href="jdh-2021-1000.pdf"/>
 			<kwd-group>
 				<title>Keywords</title>
-				<kwd>Crowds</kwd>
-				<kwd>Tacitus</kwd>
-				<kwd>Lexicology</kwd>
-				<kwd>Phraseology</kwd>
-				<kwd>Political History</kwd>
-				<kwd>Principate</kwd>
+				{% for keyword in keywords %}
+						<kwd>{% spaceless %}{{ keyword }}{% endspaceless %}</kwd>
+			  	{% endfor %}
 			</kwd-group>
 			<counts>
 				<page-count count="33"/>

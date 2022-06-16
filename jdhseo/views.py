@@ -9,6 +9,9 @@ from django.conf import settings
 from .utils import parseJupyterNotebook, generate_qrcode, getDoiUrlDGFormatted
 from .utils import getPlainMetadataFromArticle
 from django.http import HttpResponse
+from jdhapi.utils.copyright import CopyrightJDH
+import marko
+from lxml import html
 
 logger = logging.getLogger(__name__)
 
@@ -102,6 +105,7 @@ def ArticleXmlDG(request, pid):
         article = Article.objects.get(
             abstract__pid=pid,
             status=Article.Status.PUBLISHED)
+
         nbauthors = article.abstract.authors.count()
         logger.debug(f'Nb Authors(count={nbauthors}) for article {pid}')
         authors = []
@@ -112,12 +116,21 @@ def ArticleXmlDG(request, pid):
             }
             authors.append(contrib)
             logger.debug(f'authors {authors}')
+        if 'keywords' in article.data:
+            array_keys = article.data['keywords'][0].replace(';', ',').split(',')
+        if 'title' in article.data:
+            articleTitle = html.fromstring(marko.convert(article.data['title'][0])).text_content()
         context = {
+            'authorsList': CopyrightJDH.getAuthorList(),
+            'copyrightJDHUrl': CopyrightJDH.getCCBYUrl(),
+            'copyrightJDH': CopyrightJDH.getCCBYDesc(),
+            'title': articleTitle,
             'authors': authors,
             'publisher_id': 'jdh',
             'journal_code': 'jdh',
             'doi_code': 'jdh',
-            'issn': '2747-5271'
+            'issn': '2747-5271',
+            'keywords': array_keys
         }
     except Article.DoesNotExist:
         raise Http404("Article does not exist")
