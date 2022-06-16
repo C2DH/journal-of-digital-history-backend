@@ -6,12 +6,14 @@ from django.http import Http404
 from django.shortcuts import render
 from jdhapi.models import Article, Issue, Author
 from django.conf import settings
-from .utils import parseJupyterNotebook, generate_qrcode, getDoiUrlDGFormatted
+from .utils import parseJupyterNotebook, generate_qrcode
 from .utils import getPlainMetadataFromArticle
 from django.http import HttpResponse
 from jdhapi.utils.copyright import CopyrightJDH
+from jdhapi.utils.doi import DOIDG
 import marko
 from lxml import html
+
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +30,7 @@ def ArticleDetail(request, pid):
     # generate qrcode
     qrCodebase64 = generate_qrcode(pid)
     # get doi url format for DG
-    doi_url = getDoiUrlDGFormatted(article.doi)
+    doi_url = DOIDG.getDoiUrlDGFormatted(article.doi)
     # Publish online
     if (article.publication_date):
         published_date = article.publication_date.date()
@@ -130,7 +132,10 @@ def ArticleXmlDG(request, pid):
             'journal_code': 'jdh',
             'doi_code': 'jdh',
             'issn': '2747-5271',
-            'keywords': array_keys
+            'keywords': array_keys,
+            'doi': DOIDG.getDoiUrlDGFormatted(article.doi),
+            'publisherId': DOIDG.getDoiUrlDGFormatted(article.doi)
+
         }
     except Article.DoesNotExist:
         raise Http404("Article does not exist")

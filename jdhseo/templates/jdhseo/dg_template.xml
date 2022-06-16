@@ -15,8 +15,8 @@
 			</publisher>
 		</journal-meta>
 		<article-meta>
-			<article-id pub-id-type="publisher-id">jdh-2021-1000</article-id>
-			<article-id pub-id-type="doi">10.1515/jdh-2021-1000</article-id>
+			<article-id pub-id-type="publisher-id">{{ publisherId }}</article-id>
+			<article-id pub-id-type="doi">{{ doi }}</article-id>
 			<article-categories/>
 			<title-group>
 				<article-title>{{ title }}</article-title>
