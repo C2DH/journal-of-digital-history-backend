@@ -31,6 +31,7 @@ def ArticleDetail(request, pid):
     qrCodebase64 = generate_qrcode(pid)
     # get doi url format for DG
     doi_url = DOIDG.getDoiUrlDGFormatted(article.doi)
+    logger.info("DOI formatted for DG" + str(doi_url))
     # Publish online
     if (article.publication_date):
         published_date = article.publication_date.date()
@@ -114,7 +115,8 @@ def ArticleXmlDG(request, pid):
         for author in article.abstract.authors.all():
             contrib = {
                 "given_names": author.firstname,
-                "surname": author.lastname
+                "surname": author.lastname,
+                "orcid": author.orcid
             }
             authors.append(contrib)
             logger.debug(f'authors {authors}')
@@ -123,7 +125,7 @@ def ArticleXmlDG(request, pid):
         if 'title' in article.data:
             articleTitle = html.fromstring(marko.convert(article.data['title'][0])).text_content()
         context = {
-            'authorsList': CopyrightJDH.getAuthorList(),
+            'authorsList': CopyrightJDH.getAuthorList(authors),
             'copyrightJDHUrl': CopyrightJDH.getCCBYUrl(),
             'copyrightJDH': CopyrightJDH.getCCBYDesc(),
             'title': articleTitle,
@@ -133,8 +135,8 @@ def ArticleXmlDG(request, pid):
             'doi_code': 'jdh',
             'issn': '2747-5271',
             'keywords': array_keys,
-            'doi': DOIDG.getDoiUrlDGFormatted(article.doi),
-            'publisherId': DOIDG.getDoiUrlDGFormatted(article.doi)
+            'doi': DOIDG.getDoi(article.doi),
+            'publisherId': DOIDG.getPublisherId(article.doi)
 
         }
     except Article.DoesNotExist:

@@ -16,7 +16,15 @@ class CopyrightJDH:
     def getCCBYNCNDDesc():
         return "Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International License"
 
-    def getAuthorList():
-        return "Louis Autin"
-
-
+    # DG rules
+    # if nbAuthor == 2  Ex: Sarah Oberbichler and Eva Pfanzelter
+    # if nbAuthor > 2   Ex: Petra Heřmánková et al.
+    def getAuthorList(listAuthors):
+        print(listAuthors[0]['given_names'])
+        if len(listAuthors) == 1:
+            return f"{listAuthors[0]['given_names']} {listAuthors[0]['surname']}"
+        # return "more than one"
+        if len(listAuthors) == 2:
+            return f"{listAuthors[0]['given_names']} {listAuthors[0]['surname']} and {listAuthors[1]['given_names']} {listAuthors[1]['surname']}"
+        if len(listAuthors) > 2:
+            return f"{listAuthors[0]['given_names']} {listAuthors[0]['surname']} et al."

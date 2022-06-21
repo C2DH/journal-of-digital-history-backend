@@ -24,7 +24,7 @@
 			<contrib-group>
 				{% for contrib in authors %}
 				<contrib contrib-type="author">
-					<contrib-id contrib-id-type="orcid">https://orcid.org/0000-0002-1716-1236</contrib-id>
+					<contrib-id contrib-id-type="orcid">{{ contrib.orcid }}</contrib-id>
 						<name>
 							<surname>{{ contrib.surname }}</surname>
 							<given-names>{{ contrib.given_names }}</given-names>
