@@ -3,7 +3,7 @@
 <article article-type="research-article" dtd-version="1.1" xml:lang="en" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ali="http://www.niso.org/schemas/ali/1.0/">
 	<front>
 		<journal-meta>
-			<journal-id journal-id-type="publisher-id">{{ publisher_id }}</journal-id>
+			<journal-id journal-id-type="publisher-id">{{journal_publisher_id }}</journal-id>
 			<journal-id journal-id-type="journal-code">{{ journal_code }}</journal-id>
 			<journal-id journal-id-type="doi-code">{{ doi_code }}</journal-id>
 			<journal-title-group>
@@ -15,8 +15,8 @@
 			</publisher>
 		</journal-meta>
 		<article-meta>
-			<article-id pub-id-type="publisher-id">{{ publisherId }}</article-id>
-			<article-id pub-id-type="doi">{{ doi }}</article-id>
+			<article-id pub-id-type="publisher-id">{{ publisher_id }}</article-id>
+			<article-id pub-id-type="doi">{{ articleXml.doi }}</article-id>
 			<article-categories/>
 			<title-group>
 				<article-title>{{ title }}</article-title>
@@ -56,11 +56,11 @@
 			<fpage>41</fpage>
 			<lpage>73</lpage>
 			<permissions>
-				<copyright-statement>© 2022 {{ authorsList }}, published by Walter de Gruyter GmbH, Berlin/Boston</copyright-statement>
+				<copyright-statement>© 2022 {{ articleXml.authors_concat }}, published by Walter de Gruyter GmbH, Berlin/Boston</copyright-statement>
 				<copyright-year>2022</copyright-year>
-				<copyright-holder>{{ authorsList }}, published by Walter de Gruyter GmbH, Berlin/Boston</copyright-holder>
-				<license license-type="open-access" specific-use="rights-object-archive-dnb" xlink:href="{{ copyrightJDHUrl }}">
-					<license-p>This work is licensed under the {{ copyrightJDH }}.</license-p>
+				<copyright-holder>{{ articleXml.authors_concat}}, published by Walter de Gruyter GmbH, Berlin/Boston</copyright-holder>
+				<license license-type="open-access" specific-use="rights-object-archive-dnb" xlink:href="{{ copyright_JDH_url }}">
+					<license-p>This work is licensed under the {{ copyright_JDH }}.</license-p>
 				</license>
 			</permissions>
 			<related-article related-article-type="pdf" xlink:href="jdh-2021-1000.pdf"/>

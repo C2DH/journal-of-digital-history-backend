@@ -9,8 +9,9 @@ from django.conf import settings
 from .utils import parseJupyterNotebook, generate_qrcode
 from .utils import getPlainMetadataFromArticle
 from django.http import HttpResponse
+from jdhapi.utils.article_xml import ArticleXml
+from jdhapi.utils.doi import  get_doi, get_publisher_id, get_doi_url_formatted
 from jdhapi.utils.copyright import CopyrightJDH
-from jdhapi.utils.doi import DOIDG
 import marko
 from lxml import html
 
@@ -30,7 +31,7 @@ def ArticleDetail(request, pid):
     # generate qrcode
     qrCodebase64 = generate_qrcode(pid)
     # get doi url format for DG
-    doi_url = DOIDG.getDoiUrlDGFormatted(article.doi)
+    doi_url = get_doi_url_formatted(article.doi)
     logger.info("DOI formatted for DG" + str(doi_url))
     # Publish online
     if (article.publication_date):
@@ -124,19 +125,22 @@ def ArticleXmlDG(request, pid):
             array_keys = article.data['keywords'][0].replace(';', ',').split(',')
         if 'title' in article.data:
             articleTitle = html.fromstring(marko.convert(article.data['title'][0])).text_content()
+        # articleXml = ArticleXml.format_properties(authors)
+        # print(f"inside articleXml {articleXml.authors_concat}")
+
         context = {
-            'authorsList': CopyrightJDH.getAuthorList(authors),
-            'copyrightJDHUrl': CopyrightJDH.getCCBYUrl(),
-            'copyrightJDH': CopyrightJDH.getCCBYDesc(),
+            'articleXml': ArticleXml.format_properties(authors),
+            'copyright_JDH_url': CopyrightJDH.getCCBYUrl(),
+            'copyright_JDH': CopyrightJDH.getCCBYDesc(),
             'title': articleTitle,
             'authors': authors,
-            'publisher_id': 'jdh',
+            'journal_publisher_id': 'jdh',
             'journal_code': 'jdh',
             'doi_code': 'jdh',
             'issn': '2747-5271',
             'keywords': array_keys,
-            'doi': DOIDG.getDoi(article.doi),
-            'publisherId': DOIDG.getPublisherId(article.doi)
+            'doi': get_doi(article.doi),
+            'publisher_id': get_publisher_id(article.doi)
 
         }
     except Article.DoesNotExist:
