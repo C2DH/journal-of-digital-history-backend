@@ -200,7 +200,7 @@ LOGGING = {
             'handlers': ['console'],
             'level': 'ERROR',
         },
-        'jdhapi.utils.doi': {
+        'jdhapi': {
             'handlers': ['console'],
             'level': get_env_variable('DJANGO_LOG_LEVEL', 'DEBUG'),
             'propagate': True,

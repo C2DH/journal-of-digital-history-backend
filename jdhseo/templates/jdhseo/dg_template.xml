@@ -15,14 +15,14 @@
 			</publisher>
 		</journal-meta>
 		<article-meta>
-			<article-id pub-id-type="publisher-id">{{ publisher_id }}</article-id>
+			<article-id pub-id-type="publisher-id">{{ articleXml.publisher_id }}</article-id>
 			<article-id pub-id-type="doi">{{ articleXml.doi }}</article-id>
 			<article-categories/>
 			<title-group>
-				<article-title>{{ title }}</article-title>
+				<article-title>{{ articleXml.title }}</article-title>
 			</title-group>
 			<contrib-group>
-				{% for contrib in authors %}
+				{% for contrib in articleXml.authors %}
 				<contrib contrib-type="author">
 					<contrib-id contrib-id-type="orcid">{{ contrib.orcid }}</contrib-id>
 						<name>
@@ -63,12 +63,12 @@
 					<license-p>This work is licensed under the {{ copyright_JDH }}.</license-p>
 				</license>
 			</permissions>
-			<related-article related-article-type="pdf" xlink:href="jdh-2021-1000.pdf"/>
+			<related-article related-article-type="pdf" xlink:href="{{ articleXml.publisher_id }}.pdf"/>
 			<kwd-group>
 				<title>Keywords</title>
-				{% for keyword in keywords %}
-						<kwd>{% spaceless %}{{ keyword }}{% endspaceless %}</kwd>
-			  	{% endfor %}
+				{% for item in articleXml.keywords %}
+				<kwd>{% spaceless %}{{ item.keyword }}{% endspaceless %}</kwd>
+				{% endfor %}
 			</kwd-group>
 			<counts>
 				<page-count count="33"/>

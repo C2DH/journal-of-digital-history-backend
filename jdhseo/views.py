@@ -10,7 +10,7 @@ from .utils import parseJupyterNotebook, generate_qrcode
 from .utils import getPlainMetadataFromArticle
 from django.http import HttpResponse
 from jdhapi.utils.article_xml import ArticleXml
-from jdhapi.utils.doi import  get_doi, get_publisher_id, get_doi_url_formatted
+from jdhapi.utils.doi import get_doi, get_publisher_id, get_doi_url_formatted
 from jdhapi.utils.copyright import CopyrightJDH
 import marko
 from lxml import html
@@ -121,27 +121,25 @@ def ArticleXmlDG(request, pid):
             }
             authors.append(contrib)
             logger.debug(f'authors {authors}')
+        keywords = []
         if 'keywords' in article.data:
             array_keys = article.data['keywords'][0].replace(';', ',').split(',')
+            for item in array_keys:
+                keyword = {
+                    "keyword": item,
+                }
+                keywords.append(keyword)
+                logger.debug(f'keywords {keywords}')
         if 'title' in article.data:
             articleTitle = html.fromstring(marko.convert(article.data['title'][0])).text_content()
-        # articleXml = ArticleXml.format_properties(authors)
-        # print(f"inside articleXml {articleXml.authors_concat}")
-
         context = {
-            'articleXml': ArticleXml.format_properties(authors),
+            'articleXml': ArticleXml(authors, articleTitle, article.doi, keywords),
             'copyright_JDH_url': CopyrightJDH.getCCBYUrl(),
             'copyright_JDH': CopyrightJDH.getCCBYDesc(),
-            'title': articleTitle,
-            'authors': authors,
             'journal_publisher_id': 'jdh',
             'journal_code': 'jdh',
             'doi_code': 'jdh',
             'issn': '2747-5271',
-            'keywords': array_keys,
-            'doi': get_doi(article.doi),
-            'publisher_id': get_publisher_id(article.doi)
-
         }
     except Article.DoesNotExist:
         raise Http404("Article does not exist")

@@ -8,6 +8,7 @@ logger = logging.getLogger(__name__)
 # DOI: 10.1515/JDH.2021.1000.R1
 # Doi: 10.1515/jdh-2021-1000
 def get_doi(doi):
+
     doi_all = ""
     if doi:
         doi_group = re.split('/', doi)
