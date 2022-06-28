@@ -11,23 +11,35 @@ class ArticleXml:
     """
                 'copyright_JDH_url': CopyrightJDH.getCCBYUrl(),
                 'copyright_JDH': CopyrightJDH.getCCBYDesc(),
-                'title': articleTitle,
-                'authors': authors,
                 'publisher_id': 'jdh',
                 'journal_code': 'jdh',
                 'doi_code': 'jdh',
                 'issn': '2747-5271',
-                'keywords': array_keys,
+
      """
 
-    def __init__(self, article_authors, title, article_doi, keywords):
-        logger.debug("coucou dan iele")
+    def __init__(self, article_authors, title, article_doi, keywords, publication_date):
         self.authors = article_authors
         self.authors_concat = CopyrightJDH.getAuthorList(article_authors)
         self.title = title
         self.doi = get_doi(article_doi)
         self.publisher_id = get_publisher_id(article_doi)
         self.keywords = keywords
+        self.epub = publication_date
+        self.ppub = publication_date
+        self.cover_date = publication_date
+
+    @property
+    def cover_date(self):
+        return self._cover_date
+
+    @property
+    def ppub(self):
+        return self._ppub
+
+    @property
+    def epub(self):
+        return self._epub
 
     @property
     def keywords(self):
@@ -52,6 +64,18 @@ class ArticleXml:
     @property
     def title(self):
         return self._title
+
+    @cover_date.setter
+    def cover_date(self, value):
+        self._cover_date = value
+
+    @ppub.setter
+    def ppub(self, value):
+        self._ppub = value
+
+    @epub.setter
+    def epub(self, value):
+        self._epub = value
 
     @keywords.setter
     def keywords(self, value):

@@ -133,7 +133,7 @@ def ArticleXmlDG(request, pid):
         if 'title' in article.data:
             articleTitle = html.fromstring(marko.convert(article.data['title'][0])).text_content()
         context = {
-            'articleXml': ArticleXml(authors, articleTitle, article.doi, keywords),
+            'articleXml': ArticleXml(authors, articleTitle, article.doi, keywords, article.publication_date),
             'copyright_JDH_url': CopyrightJDH.getCCBYUrl(),
             'copyright_JDH': CopyrightJDH.getCCBYDesc(),
             'journal_publisher_id': 'jdh',

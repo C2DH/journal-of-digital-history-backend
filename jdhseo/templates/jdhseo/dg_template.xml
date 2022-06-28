@@ -37,27 +37,27 @@
 				<aff id="j_jdh-2021-1000_aff_001"><sup>1</sup><institution>Sorbonne-Université, UFR de latin,</institution> <city>Paris</city>, <country country="FR">France</country></aff>
 			</contrib-group>
 			<pub-date pub-type="ppub">
-				<day>01</day>
-				<month>09</month>
-				<year>2021</year>
+				<day>{{ articleXml.ppub|date:"d"}}</day>
+				<month>{{ articleXml.ppub|date:"m"}}</month>
+				<year>{{ articleXml.ppub|date:"Y" }}</year>
 			</pub-date>
 			<pub-date pub-type="epub">
-				<day>12</day>
-				<month>04</month>
-				<year>2022</year>
+				<day>{{ articleXml.epub|date:"d"}}</day>
+				<month>{{ articleXml.epub|date:"m"}}</month>
+				<year>{{ articleXml.epub|date:"Y" }}</year>
 			</pub-date>
 			<pub-date pub-type="cover-date">
-				<day>01</day>
-				<month>09</month>
-				<year>2021</year>
+				<day>{{ articleXml.cover_date|date:"d"}}</day>
+				<month>{{ articleXml.cover_date|date:"m"}}</month>
+				<year>{{ articleXml.cover_date|date:"Y" }}</year>
 			</pub-date>
 			<volume>1</volume>
 			<issue>1</issue>
 			<fpage>41</fpage>
 			<lpage>73</lpage>
 			<permissions>
-				<copyright-statement>© 2022 {{ articleXml.authors_concat }}, published by Walter de Gruyter GmbH, Berlin/Boston in cooperation with the University of Luxembourg Centre for Contemporary and Digital History</copyright-statement>
-				<copyright-year>2022</copyright-year>
+				<copyright-statement>© {{ articleXml.ppub|date:"Y" }} {{ articleXml.authors_concat }}, published by Walter de Gruyter GmbH, Berlin/Boston in cooperation with the University of Luxembourg Centre for Contemporary and Digital History</copyright-statement>
+				<copyright-year>{{ articleXml.ppub|date:"Y" }}</copyright-year>
 				<copyright-holder>{{ articleXml.authors_concat}}, published by Walter de Gruyter GmbH, Berlin/Boston in cooperation with the University of Luxembourg Centre for Contemporary and Digital History</copyright-holder>
 				<license license-type="open-access" specific-use="rights-object-archive-dnb" xlink:href="{{ copyright_JDH_url }}">
 					<license-p>This work is licensed under the {{ copyright_JDH }}.</license-p>
