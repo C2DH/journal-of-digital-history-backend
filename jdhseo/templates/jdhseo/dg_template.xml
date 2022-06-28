@@ -56,9 +56,9 @@
 			<fpage>41</fpage>
 			<lpage>73</lpage>
 			<permissions>
-				<copyright-statement>© 2022 {{ articleXml.authors_concat }}, published by Walter de Gruyter GmbH, Berlin/Boston</copyright-statement>
+				<copyright-statement>© 2022 {{ articleXml.authors_concat }}, published by Walter de Gruyter GmbH, Berlin/Boston in cooperation with the University of Luxembourg Centre for Contemporary and Digital History</copyright-statement>
 				<copyright-year>2022</copyright-year>
-				<copyright-holder>{{ articleXml.authors_concat}}, published by Walter de Gruyter GmbH, Berlin/Boston</copyright-holder>
+				<copyright-holder>{{ articleXml.authors_concat}}, published by Walter de Gruyter GmbH, Berlin/Boston in cooperation with the University of Luxembourg Centre for Contemporary and Digital History</copyright-holder>
 				<license license-type="open-access" specific-use="rights-object-archive-dnb" xlink:href="{{ copyright_JDH_url }}">
 					<license-p>This work is licensed under the {{ copyright_JDH }}.</license-p>
 				</license>
