@@ -216,7 +216,7 @@ class ArticleList(generics.ListCreateAPIView):
     queryset = Article.objects.all()
     serializer_class = ArticleSerializer
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
-    filterset_fields = ["issue", "abstract", "status", "tags", "authors"]
+    filterset_fields = ["issue", "abstract", "status", "tags", "authors", "copyright_type"]
     ordering_fields = ["issue__publication_date", "publication_date"]
     ordering = ["-issue__publication_date", "-publication_date"]
 

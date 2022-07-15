@@ -51,7 +51,7 @@ class TagAdmin(admin.ModelAdmin):
 
 class ArticleAdmin(admin.ModelAdmin):
     list_display = ['abstract_pid', 'issue', 'abstract_title', 'status']
-    list_filter = ('issue', 'status')
+    list_filter = ('issue', 'status', 'copyright_type')
     actions = [save_notebook_fingerprint, save_notebook_specific_cell, save_article_citation, save_article_package]
 
     def abstract_pid(self, obj):

@@ -1,3 +1,6 @@
+from jdhapi.models import Article
+
+
 class CopyrightJDH:
 
     @staticmethod
@@ -27,3 +30,17 @@ class CopyrightJDH:
             return f"{listAuthors[0]['given_names']} {listAuthors[0]['surname']} and {listAuthors[1]['given_names']} {listAuthors[1]['surname']}"
         if len(listAuthors) > 2:
             return f"{listAuthors[0]['given_names']} {listAuthors[0]['surname']} et al."
+
+    @staticmethod
+    def getCopyrightDesc(copyright):
+        if copyright == Article.CopyrightType.CC_BY:
+            return CopyrightJDH.getCCBYDesc()
+        else:
+            return CopyrightJDH.getCCBYNCNDDesc()
+
+    @staticmethod
+    def getCopyrightUrl(copyright):
+        if copyright == Article.CopyrightType.CC_BY:
+            return CopyrightJDH.getCCBYUrl()
+        else:
+            return CopyrightJDH.getCCBYNCNDUrl()

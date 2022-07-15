@@ -129,13 +129,10 @@ def ArticleXmlDG(request, pid):
                     "keyword": item,
                 }
                 keywords.append(keyword)
-                logger.debug(f'keywords {keywords}')
         if 'title' in article.data:
             articleTitle = html.fromstring(marko.convert(article.data['title'][0])).text_content()
         context = {
-            'articleXml': ArticleXml(authors, articleTitle, article.doi, keywords, article.publication_date),
-            'copyright_JDH_url': CopyrightJDH.getCCBYUrl(),
-            'copyright_JDH': CopyrightJDH.getCCBYDesc(),
+            'articleXml': ArticleXml(authors, articleTitle, article.doi, keywords, article.publication_date, article.copyright_type),
             'journal_publisher_id': 'jdh',
             'journal_code': 'jdh',
             'doi_code': 'jdh',

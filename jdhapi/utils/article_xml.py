@@ -18,7 +18,7 @@ class ArticleXml:
 
      """
 
-    def __init__(self, article_authors, title, article_doi, keywords, publication_date):
+    def __init__(self, article_authors, title, article_doi, keywords, publication_date, copyright):
         self.authors = article_authors
         self.authors_concat = CopyrightJDH.getAuthorList(article_authors)
         self.title = title
@@ -28,6 +28,16 @@ class ArticleXml:
         self.epub = publication_date
         self.ppub = publication_date
         self.cover_date = publication_date
+        self.copyright_desc = CopyrightJDH.getCopyrightDesc(copyright)
+        self.copyright_url = CopyrightJDH.getCopyrightUrl(copyright)
+
+    @property
+    def copyright_desc(self):
+        return self._copyright_desc
+
+    @property
+    def copyright_url(self):
+        return self._copyright_url
 
     @property
     def cover_date(self):
@@ -64,6 +74,14 @@ class ArticleXml:
     @property
     def title(self):
         return self._title
+
+    @copyright_url.setter
+    def copyright_url(self, value):
+        self._copyright_url = value
+
+    @copyright_desc.setter
+    def copyright_desc(self, value):
+        self._copyright_desc = value
 
     @cover_date.setter
     def cover_date(self, value):

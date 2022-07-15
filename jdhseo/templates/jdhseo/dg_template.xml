@@ -59,8 +59,8 @@
 				<copyright-statement>© {{ articleXml.ppub|date:"Y" }} {{ articleXml.authors_concat }}, published by Walter de Gruyter GmbH, Berlin/Boston in cooperation with the University of Luxembourg Centre for Contemporary and Digital History</copyright-statement>
 				<copyright-year>{{ articleXml.ppub|date:"Y" }}</copyright-year>
 				<copyright-holder>{{ articleXml.authors_concat}}, published by Walter de Gruyter GmbH, Berlin/Boston in cooperation with the University of Luxembourg Centre for Contemporary and Digital History</copyright-holder>
-				<license license-type="open-access" specific-use="rights-object-archive-dnb" xlink:href="{{ copyright_JDH_url }}">
-					<license-p>This work is licensed under the {{ copyright_JDH }}.</license-p>
+				<license license-type="open-access" specific-use="rights-object-archive-dnb" xlink:href="{{ articleXml.copyright_url }}">
+					<license-p>This work is licensed under the {{ articleXml.copyright_desc }}.</license-p>
 				</license>
 			</permissions>
 			<related-article related-article-type="pdf" xlink:href="{{ articleXml.publisher_id }}.pdf"/>
