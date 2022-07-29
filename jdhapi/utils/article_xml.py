@@ -33,6 +33,10 @@ class ArticleXml:
         self.cover_date = publication_date
         self.copyright_desc = CopyrightJDH.getCopyrightDesc(copyright)
         self.copyright_url = CopyrightJDH.getCopyrightUrl(copyright)
+        # To look at here http://www.wiki.degruyter.de/production/files/dg_xml_guidelines.xhtml#elocation-id
+        self.elocation_id = "TO DEFINE"
+        # seq reflect the sequence of articles within an issue.
+        self.seq = "TO DEFINE"
         try:
             issue = Issue.objects.get(
                 pid=issue_pid)
@@ -40,6 +44,14 @@ class ArticleXml:
             self.issue = issue.issue
         except Issue.DoesNotExist:
             raise Http404("Issue does not exist")
+
+    @property
+    def seq(self):
+        return self._seq
+
+    @property
+    def elocation_id(self):
+        return self._elocation_id
 
     @property
     def issue(self):
@@ -144,3 +156,11 @@ class ArticleXml:
     @volume.setter
     def volume(self, value):
         self._volume = value
+
+    @elocation_id.setter
+    def elocation_id(self, value):
+        self._elocation_id = value
+
+    @seq.setter
+    def seq(self, value):
+        self._seq = value

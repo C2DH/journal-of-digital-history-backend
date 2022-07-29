@@ -53,8 +53,7 @@
 			</pub-date>
 			<volume>{{ articleXml.volume }}</volume>
 			<issue>>{{ articleXml.issue }}</issue>
-			<fpage>41</fpage>
-			<lpage>73</lpage>
+			<elocation-id seq="{{ articleXml.seq }}">{{ articleXml.elocation_id }}</elocation-id>
 			<permissions>
 				<copyright-statement>© {{ articleXml.ppub|date:"Y" }} {{ articleXml.authors_concat }}, published by Walter de Gruyter GmbH, Berlin/Boston in cooperation with the University of Luxembourg Centre for Contemporary and Digital History</copyright-statement>
 				<copyright-year>{{ articleXml.ppub|date:"Y" }}</copyright-year>

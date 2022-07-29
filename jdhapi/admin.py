@@ -40,7 +40,7 @@ save_article_package.short_description = "4: Generate tags TOOL/NARRATIVE"
 
 
 class AbstractAdmin(ExportActionMixin, admin.ModelAdmin):
-    list_display = ['title', 'contact_email','submitted_date', 'status']
+    list_display = ['title', 'contact_email', 'submitted_date', 'status']
     list_filter = ('status',)
 
 
