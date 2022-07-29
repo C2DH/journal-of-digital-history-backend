@@ -51,8 +51,8 @@
 				<month>{{ articleXml.cover_date|date:"m"}}</month>
 				<year>{{ articleXml.cover_date|date:"Y" }}</year>
 			</pub-date>
-			<volume>1</volume>
-			<issue>1</issue>
+			<volume>{{ articleXml.volume }}</volume>
+			<issue>>{{ articleXml.issue }}</issue>
 			<fpage>41</fpage>
 			<lpage>73</lpage>
 			<permissions>

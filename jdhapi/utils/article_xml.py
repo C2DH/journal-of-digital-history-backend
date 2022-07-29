@@ -1,6 +1,9 @@
 import re
 from jdhapi.utils.copyright import CopyrightJDH
 from jdhapi.utils.doi import get_doi, get_publisher_id, get_doi_url_formatted
+from jdhapi.models import Issue
+from django.http import Http404
+
 import logging
 
 logger = logging.getLogger(__name__)
@@ -18,7 +21,7 @@ class ArticleXml:
 
      """
 
-    def __init__(self, article_authors, title, article_doi, keywords, publication_date, copyright):
+    def __init__(self, article_authors, title, article_doi, keywords, publication_date, copyright, issue_pid):
         self.authors = article_authors
         self.authors_concat = CopyrightJDH.getAuthorList(article_authors)
         self.title = title
@@ -30,6 +33,21 @@ class ArticleXml:
         self.cover_date = publication_date
         self.copyright_desc = CopyrightJDH.getCopyrightDesc(copyright)
         self.copyright_url = CopyrightJDH.getCopyrightUrl(copyright)
+        try:
+            issue = Issue.objects.get(
+                pid=issue_pid)
+            self.volume = issue.volume
+            self.issue = issue.issue
+        except Issue.DoesNotExist:
+            raise Http404("Issue does not exist")
+
+    @property
+    def issue(self):
+        return self._issue
+
+    @property
+    def volume(self):
+        return self._volume
 
     @property
     def copyright_desc(self):
@@ -118,3 +136,11 @@ class ArticleXml:
     @authors_concat.setter
     def authors_concat(self, value):
         self._authors_concat = value
+
+    @issue.setter
+    def issue(self, value):
+        self._issue = value
+
+    @volume.setter
+    def volume(self, value):
+        self._volume = value

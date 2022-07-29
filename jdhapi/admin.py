@@ -40,12 +40,16 @@ save_article_package.short_description = "4: Generate tags TOOL/NARRATIVE"
 
 
 class AbstractAdmin(ExportActionMixin, admin.ModelAdmin):
-    list_display = ['title', 'status']
+    list_display = ['title', 'contact_email','submitted_date', 'status']
     list_filter = ('status',)
 
 
 class AuthorAdmin(ExportActionMixin, admin.ModelAdmin):
     list_display = ['lastname', 'firstname', 'affiliation', 'orcid', 'email']
+
+
+class IssueAdmin(admin.ModelAdmin):
+    list_display = ['name', 'volume', 'issue', 'status']
 
 
 class TagAdmin(admin.ModelAdmin):
@@ -73,7 +77,7 @@ admin.site.register(Abstract, AbstractAdmin)
 admin.site.register(Dataset)
 admin.site.register(Author, AuthorAdmin)
 admin.site.register(Article, ArticleAdmin)
-admin.site.register(Issue)
+admin.site.register(Issue, IssueAdmin)
 admin.site.register(Tag, TagAdmin)
 admin.site.register(Role)
 admin.site.site_url = "/dashboard"

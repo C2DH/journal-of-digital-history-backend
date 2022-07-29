@@ -112,6 +112,7 @@ def ArticleXmlDG(request, pid):
 
         nbauthors = article.abstract.authors.count()
         logger.debug(f'Nb Authors(count={nbauthors}) for article {pid}')
+        logger.debug(f'Belongs to issue {article.issue}')
         authors = []
         for author in article.abstract.authors.all():
             contrib = {
@@ -132,7 +133,7 @@ def ArticleXmlDG(request, pid):
         if 'title' in article.data:
             articleTitle = html.fromstring(marko.convert(article.data['title'][0])).text_content()
         context = {
-            'articleXml': ArticleXml(authors, articleTitle, article.doi, keywords, article.publication_date, article.copyright_type),
+            'articleXml': ArticleXml(authors, articleTitle, article.doi, keywords, article.publication_date, article.copyright_type, article.issue),
             'journal_publisher_id': 'jdh',
             'journal_code': 'jdh',
             'doi_code': 'jdh',
