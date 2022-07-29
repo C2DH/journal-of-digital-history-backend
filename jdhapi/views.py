@@ -244,7 +244,7 @@ class IssueList(generics.ListCreateAPIView):
     queryset = Issue.objects.all()
     serializer_class = IssueSerializer
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
-    filterset_fields = ["id", "pid", "name", "description", "creation_date", "publication_date", "status"]
+    filterset_fields = ["id", "pid", "name", "description", "creation_date", "publication_date", "status", "volume", "issue"]
     ordering_fields = ["creation_date", "publication_date"]
 
 
