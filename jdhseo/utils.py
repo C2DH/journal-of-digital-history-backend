@@ -82,6 +82,7 @@ def getReferencesFromJupyterNotebook(notebook):
 
 
 def parseJupyterNotebook(notebook, contact_orcid):
+    logger.info(f'CONTACT ORCID: {contact_orcid}')
     affiliation = get_affiliation(contact_orcid)
     cells = notebook.get('cells')
     title = []

@@ -12,6 +12,7 @@ from django.http import HttpResponse
 from jdhapi.utils.article_xml import ArticleXml
 from jdhapi.utils.doi import get_doi, get_publisher_id, get_doi_url_formatted
 from jdhapi.utils.copyright import CopyrightJDH
+from jdhapi.utils.affiliation import get_affiliation_json
 import marko
 from lxml import html
 
@@ -113,15 +114,7 @@ def ArticleXmlDG(request, pid):
         nbauthors = article.abstract.authors.count()
         logger.debug(f'Nb Authors(count={nbauthors}) for article {pid}')
         logger.debug(f'Belongs to issue {article.issue}')
-        authors = []
-        for author in article.abstract.authors.all():
-            contrib = {
-                "given_names": author.firstname,
-                "surname": author.lastname,
-                "orcid": author.orcid
-            }
-            authors.append(contrib)
-            logger.debug(f'authors {authors}')
+        get_affiliation_json(article.abstract.authors.all())
         keywords = []
         if 'keywords' in article.data:
             array_keys = article.data['keywords'][0].replace(';', ',').split(',')
@@ -133,7 +126,7 @@ def ArticleXmlDG(request, pid):
         if 'title' in article.data:
             articleTitle = html.fromstring(marko.convert(article.data['title'][0])).text_content()
         context = {
-            'articleXml': ArticleXml(authors, articleTitle, article.doi, keywords, article.publication_date, article.copyright_type, article.issue),
+            'articleXml': ArticleXml(article.abstract.authors.all(), articleTitle, article.doi, keywords, article.publication_date, article.copyright_type, article.issue),
             'journal_publisher_id': 'jdh',
             'journal_code': 'jdh',
             'doi_code': 'jdh',

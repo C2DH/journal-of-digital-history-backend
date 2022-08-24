@@ -34,7 +34,9 @@
 						</xref>
 					</contrib>
 			  {% endfor %}
-				<aff id="j_jdh-2021-1000_aff_001"><sup>1</sup><institution>Sorbonne-Université, UFR de latin,</institution> <city>Paris</city>, <country country="FR">France</country></aff>
+			  {% for affiliation in articleXml.affiliations %}
+				<aff id="{{ articleXml.publisher_id }}{{ affiliation. }}"><sup>1</sup><institution>{{ affiliation.institution }}</institution> <city>{{ affiliation.city }}</city>,<country country="{{ affiliation.country }}">{{ affiliation.country }}</country></aff>
+			  {% endfor %}
 			</contrib-group>
 			<pub-date pub-type="ppub">
 				<day>{{ articleXml.ppub|date:"d"}}</day>

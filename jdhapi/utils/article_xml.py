@@ -1,6 +1,7 @@
 import re
 from jdhapi.utils.copyright import CopyrightJDH
 from jdhapi.utils.doi import get_doi, get_publisher_id, get_doi_url_formatted
+from jdhapi.utils.affiliation import get_authors, get_affiliation_json
 from jdhapi.models import Issue
 from django.http import Http404
 
@@ -11,19 +12,10 @@ logger = logging.getLogger(__name__)
 
 class ArticleXml:
 
-    """
-                'copyright_JDH_url': CopyrightJDH.getCCBYUrl(),
-                'copyright_JDH': CopyrightJDH.getCCBYDesc(),
-                'publisher_id': 'jdh',
-                'journal_code': 'jdh',
-                'doi_code': 'jdh',
-                'issn': '2747-5271',
-
-     """
-
     def __init__(self, article_authors, title, article_doi, keywords, publication_date, copyright, issue_pid):
-        self.authors = article_authors
-        self.authors_concat = CopyrightJDH.getAuthorList(article_authors)
+        self.authors = get_authors(article_authors)
+        self.affiliations = get_affiliation_json(article_authors)
+        self.authors_concat = CopyrightJDH.getAuthorList(self.authors)
         self.title = title
         self.doi = get_doi(article_doi)
         self.publisher_id = get_publisher_id(article_doi)
