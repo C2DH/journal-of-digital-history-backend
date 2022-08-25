@@ -35,7 +35,7 @@
 					</contrib>
 			  {% endfor %}
 			  {% for affiliation in articleXml.affiliations %}
-				<aff id="{{ articleXml.publisher_id }}{{ affiliation. }}"><sup>1</sup><institution>{{ affiliation.institution }}</institution> <city>{{ affiliation.city }}</city>,<country country="{{ affiliation.country }}">{{ affiliation.country }}</country></aff>
+				<aff id="j_{{ articleXml.publisher_id }}_aff_{{ affiliation.aff_id }}"><sup>coucou</sup><institution>{{ affiliation.institution }}</institution> <city>{{ affiliation.city }}</city>,<country country="{{ affiliation.country }}">{{ affiliation.country_name }}</country></aff>
 			  {% endfor %}
 			</contrib-group>
 			<pub-date pub-type="ppub">
