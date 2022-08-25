@@ -50,6 +50,7 @@ def get_affiliation_json(authors):
         affiliation_one = get_affiliation_json_one(author.orcid, author.affiliation)
         if len(affiliations) == 0:
             affiliation_one["aff_id"] = i
+            affiliation_one["authors_link"] = [author.lastname]
             affiliations.append(affiliation_one)
         else:
             # need to check if already exist
@@ -57,27 +58,14 @@ def get_affiliation_json(authors):
                 (item for item in affiliations if item['institution'] == affiliation_one['institution']),
                 {}
             )
-            if not result:
+            if result:
+                # need to add author
+                result["authors_link"].append(author.lastname)
+            else:
                 i += 1
                 affiliation_one["aff_id"] = i
-                logger.info(f'new affiliation: {affiliation_one["institution"]}')
+                affiliation_one["authors_link"] = [author.lastname]
+                logger.info(f'new affiliation: {affiliation_one["institution"]} with new author {author.lastname}')
                 affiliations.append(affiliation_one)
     logger.info(f'affiliations: {affiliations}')
     return affiliations
-
-
-"""             for item in affiliations:
-                if affiliation_one["institution"] == item["institution"] in item.values():
-                    logger.info(f'already exist: {item["institution"]}') """
-
-
-"""     authors_full = []
-    for author in authors:
-        contrib = {
-            "given_names": author.firstname,
-            "surname": author.lastname,
-            "orcid": author.orcid
-        }
-        get_affiliation_json_one(author.orcid)
-        authors_full.append(contrib)
-        logger.debug(f'authors {authors_full}') """
