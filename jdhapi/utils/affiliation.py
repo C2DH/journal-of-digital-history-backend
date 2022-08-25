@@ -1,4 +1,5 @@
 import logging
+from re import I
 import pycountry
 from jdhseo.utils import get_affiliation
 logger = logging.getLogger(__name__)
@@ -44,16 +45,30 @@ def get_affiliation_json_one(orcid_url, affiliation):
 
 def get_affiliation_json(authors):
     affiliations = []
+    i = 1
     for author in authors:
-        affiliation = get_affiliation_json_one(author.orcid, author.affiliation)
+        affiliation_one = get_affiliation_json_one(author.orcid, author.affiliation)
         if len(affiliations) == 0:
-            logger.info(f'first element')
-            affiliation["aff_id"] = '001'
+            affiliation_one["aff_id"] = i
+            affiliations.append(affiliation_one)
         else:
-            logger.info(f'second element')
-        affiliations.append(affiliation)
+            # need to check if already exist
+            result = next(
+                (item for item in affiliations if item['institution'] == affiliation_one['institution']),
+                {}
+            )
+            if not result:
+                i += 1
+                affiliation_one["aff_id"] = i
+                logger.info(f'new affiliation: {affiliation_one["institution"]}')
+                affiliations.append(affiliation_one)
     logger.info(f'affiliations: {affiliations}')
     return affiliations
+
+
+"""             for item in affiliations:
+                if affiliation_one["institution"] == item["institution"] in item.values():
+                    logger.info(f'already exist: {item["institution"]}') """
 
 
 """     authors_full = []
