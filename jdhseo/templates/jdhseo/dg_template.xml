@@ -1,0 +1,79 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE article PUBLIC "-//NLM//DTD JATS (Z39.96) Journal Publishing DTD v1.1 20151215//EN" "JATS-journalpublishing1.dtd">
+<article article-type="research-article" dtd-version="1.1" xml:lang="en" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ali="http://www.niso.org/schemas/ali/1.0/">
+	<front>
+		<journal-meta>
+			<journal-id journal-id-type="publisher-id">{{journal_publisher_id }}</journal-id>
+			<journal-id journal-id-type="journal-code">{{ journal_code }}</journal-id>
+			<journal-id journal-id-type="doi-code">{{ doi_code }}</journal-id>
+			<journal-title-group>
+				<journal-title>Journal of Digital History</journal-title>
+			</journal-title-group>
+			<issn pub-type="epub">{{ issn }}</issn>
+			<publisher>
+				<publisher-name>De Gruyter</publisher-name>
+			</publisher>
+		</journal-meta>
+		<article-meta>
+			<article-id pub-id-type="publisher-id">{{ articleXml.publisher_id }}</article-id>
+			<article-id pub-id-type="doi">{{ articleXml.doi }}</article-id>
+			<article-categories/>
+			<title-group>
+				<article-title>{{ articleXml.title }}</article-title>
+			</title-group>
+			<contrib-group>
+				{% for contrib in articleXml.authors %}
+				<contrib contrib-type="author">
+					<contrib-id contrib-id-type="orcid">{{ contrib.orcid }}</contrib-id>
+						<name>
+							<surname>{{ contrib.surname }}</surname>
+							<given-names>{{ contrib.given_names }}</given-names>
+						</name>
+						<xref ref-type="aff" rid="{{ contrib.aff_pub_id}}">
+							<sup>{{ contrib.aff_id }}</sup>
+						</xref>
+					</contrib>
+			  {% endfor %}
+			  {% for affiliation in articleXml.affiliations %}
+				<aff id="{{ affiliation.aff_pub_id }}"><sup>{{ affiliation.aff_id }}</sup><institution>{{ affiliation.institution }}</institution> <city>{{ affiliation.city }}</city>,<country country="{{ affiliation.country }}">{{ affiliation.country_name }}</country></aff>
+			  {% endfor %}
+			</contrib-group>
+			<pub-date pub-type="ppub">
+				<day>{{ articleXml.ppub|date:"d"}}</day>
+				<month>{{ articleXml.ppub|date:"m"}}</month>
+				<year>{{ articleXml.ppub|date:"Y" }}</year>
+			</pub-date>
+			<pub-date pub-type="epub">
+				<day>{{ articleXml.epub|date:"d"}}</day>
+				<month>{{ articleXml.epub|date:"m"}}</month>
+				<year>{{ articleXml.epub|date:"Y" }}</year>
+			</pub-date>
+			<pub-date pub-type="cover-date">
+				<day>{{ articleXml.cover_date|date:"d"}}</day>
+				<month>{{ articleXml.cover_date|date:"m"}}</month>
+				<year>{{ articleXml.cover_date|date:"Y" }}</year>
+			</pub-date>
+			<volume>{{ articleXml.volume }}</volume>
+			<issue>>{{ articleXml.issue }}</issue>
+			<elocation-id seq="{{ articleXml.seq }}">{{ articleXml.elocation_id }}</elocation-id>
+			<permissions>
+				<copyright-statement>© {{ articleXml.ppub|date:"Y" }} {{ articleXml.authors_concat }}, published by Walter de Gruyter GmbH, Berlin/Boston in cooperation with the University of Luxembourg Centre for Contemporary and Digital History</copyright-statement>
+				<copyright-year>{{ articleXml.ppub|date:"Y" }}</copyright-year>
+				<copyright-holder>{{ articleXml.authors_concat}}, published by Walter de Gruyter GmbH, Berlin/Boston in cooperation with the University of Luxembourg Centre for Contemporary and Digital History</copyright-holder>
+				<license license-type="open-access" specific-use="rights-object-archive-dnb" xlink:href="{{ articleXml.copyright_url }}">
+					<license-p>This work is licensed under the {{ articleXml.copyright_desc }}.</license-p>
+				</license>
+			</permissions>
+			<related-article related-article-type="pdf" xlink:href="{{ articleXml.publisher_id }}.pdf"/>
+			<kwd-group>
+				<title>Keywords</title>
+				{% for item in articleXml.keywords %}
+				<kwd>{% spaceless %}{{ item.keyword }}{% endspaceless %}</kwd>
+				{% endfor %}
+			</kwd-group>
+			<counts>
+				<page-count count="33"/>
+			</counts>
+		</article-meta>
+	</front>
+</article>

@@ -25,7 +25,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = get_env_variable('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = get_env_variable('DEBUG', 'True') == 'True'
+DEBUG = get_env_variable('DEBUG', 'True')
+
+DJANGO_LOG_LEVEL = get_env_variable('DJANGO_LOG_LEVEL', 'DEBUG')
 
 ALLOWED_HOSTS = get_env_variable('ALLOWED_HOSTS', 'localhost').split(',')
 
@@ -182,6 +184,7 @@ JDH_ORCID_API_TOKEN = get_env_variable('JDH_ORCID_API_TOKEN', 0)
 # in settings, no request to Google, no warnings,
 DRF_RECAPTCHA_TESTING = get_env_variable('DRF_RECAPTCHA_TESTING', 'False') == 'True'
 
+
 # ADD logging
 LOGGING = {
     'version': 1,
@@ -189,8 +192,25 @@ LOGGING = {
     'handlers': {
         'console': {
             'class': 'logging.StreamHandler',
-            'formatter': 'verbose'
+            'formatter': 'verbose',
         },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': 'ERROR',
+        },
+        'jdhapi': {
+            'handlers': ['console'],
+            'level': get_env_variable('DJANGO_LOG_LEVEL', 'DEBUG'),
+            'propagate': True,
+        },
+        'jdhseo.views': {
+            'handlers': ['console'],
+            'level': get_env_variable('DJANGO_LOG_LEVEL', 'DEBUG'),
+            'propagate': False,
+        },
+
     },
     'formatters': {
         'verbose': {
@@ -199,6 +219,10 @@ LOGGING = {
             'format': '{levelname} {asctime} - {name:s} L{lineno:d}: {message}',
             'style': '{',
         },
+    },
+    'simple': {
+        'format': '{levelname} {message}',
+        'style': '{',
     },
 }
 

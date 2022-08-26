@@ -8,6 +8,11 @@ class Article(models.Model):
         EXTERNAL_REVIEW = 'EXTERNAL_REVIEW', 'External_review',
         PUBLISHED = 'PUBLISHED', 'Published'
 
+    class CopyrightType(models.TextChoices):
+        DRAFT = 'DRAFT', 'Draft',
+        CC_BY = 'CC_BY', 'CC-BY',
+        CC_BY_NC_ND = 'CC_BY_NC_ND', 'CC-BY-NC-ND'
+
     class RepositoryType(models.TextChoices):
         GITHUB = 'GITHUB', 'Github',
         GITLAB = 'GITLAB', 'Gitlab',
@@ -38,6 +43,11 @@ class Article(models.Model):
         max_length=15,
         choices=RepositoryType.choices,
         default=RepositoryType.GITHUB,
+    )
+    copyright_type = models.CharField(
+        max_length=15,
+        choices=CopyrightType.choices,
+        default=CopyrightType.DRAFT,
     )
     issue = models.ForeignKey('jdhapi.Issue', on_delete=models.CASCADE)
     data = models.JSONField(
