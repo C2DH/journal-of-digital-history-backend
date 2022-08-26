@@ -5,14 +5,20 @@ from jdhseo.utils import get_affiliation
 logger = logging.getLogger(__name__)
 
 
-def get_authors(article_authors):
+def get_authors(article_authors, affiliations):
     authors = []
     for author in article_authors:
-        contrib = {
-            "given_names": author.firstname,
-            "surname": author.lastname,
-            "orcid": author.orcid
-        }
+        for affiliation in affiliations:
+            for author_aff in affiliation["authors_link"]:
+                if author.lastname == author_aff:
+                    logger.debug(f'author found {author} in affiliation {affiliation["aff_id"]}  ')
+                    contrib = {
+                        "given_names": author.firstname,
+                        "surname": author.lastname,
+                        "orcid": author.orcid,
+                        "aff_id": affiliation["aff_id"],
+                        "aff_pub_id": affiliation["aff_pub_id"]
+                    }
         authors.append(contrib)
         logger.debug(f'authors {authors}')
     return authors
@@ -43,7 +49,11 @@ def get_affiliation_json_one(orcid_url, affiliation):
     return affiliation
 
 
-def get_affiliation_json(authors):
+def get_aff_pub_id(publisher_id, aff_id):
+    return "j_" + publisher_id.lower() + "_aff_00" + str(aff_id)
+
+
+def get_affiliation_json(authors, publisher_id):
     affiliations = []
     i = 1
     for author in authors:
@@ -51,6 +61,8 @@ def get_affiliation_json(authors):
         if len(affiliations) == 0:
             affiliation_one["aff_id"] = i
             affiliation_one["authors_link"] = [author.lastname]
+            # format j_publisherId_aff_00sup Ex: j_jdh-2021-1006_aff_001
+            affiliation_one["aff_pub_id"] = get_aff_pub_id(publisher_id, affiliation_one["aff_id"])
             affiliations.append(affiliation_one)
         else:
             # need to check if already exist
@@ -65,7 +77,7 @@ def get_affiliation_json(authors):
                 i += 1
                 affiliation_one["aff_id"] = i
                 affiliation_one["authors_link"] = [author.lastname]
-                logger.info(f'new affiliation: {affiliation_one["institution"]} with new author {author.lastname}')
+                affiliation_one["aff_pub_id"] = get_aff_pub_id(publisher_id, affiliation_one["aff_id"])
                 affiliations.append(affiliation_one)
     logger.info(f'affiliations: {affiliations}')
     return affiliations

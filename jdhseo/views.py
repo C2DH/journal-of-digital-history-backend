@@ -114,7 +114,6 @@ def ArticleXmlDG(request, pid):
         nbauthors = article.abstract.authors.count()
         logger.debug(f'Nb Authors(count={nbauthors}) for article {pid}')
         logger.debug(f'Belongs to issue {article.issue}')
-        get_affiliation_json(article.abstract.authors.all())
         keywords = []
         if 'keywords' in article.data:
             array_keys = article.data['keywords'][0].replace(';', ',').split(',')

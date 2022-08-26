@@ -29,13 +29,13 @@
 							<surname>{{ contrib.surname }}</surname>
 							<given-names>{{ contrib.given_names }}</given-names>
 						</name>
-						<xref ref-type="aff" rid="j_jdh-2021-1000_aff_001">
-							<sup>1</sup>
+						<xref ref-type="aff" rid="{{ contrib.aff_pub_id}}">
+							<sup>{{ contrib.aff_id }}</sup>
 						</xref>
 					</contrib>
 			  {% endfor %}
 			  {% for affiliation in articleXml.affiliations %}
-				<aff id="j_{{ articleXml.publisher_id }}_aff_00{{ affiliation.aff_id }}"><sup>{{ affiliation.aff_id }}</sup><institution>{{ affiliation.institution }}</institution> <city>{{ affiliation.city }}</city>,<country country="{{ affiliation.country }}">{{ affiliation.country_name }}</country></aff>
+				<aff id="{{ affiliation.aff_pub_id }}"><sup>{{ affiliation.aff_id }}</sup><institution>{{ affiliation.institution }}</institution> <city>{{ affiliation.city }}</city>,<country country="{{ affiliation.country }}">{{ affiliation.country_name }}</country></aff>
 			  {% endfor %}
 			</contrib-group>
 			<pub-date pub-type="ppub">
