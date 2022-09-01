@@ -16,6 +16,13 @@ class Issue(models.Model):
     creation_date = models.DateTimeField(default=timezone.now)
     publication_date = models.DateTimeField(blank=True, null=True)
     data = models.JSONField(verbose_name=u'data contents', help_text='JSON format', default=dict, blank=True)
+    # YEAR OF PUBLICATION
+    # 2021  - volume 1
+    # 2022 -  volume 2
+    volume = models.PositiveSmallIntegerField(null=True)
+    # ISSUE
+    # first issue - issue 1
+    issue = models.PositiveSmallIntegerField(null=True)
     status = models.CharField(
         max_length=15,
         choices=Status.choices,
@@ -23,4 +30,4 @@ class Issue(models.Model):
     )
 
     def __str__(self):
-        return self.name
+        return self.pid

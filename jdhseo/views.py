@@ -4,10 +4,17 @@ import requests
 import urllib.parse
 from django.http import Http404
 from django.shortcuts import render
-from jdhapi.models import Article, Issue
+from jdhapi.models import Article, Issue, Author
 from django.conf import settings
-from .utils import parseJupyterNotebook, generate_qrcode, getDoiUrlDGFormatted
+from .utils import parseJupyterNotebook, generate_qrcode
 from .utils import getPlainMetadataFromArticle
+from django.http import HttpResponse
+from jdhapi.utils.article_xml import ArticleXml
+from jdhapi.utils.doi import get_doi, get_publisher_id, get_doi_url_formatted
+from jdhapi.utils.copyright import CopyrightJDH
+from jdhapi.utils.affiliation import get_affiliation_json
+import marko
+from lxml import html
 
 
 logger = logging.getLogger(__name__)
@@ -25,7 +32,8 @@ def ArticleDetail(request, pid):
     # generate qrcode
     qrCodebase64 = generate_qrcode(pid)
     # get doi url format for DG
-    doi_url = getDoiUrlDGFormatted(article.doi)
+    doi_url = get_doi_url_formatted(article.doi)
+    logger.info("DOI formatted for DG" + str(doi_url))
     # Publish online
     if (article.publication_date):
         published_date = article.publication_date.date()
@@ -95,3 +103,34 @@ def IssueDetail(request, pid):
         ]
     }
     return render(request, 'jdhseo/issue_detail.html', context)
+
+
+def ArticleXmlDG(request, pid):
+    try:
+        article = Article.objects.get(
+            abstract__pid=pid,
+            status=Article.Status.PUBLISHED)
+
+        nbauthors = article.abstract.authors.count()
+        logger.debug(f'Nb Authors(count={nbauthors}) for article {pid}')
+        logger.debug(f'Belongs to issue {article.issue}')
+        keywords = []
+        if 'keywords' in article.data:
+            array_keys = article.data['keywords'][0].replace(';', ',').split(',')
+            for item in array_keys:
+                keyword = {
+                    "keyword": item,
+                }
+                keywords.append(keyword)
+        if 'title' in article.data:
+            articleTitle = html.fromstring(marko.convert(article.data['title'][0])).text_content()
+        context = {
+            'articleXml': ArticleXml(article.abstract.authors.all(), articleTitle, article.doi, keywords, article.publication_date, article.copyright_type, article.issue),
+            'journal_publisher_id': 'jdh',
+            'journal_code': 'jdh',
+            'doi_code': 'jdh',
+            'issn': '2747-5271',
+        }
+    except Article.DoesNotExist:
+        raise Http404("Article does not exist")
+    return render(request, 'jdhseo/dg_template.xml', context, content_type='text/xml')

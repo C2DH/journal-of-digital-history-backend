@@ -4,6 +4,7 @@ from django.utils.safestring import mark_safe
 from .models import Author, Abstract, Dataset, Article, Issue, Tag, Role
 from .filter.languagetagfilter import LanguageTagFilter
 from .tasks import save_article_fingerprint, save_article_specific_content, save_citation, save_libraries
+from import_export.admin import ExportActionMixin
 
 
 def save_notebook_fingerprint(modeladmin, request, queryset):
@@ -38,9 +39,17 @@ def save_article_package(modeladmin, request, queryset):
 save_article_package.short_description = "4: Generate tags TOOL/NARRATIVE"
 
 
-class AbstractAdmin(admin.ModelAdmin):
-    list_display = ['title', 'status']
+class AbstractAdmin(ExportActionMixin, admin.ModelAdmin):
+    list_display = ['title', 'contact_email', 'submitted_date', 'status']
     list_filter = ('status',)
+
+
+class AuthorAdmin(ExportActionMixin, admin.ModelAdmin):
+    list_display = ['lastname', 'firstname', 'affiliation', 'orcid', 'email']
+
+
+class IssueAdmin(admin.ModelAdmin):
+    list_display = ['name', 'volume', 'issue', 'status']
 
 
 class TagAdmin(admin.ModelAdmin):
@@ -51,7 +60,7 @@ class TagAdmin(admin.ModelAdmin):
 
 class ArticleAdmin(admin.ModelAdmin):
     list_display = ['abstract_pid', 'issue', 'abstract_title', 'status']
-    list_filter = ('issue', 'status')
+    list_filter = ('issue', 'status', 'copyright_type')
     actions = [save_notebook_fingerprint, save_notebook_specific_cell, save_article_citation, save_article_package]
 
     def abstract_pid(self, obj):
@@ -66,9 +75,9 @@ class ArticleAdmin(admin.ModelAdmin):
 # Register your models here.
 admin.site.register(Abstract, AbstractAdmin)
 admin.site.register(Dataset)
-admin.site.register(Author)
+admin.site.register(Author, AuthorAdmin)
 admin.site.register(Article, ArticleAdmin)
-admin.site.register(Issue)
+admin.site.register(Issue, IssueAdmin)
 admin.site.register(Tag, TagAdmin)
 admin.site.register(Role)
 admin.site.site_url = "/dashboard"
