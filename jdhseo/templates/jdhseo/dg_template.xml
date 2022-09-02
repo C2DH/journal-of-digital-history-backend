@@ -48,6 +48,11 @@
 				<month>{{ articleXml.cover_date|date:"m"}}</month>
 				<year>{{ articleXml.cover_date|date:"Y" }}</year>
 			</pub-date>
+			<pub-date pub-type="issue">
+				<day>{{ articleXml.issue_date|date:"d"}}</day>
+				<month>{{ articleXml.issue_date|date:"m"}}</month>
+				<year>{{ articleXml.issue_date|date:"Y" }}</year>
+			</pub-date>
 			<volume>{{ articleXml.volume }}</volume>
 			<issue>>{{ articleXml.issue }}</issue>
 			<elocation-id seq="{{ articleXml.seq }}">{{ articleXml.elocation_id }}</elocation-id>
