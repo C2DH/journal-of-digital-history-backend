@@ -1,6 +1,6 @@
 import re
 from jdhapi.utils.copyright import CopyrightJDH
-from jdhapi.utils.doi import get_doi, get_publisher_id, get_doi_url_formatted
+from jdhapi.utils.doi import get_doi, get_publisher_id, get_elocation_id
 from jdhapi.utils.affiliation import get_authors, get_affiliation_json
 from jdhapi.models import Issue
 from django.http import Http404
@@ -22,12 +22,10 @@ class ArticleXml:
         self.publisher_id = get_publisher_id(article_doi)
         self.keywords = keywords
         self.epub = publication_date
-        self.ppub = publication_date
-        self.cover_date = publication_date
         self.copyright_desc = CopyrightJDH.getCopyrightDesc(copyright)
         self.copyright_url = CopyrightJDH.getCopyrightUrl(copyright)
-        # To look at here http://www.wiki.degruyter.de/production/files/dg_xml_guidelines.xhtml#elocation-id
-        self.elocation_id = "TO DEFINE"
+        # To look at here http://www.wiki.degruyter.de/production/files/dg_variables_and_id.xhtml#elocation-id
+        self.elocation_id = get_elocation_id(self.publisher_id)
         # seq reflect the sequence of articles within an issue.
         self.seq = "TO DEFINE"
         try:
@@ -35,12 +33,18 @@ class ArticleXml:
                 pid=issue_pid)
             self.volume = issue.volume
             self.issue = issue.issue
+            self.cover_date = issue.cover_date
+            self.issue_date = issue.publication_date
         except Issue.DoesNotExist:
             raise Http404("Issue does not exist")
 
     @property
     def seq(self):
         return self._seq
+
+    @property
+    def issue_date(self):
+        return self._issue_date
 
     @property
     def elocation_id(self):
@@ -55,20 +59,16 @@ class ArticleXml:
         return self._volume
 
     @property
+    def cover_date(self):
+        return self._cover_date
+
+    @property
     def copyright_desc(self):
         return self._copyright_desc
 
     @property
     def copyright_url(self):
         return self._copyright_url
-
-    @property
-    def cover_date(self):
-        return self._cover_date
-
-    @property
-    def ppub(self):
-        return self._ppub
 
     @property
     def epub(self):
@@ -109,10 +109,6 @@ class ArticleXml:
     @cover_date.setter
     def cover_date(self, value):
         self._cover_date = value
-
-    @ppub.setter
-    def ppub(self, value):
-        self._ppub = value
 
     @epub.setter
     def epub(self, value):
@@ -157,3 +153,7 @@ class ArticleXml:
     @seq.setter
     def seq(self, value):
         self._seq = value
+
+    @issue_date.setter
+    def issue_date(self, value):
+        self._issue_date = value

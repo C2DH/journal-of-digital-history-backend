@@ -38,11 +38,6 @@
 				<aff id="{{ affiliation.aff_pub_id }}"><sup>{{ affiliation.aff_id }}</sup><institution>{{ affiliation.institution }}</institution> <city>{{ affiliation.city }}</city>,<country country="{{ affiliation.country }}">{{ affiliation.country_name }}</country></aff>
 			  {% endfor %}
 			</contrib-group>
-			<pub-date pub-type="ppub">
-				<day>{{ articleXml.ppub|date:"d"}}</day>
-				<month>{{ articleXml.ppub|date:"m"}}</month>
-				<year>{{ articleXml.ppub|date:"Y" }}</year>
-			</pub-date>
 			<pub-date pub-type="epub">
 				<day>{{ articleXml.epub|date:"d"}}</day>
 				<month>{{ articleXml.epub|date:"m"}}</month>
@@ -52,6 +47,11 @@
 				<day>{{ articleXml.cover_date|date:"d"}}</day>
 				<month>{{ articleXml.cover_date|date:"m"}}</month>
 				<year>{{ articleXml.cover_date|date:"Y" }}</year>
+			</pub-date>
+			<pub-date pub-type="issue">
+				<day>{{ articleXml.issue_date|date:"d"}}</day>
+				<month>{{ articleXml.issue_date|date:"m"}}</month>
+				<year>{{ articleXml.issue_date|date:"Y" }}</year>
 			</pub-date>
 			<volume>{{ articleXml.volume }}</volume>
 			<issue>>{{ articleXml.issue }}</issue>
