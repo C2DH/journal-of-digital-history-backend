@@ -49,7 +49,7 @@ class AuthorAdmin(ExportActionMixin, admin.ModelAdmin):
 
 
 class IssueAdmin(admin.ModelAdmin):
-    list_display = ['name', 'volume', 'issue', 'status']
+    list_display = ['name', 'volume', 'issue', 'status', 'publication_date']
 
 
 class TagAdmin(admin.ModelAdmin):
