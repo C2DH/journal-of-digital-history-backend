@@ -36,7 +36,8 @@ def get_affiliation_json_one(orcid_url, affiliation):
         ORCID_URL = "https://orcid.org/"
         orcid = orcid_url.partition(ORCID_URL)[2]
         city_country = get_affiliation(orcid)
-        if city_country.find('-') != -1:
+        if city_country:
+            # if city_country.find('-') != -1:
             city = city_country.partition('-')[0].strip()
             country = city_country.partition('-')[2].strip()
             country_name = pycountry.countries.get(alpha_2=country).name

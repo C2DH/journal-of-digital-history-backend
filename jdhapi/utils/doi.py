@@ -8,7 +8,6 @@ logger = logging.getLogger(__name__)
 # DOI: 10.1515/JDH.2021.1000.R1
 # Doi: 10.1515/jdh-2021-1000
 def get_doi(doi):
-
     doi_all = ""
     if doi:
         doi_group = re.split('/', doi)
@@ -53,3 +52,13 @@ def get_doi_url_formatted(doi):
         return doi_all
     else:
         return doi_all
+
+
+# Variable: {elocation-id}={article-system-creation-date-year} {article-counter-ID}
+# http://www.wiki.degruyter.de/production/files/dg_variables_and_id.xhtml#elocation-id
+def get_elocation_id(publisher_id):
+    # PublisherId: jdh-2021-1000
+    elocation_id = publisher_id.replace("-", "").replace("JDH", "")
+    return elocation_id
+
+
