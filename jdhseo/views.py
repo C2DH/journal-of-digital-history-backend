@@ -10,7 +10,7 @@ from .utils import parseJupyterNotebook, generate_qrcode
 from .utils import getPlainMetadataFromArticle
 from django.http import HttpResponse
 from jdhapi.utils.article_xml import ArticleXml
-from jdhapi.utils.doi import get_doi, get_publisher_id, get_doi_url_formatted
+from jdhapi.utils.doi import get_doi, get_publisher_id, get_doi_url_formatted_jdh
 from jdhapi.utils.copyright import CopyrightJDH
 from jdhapi.utils.affiliation import get_affiliation_json
 import marko
@@ -32,7 +32,7 @@ def ArticleDetail(request, pid):
     # generate qrcode
     qrCodebase64 = generate_qrcode(pid)
     # get doi url format for DG
-    doi_url = get_doi_url_formatted(article.doi)
+    doi_url = get_doi_url_formatted_jdh(article.doi)
     # Publish online
     if (article.publication_date):
         published_date = article.publication_date.date()
