@@ -33,7 +33,6 @@ def ArticleDetail(request, pid):
     qrCodebase64 = generate_qrcode(pid)
     # get doi url format for DG
     doi_url = get_doi_url_formatted(article.doi)
-    logger.info("DOI formatted for DG" + str(doi_url))
     # Publish online
     if (article.publication_date):
         published_date = article.publication_date.date()
