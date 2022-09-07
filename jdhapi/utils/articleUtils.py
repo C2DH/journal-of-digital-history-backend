@@ -183,13 +183,13 @@ def get_citation(raw_url, article):
         # "DOI": article.doi,
         "URL": url,
         "type": "article-journal",
-        "issue": article.issue.pid,
+        "issue": article.issue.issue,
         "title": titleEscape,
         "author": authors,
         "issued": {
-            "year": article.issue.creation_date.strftime("%Y")
+            "year": article.issue.publication_date.strftime("%Y")
         },
-        # "volume": "1",
+        "volume": article.issue.volume,
         "container-title": "Journal of Digital History",
         "container-title-short": "JDH"
     })
