@@ -191,7 +191,7 @@
       </p>
       <p class="desktop" style="font-size:8pt; line-height:12pt">
         {% if published_date %}
-        Published online {{published_date}}
+        Published online the {{ published_date|date:"j"}}{{ published_date|date:"S"}} {{ published_date|date:"F"}} {{ published_date|date:"Y"}}
         {% endif%}
       </p>
       <p class="desktop" style="font-size:8pt; line-height:12pt">
