@@ -205,12 +205,16 @@ LOGGING = {
             'level': get_env_variable('DJANGO_LOG_LEVEL', 'DEBUG'),
             'propagate': True,
         },
+        'dashboard': {
+            'handlers': ['console'],
+            'level': get_env_variable('DJANGO_LOG_LEVEL', 'DEBUG'),
+            'propagate': True,
+        },
         'jdhseo.views': {
             'handlers': ['console'],
             'level': get_env_variable('DJANGO_LOG_LEVEL', 'DEBUG'),
             'propagate': False,
         },
-
     },
     'formatters': {
         'verbose': {

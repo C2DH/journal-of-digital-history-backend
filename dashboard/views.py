@@ -12,10 +12,14 @@ from django.http import HttpResponseRedirect
 from django.urls import reverse
 from django.contrib.admin.views.decorators import staff_member_required
 import imaplib
+import logging
 import time
 import requests
 import json
 import re
+
+
+logger = logging.getLogger(__name__)
 
 
 def getDefaultSubject(abstractsubmission):
@@ -48,8 +52,16 @@ def home(request):
 
 @staff_member_required
 def abstractSubmissions(request):
-    abstractsubmissions = Abstract.objects.all()
+    abstractsubmissions = []
+    # Exclude if ABANDONNED- if DECLINED
+    abstracts = Abstract.objects.exclude(status=Abstract.Status.ABANDONED).exclude(status=Abstract.Status.DECLINED)
+    for abstract in abstracts:
+        article = Article.objects.filter(abstract__pid=abstract.pid, status=Article.Status.PUBLISHED).first()
+        if not article:
+            # abstract without article created
+            abstractsubmissions.append(abstract)
     return render(request, 'dashboard/abstract_submissions.html', {'abstractsubmissions': abstractsubmissions})
+
 
 
 @staff_member_required
