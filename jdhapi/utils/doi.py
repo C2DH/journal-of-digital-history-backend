@@ -62,3 +62,13 @@ def get_elocation_id(publisher_id):
     return elocation_id
 
 
+# DOI 10.1515/JDH.2021.1006.R1
+# URL https://doi.org/10.1515/JDH-2021-1006?locatt=label:JDHFULL
+def get_doi_url_formatted_jdh(doi):
+    doi_all = ""
+    if doi:
+        JDH_PARAM = "?locatt=label:JDHFULL"
+        doi_all = get_doi_url_formatted(doi) + JDH_PARAM
+        return doi_all
+    else:
+        return doi_all

@@ -11,7 +11,7 @@ def get_authors(article_authors, affiliations):
         for affiliation in affiliations:
             for author_aff in affiliation["authors_link"]:
                 if author.lastname == author_aff:
-                    logger.debug(f'author found {author} in affiliation {affiliation["aff_id"]}  ')
+                    # logger.debug(f'author found {author} in affiliation {affiliation["aff_id"]}  ')
                     contrib = {
                         "given_names": author.firstname,
                         "surname": author.lastname,
@@ -20,7 +20,7 @@ def get_authors(article_authors, affiliations):
                         "aff_pub_id": affiliation["aff_pub_id"]
                     }
         authors.append(contrib)
-        logger.debug(f'authors {authors}')
+        # logger.debug(f'authors {authors}')
     return authors
 
 
@@ -84,5 +84,5 @@ def get_affiliation_json(authors, publisher_id):
                 affiliation_one["authors_link"] = [author.lastname]
                 affiliation_one["aff_pub_id"] = get_aff_pub_id(publisher_id, affiliation_one["aff_id"])
                 affiliations.append(affiliation_one)
-    logger.info(f'affiliations: {affiliations}')
+    # logger.info(f'affiliations: {affiliations}')
     return affiliations

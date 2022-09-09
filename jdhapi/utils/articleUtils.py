@@ -8,6 +8,7 @@ from django.conf import settings  # import the settings file
 from django.utils.html import strip_tags
 import marko
 from django.shortcuts import render, get_object_or_404
+from jdhapi.utils.doi import get_doi_url_formatted_jdh
 from jdhapi.models import Author, Tag
 from requests.exceptions import HTTPError
 import os
@@ -175,18 +176,20 @@ def get_citation(raw_url, article):
             "family": contributor.lastname
         }
         authors.append(contrib)
+    url = get_doi_url_formatted_jdh(article.doi)
+    logger.info(f'url CITATION:{url}')
     return ({
         # DO NOT DISPLAYED THE DOI FOR THE MOMENT
         # "DOI": article.doi,
-        "URL": "https://journalofdigitalhistory.org/en/article/" + article.abstract.pid,
+        "URL": url,
         "type": "article-journal",
-        "issue": article.issue.pid,
+        "issue": article.issue.issue,
         "title": titleEscape,
         "author": authors,
         "issued": {
-            "year": article.issue.creation_date.strftime("%Y")
+            "year": article.issue.publication_date.strftime("%Y")
         },
-        # "volume": "1",
+        "volume": article.issue.volume,
         "container-title": "Journal of Digital History",
         "container-title-short": "JDH"
     })
