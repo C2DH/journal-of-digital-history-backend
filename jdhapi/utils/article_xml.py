@@ -2,6 +2,7 @@ import re
 from jdhapi.utils.copyright import CopyrightJDH
 from jdhapi.utils.doi import get_doi, get_publisher_id, get_elocation_id
 from jdhapi.utils.affiliation import get_authors, get_affiliation_json
+from jdhapi.utils.publication_date import get_order_publication
 from jdhapi.models import Issue
 from django.http import Http404
 
@@ -12,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 class ArticleXml:
 
-    def __init__(self, article_authors, title, article_doi, keywords, publication_date, copyright, issue_pid):
+    def __init__(self, article_authors, title, article_doi, keywords, publication_date, copyright, issue_pid, pid):
         self.publisher_id = get_publisher_id(article_doi)
         self.affiliations = get_affiliation_json(article_authors, self.publisher_id)
         self.authors = get_authors(article_authors, self.affiliations)
@@ -27,7 +28,7 @@ class ArticleXml:
         # To look at here http://www.wiki.degruyter.de/production/files/dg_variables_and_id.xhtml#elocation-id
         self.elocation_id = get_elocation_id(self.publisher_id)
         # seq reflect the sequence of articles within an issue.
-        self.seq = "TO DEFINE"
+        self.seq = get_order_publication(pid, issue_pid)
         try:
             issue = Issue.objects.get(
                 pid=issue_pid)
