@@ -21,7 +21,7 @@ def get_order_publication(pid, issue):
     else:
         seq = "UNDEFINED"
         articles = Article.objects.filter(status=Article.Status.PUBLISHED, issue=issue).order_by('publication_date').values("abstract__pid", 'abstract__title')
-        for index, article in enumerate(articles, 1):
+        for index, article in enumerate(articles, 2):
             # logger.info(f"Articles issue {issue} sorted {article['abstract__title']} - INDEX {index}")
             if pid == article['abstract__pid']:
                 seq = index
