@@ -20,9 +20,9 @@ def get_order_publication(pid, issue):
         return "1"
     else:
         seq = "UNDEFINED"
-        articles = Article.objects.filter(status=Article.Status.PUBLISHED, issue=issue).order_by('publication_date').values("abstract__pid", 'abstract__title')
+        articles = Article.objects.filter(status=Article.Status.PUBLISHED, issue=issue).exclude(tags__name="editorial").order_by('publication_date').values("abstract__pid", 'abstract__title')
         for index, article in enumerate(articles, 2):
-            # logger.info(f"Articles issue {issue} sorted {article['abstract__title']} - INDEX {index}")
+            logger.info(f"Articles issue {issue} sorted {article['abstract__title']} - INDEX {index}")
             if pid == article['abstract__pid']:
                 seq = index
         return seq
