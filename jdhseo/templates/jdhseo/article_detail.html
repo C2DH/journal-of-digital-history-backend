@@ -150,6 +150,45 @@
       margin-top: 0;
       margin-bottom: 0;
     }
+
+   .flex-container {
+    display: flex;
+   }
+  .flex-child {
+      flex: 1;
+      border: 2px solid #5e2bff;
+      text-align:center;
+
+  }
+
+  .flex-child:first-child {
+      margin-right: 20px;
+  }
+  .read a{
+    border-radius: 8px;
+    outline: none;
+    text-decoration: none;
+    display: inline-block;
+    margin-right: 0.625%;
+    text-align: center;
+    color: white;
+  }
+  .read a:link, a:visited, a:focus {
+    background: #5e2bff;
+  }
+  .email a{
+    border-radius: 8px;
+    outline: none;
+    text-decoration: none;
+    display: inline-block;
+    margin-right: 0.625%;
+    text-align: center;
+    color: black;
+    border: 2px solid #5e2bff;
+
+  }
+  .email a:link, a:visited, a:focus {
+  }
   }
 </style>
 {% endblock %}
@@ -180,11 +219,13 @@
         </div>
       {% endfor %}
     </div>
+    {% if collaborators %}
     <div class="collaborators mb20">
       {% for t in nb.collaborators %}
         {{ t }}
       {% endfor %}
     </div>
+    {% endif%}
     <div>
       <p class="desktop" style="font-size:8pt; line-height:12pt">
         <a href="{{ doi_url }}">{{ doi_url }}</a>
@@ -194,20 +235,30 @@
         Published online the {{ published_date|date:"j"}}{{ published_date|date:"S"}} {{ published_date|date:"F"}} {{ published_date|date:"Y"}}
         {% endif%}
       </p>
-      <p class="desktop" style="font-size:8pt; line-height:12pt">
-        For optimized experience read this article using <a href="{{ article_absolute_url }}">this link</a>.
-        <br>
-        You can also
-        <a href="mailto:?subject=Read%20on%20JDH%20%22{{nb.title_plain}}%22&body=Hello!%0D%0AHere%20is%20your%20reminder%20as%20requested%0D%0A%0D%0ALink%3A%20{{ article_absolute_url }}">
-          send yourself a link to this article
-        </a> for a later, more comfortable read.
-      </p>
     </div>
+    <p>
+      <div class="flex-container">
+        <div class="flex-child">
+          <br>
+          Experience the full interactive<br>multi-layered reading experience
+          <div class="read">
+            <a href="{{ article_absolute_url }}">&nbsp;-> Read here&nbsp;</a>
+          </div>
+          <br>
+        </div>
+        <div class="flex-child">
+          <br>
+          Send yourself a reminder<br>to read this article later
+          <div class="email">
+            <a  href="mailto:?subject=Read%20on%20JDH%20%22{{nb.title_plain}}%22&body=Hello!%0D%0AHere%20is%20your%20reminder%20as%20requested%0D%0A%0D%0ALink%3A%20{{ article_absolute_url }}">&nbsp;-> Send E-Mail&nbsp;</a>
+            <br>
+          </div>
+        </div>
+      </div>
+    </p>
     <div class="keywords mb5 mt5">
-      {% for t in nb.keywords %}
-        {{ t }}
-      {% endfor %}
-    </div>
+          {{ keywords}}
+      </div>
     <div class="abstract dual-column mb5">
       {% for t in nb.abstract %}
         {{ t }}
