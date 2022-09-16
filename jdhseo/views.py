@@ -42,6 +42,9 @@ def ArticleDetail(request, pid):
     # contact_orcid
     ORCID_URL = "https://orcid.org/"
     contact_orcid = article.abstract.contact_orcid.partition(ORCID_URL)[2]
+    if 'keywords' in article.data:
+        array_keys = "<b>Keywords: </b>" + article.data['keywords'][0].replace(';', ',')
+    logger.info(f"keywords {array_keys}")
     # fill the context for the template file.
     context = {
         'article': article,
@@ -51,7 +54,8 @@ def ArticleDetail(request, pid):
         'qr_code': qrCodebase64,
         'media_url': settings.MEDIA_URL,
         'doi_url': doi_url,
-        'published_date': published_date
+        'published_date': published_date,
+        'keywords': array_keys
     }
     # check if it is a github url
 
