@@ -9,8 +9,9 @@ logger = logging.getLogger(__name__)
 class Article(models.Model):
     class Status(models.TextChoices):
         DRAFT = 'DRAFT', 'Draft',
-        INTERNAL_REVIEW = 'INTERNAL_REVIEW', 'Internal_review',
-        EXTERNAL_REVIEW = 'EXTERNAL_REVIEW', 'External_review',
+        TECHNICAL_REVIEW = 'TECHNICAL_REVIEW', 'Technical review',
+        PEER_REVIEW = 'PEER_REVIEW', 'Peer review',
+        DESIGN_REVIEW = 'DESIGN_REVIEW', 'Design review',
         PUBLISHED = 'PUBLISHED', 'Published'
 
     class CopyrightType(models.TextChoices):
@@ -40,7 +41,7 @@ class Article(models.Model):
     doi = models.CharField(max_length=254, null=True, blank=True)
     publication_date = models.DateTimeField(blank=True, null=True)
     status = models.CharField(
-        max_length=15,
+        max_length=25,
         choices=Status.choices,
         default=Status.DRAFT,
     )
