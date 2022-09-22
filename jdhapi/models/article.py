@@ -28,34 +28,33 @@ class Article(models.Model):
         on_delete=models.CASCADE,
         primary_key=True,
     )
-
-    repository_url = models.URLField(max_length=254, null=True, blank=True)
-    # Url of the article in the front
-    notebook_url = models.CharField(max_length=254, null=True, blank=True)
-    # Json source from raw.github
-    notebook_ipython_url = models.URLField(max_length=254, null=True, blank=True)
-    notebook_commit_hash = models.CharField(
-        max_length=22, default='', help_text='store the git hash', blank=True)
-    notebook_path = models.CharField(max_length=254, null=True, blank=True)
-    binder_url = models.URLField(max_length=254, null=True, blank=True)
-    doi = models.CharField(max_length=254, null=True, blank=True)
-    publication_date = models.DateTimeField(blank=True, null=True)
     status = models.CharField(
         max_length=25,
         choices=Status.choices,
         default=Status.DRAFT,
     )
+    issue = models.ForeignKey('jdhapi.Issue', on_delete=models.CASCADE)
+    repository_url = models.URLField(max_length=254, null=True, blank=True, help_text="GitHub's repository URL ")
     repository_type = models.CharField(
         max_length=15,
         choices=RepositoryType.choices,
         default=RepositoryType.GITHUB,
     )
+    # Url of the article in the front
+    notebook_url = models.CharField(max_length=254, null=True, blank=True, help_text="Article's preview URL - All the caracters after the url : https://journalofdigitalhistory.org/en/notebook-viewer/")
+    # Json source from raw.github
+    notebook_ipython_url = models.URLField(max_length=254, null=True, blank=True, help_text="Raw GitHub ipynb URL")
+    notebook_commit_hash = models.CharField(
+        max_length=22, default='', help_text='store the git hash', blank=True)
+    notebook_path = models.CharField(max_length=254, null=True, blank=True, help_text="Notebook file name with .ipynb")
+    binder_url = models.URLField(max_length=254, null=True, blank=True)
+    doi = models.CharField(max_length=254, null=True, blank=True, help_text="Doi received from ScholarOne -  10.1515/JDH.YYYY.XXXX.RX")
+    publication_date = models.DateTimeField(blank=True, null=True)
     copyright_type = models.CharField(
         max_length=15,
         choices=CopyrightType.choices,
         default=CopyrightType.DRAFT,
     )
-    issue = models.ForeignKey('jdhapi.Issue', on_delete=models.CASCADE)
     data = models.JSONField(
         verbose_name=u'data contents', help_text='JSON format',
         default=dict, blank=True)

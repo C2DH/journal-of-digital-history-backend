@@ -68,9 +68,37 @@ class TagAdmin(admin.ModelAdmin):
 @admin.register(Article)
 class ArticleAdmin(admin.ModelAdmin):
     form = articleForm.ArticleForm
+    exclude = ['notebook_commit_hash']
     list_display = ['abstract_pid', 'issue', 'abstract_title', 'status']
     list_filter = ('issue', 'status', 'copyright_type')
     actions = [save_notebook_fingerprint, save_notebook_specific_cell, save_article_citation, save_article_package]
+    fieldsets = (
+        (
+            "Information related to the article", {
+                # Section Description
+                # "description" : "Enter the vehicle information",
+                # Group Make and Model
+                "fields": ("abstract", "status", "doi", "publication_date", "issue", "copyright_type"),
+            }
+        ),
+        (
+            "Information related to the GitHub repository", {
+                # Section Description
+                # "description" : "Enter the vehicle information",
+                # Group Make and Model
+                "fields": (("repository_type", "repository_url"), "notebook_url", "notebook_path", "binder_url", "notebook_ipython_url")
+            }
+        ),
+        (
+            "Information related to the publication: citation - preaload - fingerprint - tags", {
+                # Section Description
+                # "description" : "Enter any additional information",
+                # Enable a Collapsible Section
+                "classes": ("collapse",),
+                "fields": ("citation", "fingerprint", "data", 'tags')
+            }
+        )
+    )
 
     def abstract_pid(self, obj):
         return obj.abstract.pid
