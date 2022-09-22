@@ -14,7 +14,8 @@ class Abstract(models.Model):
         SUBMITTED = 'SUBMITTED', 'Submitted',
         ACCEPTED = 'ACCEPTED', 'Accepted',
         DECLINED = 'DECLINED', 'Declined',
-        ABANDONED = 'ABANDONED', 'Abandoned'
+        ABANDONED = 'ABANDONED', 'Abandoned',
+        SUSPENDED = 'SUSPENDED', 'Suspended'
 
     id = models.AutoField(primary_key=True, db_column="id")
     pid = models.CharField(max_length=255, default=create_short_url, db_index=True, unique=True)
@@ -53,6 +54,11 @@ class Abstract(models.Model):
     def abandoned(self):
         self.validation_date = timezone.now()
         self.status = Abstract.Status.ABANDONED
+        self.save()
+
+    def suspended(self):
+        self.validation_date = timezone.now()
+        self.status = Abstract.Status.SUSPENDED
         self.save()
 
     def __str__(self):

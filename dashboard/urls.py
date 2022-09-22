@@ -9,5 +9,6 @@ urlpatterns = [
     path('dashboard/accepted/<int:pk>/', views.accepted, name='accepted'),
     path('dashboard/declined/<int:pk>/', views.declined, name='declined'),
     path('dashboard/abandoned/<int:pk>/', views.abandoned, name='abandoned'),
+    path('dashboard/suspended/<int:pk>/', views.suspended, name='suspended'),
     path('dashboard/fingerprint/<int:pk>/', views.fingerprint, name='fingerprint')
 ]

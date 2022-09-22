@@ -50,16 +50,21 @@ def home(request):
     return render(request, 'dashboard/home.html')
 
 
-@staff_member_required
-def abstractSubmissions(request):
+def validAbstracts():
     abstractsubmissions = []
     # Exclude if ABANDONNED- if DECLINED
-    abstracts = Abstract.objects.exclude(status=Abstract.Status.ABANDONED).exclude(status=Abstract.Status.DECLINED)
+    abstracts = Abstract.objects.exclude(status=Abstract.Status.ABANDONED).exclude(status=Abstract.Status.DECLINED).exclude(status=Abstract.Status.SUSPENDED)
     for abstract in abstracts:
         article = Article.objects.filter(abstract__pid=abstract.pid, status=Article.Status.PUBLISHED).first()
         if not article:
             # abstract without article created
             abstractsubmissions.append(abstract)
+    return abstractsubmissions
+
+
+@staff_member_required
+def abstractSubmissions(request):
+    abstractsubmissions = validAbstracts()
     return render(request, 'dashboard/abstract_submissions.html', {'abstractsubmissions': abstractsubmissions})
 
 
@@ -127,7 +132,16 @@ def abandoned(request, pk):
     abstractsubmission = get_object_or_404(Abstract, pk=pk)
     abstractsubmission.abandoned()
     # redirect to a new URL:
-    abstractsubmissions = Abstract.objects.all()
+    abstractsubmissions = validAbstracts()
+    return render(request, 'dashboard/abstract_submissions.html', {'abstractsubmissions': abstractsubmissions})
+
+
+@staff_member_required
+def suspended(request, pk):
+    abstractsubmission = get_object_or_404(Abstract, pk=pk)
+    abstractsubmission.suspended()
+    # redirect to a new URL:
+    abstractsubmissions = validAbstracts()
     return render(request, 'dashboard/abstract_submissions.html', {'abstractsubmissions': abstractsubmissions})
 
 

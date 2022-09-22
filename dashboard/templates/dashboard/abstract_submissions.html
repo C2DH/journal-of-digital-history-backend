@@ -48,6 +48,8 @@
                         <th scope="row" class="col-accepted"></th>
                       {% elif abstractsubmission.status == "ABANDONED" %}
                         <th scope="row" class="col-abandoned"></th>
+                      {% elif abstractsubmission.status == "SUSPENDED" %}
+                        <th scope="row" class="col-abandoned"></th>
                       {% endif %}
                       {% if forloop.first %}
                         <td>{{abstractsubmission.submitted_date}}</td>
@@ -114,7 +116,7 @@
                               <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
                                 <a class="dropdown-item" href="{% url 'abstract' pk=abstractsubmission.id %}">View</a>
                                 <a class="dropdown-item" href="{% url 'abandoned' pk=abstractsubmission.id %}">Abandoned</a>
-                                <a class="dropdown-item" href="{% url 'fingerprint' pk=abstractsubmission.id %}">Generate fingerprint</a>
+                                <a class="dropdown-item" href="{% url 'suspended' pk=abstractsubmission.id %}">Suspended</a>
                               </div>
                             </div>
                           </td>
