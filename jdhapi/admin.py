@@ -1,10 +1,13 @@
 import os
 from django.contrib import admin
 from django.utils.safestring import mark_safe
+
+from .forms import articleForm
 from .models import Author, Abstract, Dataset, Article, Issue, Tag, Role
 from .filter.languagetagfilter import LanguageTagFilter
 from .tasks import save_article_fingerprint, save_article_specific_content, save_citation, save_libraries
 from import_export.admin import ExportActionMixin
+from .forms import articleForm
 
 
 def save_notebook_fingerprint(modeladmin, request, queryset):
@@ -39,29 +42,63 @@ def save_article_package(modeladmin, request, queryset):
 save_article_package.short_description = "4: Generate tags TOOL/NARRATIVE"
 
 
+@admin.register(Abstract)
 class AbstractAdmin(ExportActionMixin, admin.ModelAdmin):
     list_display = ['title', 'contact_email', 'submitted_date', 'status']
     list_filter = ('status',)
 
 
+@admin.register(Author)
 class AuthorAdmin(ExportActionMixin, admin.ModelAdmin):
     list_display = ['lastname', 'firstname', 'affiliation', 'orcid', 'email']
 
 
+@admin.register(Issue)
 class IssueAdmin(admin.ModelAdmin):
     list_display = ['name', 'volume', 'issue', 'status', 'publication_date']
 
 
+@admin.register(Tag)
 class TagAdmin(admin.ModelAdmin):
     list_display = ['name', 'category']
     list_filter = ('category', LanguageTagFilter,)
     # list_filter = ('category',)
 
 
+@admin.register(Article)
 class ArticleAdmin(admin.ModelAdmin):
+    form = articleForm.ArticleForm
+    exclude = ['notebook_commit_hash']
     list_display = ['abstract_pid', 'issue', 'abstract_title', 'status']
     list_filter = ('issue', 'status', 'copyright_type')
     actions = [save_notebook_fingerprint, save_notebook_specific_cell, save_article_citation, save_article_package]
+    fieldsets = (
+        (
+            "Information related to the article", {
+                # Section Description
+                # "description" : "Enter the vehicle information",
+                # Group Make and Model
+                "fields": ("abstract", "status", "doi", "publication_date", "issue", "copyright_type"),
+            }
+        ),
+        (
+            "Information related to the GitHub repository", {
+                # Section Description
+                # "description" : "Enter the vehicle information",
+                # Group Make and Model
+                "fields": (("repository_type", "repository_url"), "notebook_url", "notebook_path", "binder_url", "notebook_ipython_url")
+            }
+        ),
+        (
+            "Information related to the publication: citation - preaload - fingerprint - tags", {
+                # Section Description
+                # "description" : "Enter any additional information",
+                # Enable a Collapsible Section
+                "classes": ("collapse",),
+                "fields": ("citation", "fingerprint", "data", 'tags')
+            }
+        )
+    )
 
     def abstract_pid(self, obj):
         return obj.abstract.pid
@@ -73,12 +110,7 @@ class ArticleAdmin(admin.ModelAdmin):
 
 
 # Register your models here.
-admin.site.register(Abstract, AbstractAdmin)
 admin.site.register(Dataset)
-admin.site.register(Author, AuthorAdmin)
-admin.site.register(Article, ArticleAdmin)
-admin.site.register(Issue, IssueAdmin)
-admin.site.register(Tag, TagAdmin)
 admin.site.register(Role)
 admin.site.site_url = "/dashboard"
 admin.site.site_header = mark_safe(
