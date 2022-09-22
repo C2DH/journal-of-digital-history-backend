@@ -1,4 +1,3 @@
-from re import I
 from django import forms
 from jdhapi.models import Article
 from jdhapi.utils.gitup_repository import is_socialmediacover_exist
@@ -25,4 +24,5 @@ class ArticleForm(forms.ModelForm):
                 raise forms.ValidationError({'notebook_url': "Notebook_url is mandatory if published"})
             if not notebook_path:
                 raise forms.ValidationError({'notebook_path': "Notebook_url is mandatory if published"})
+
 
