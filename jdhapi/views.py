@@ -101,6 +101,7 @@ def GenerateNotebook(request, pid):
 @authentication_classes([])
 @permission_classes([AllowAny])
 def SubmitAbstract(request):
+    logger.info(f'LOG REQUEST"{str(request.build_absolute_uri)}')
     try:
         document_json_schema.validate(instance=request.data)
     except ValidationError as err:
@@ -116,6 +117,7 @@ def SubmitAbstract(request):
             'message': err.message
         }, status=status.HTTP_400_BAD_REQUEST)
     logger.info('submit abstract validated.')
+    logger.info(f'call of paper {request.data.get("cfp")}')
     contact = request.data.get("contact")
     abstract = Abstract(
         title=request.data.get("title"),
@@ -193,7 +195,7 @@ class AbstractList(generics.ListCreateAPIView):
     permission_classes = [permissions.IsAdminUser]
     serializer_class = AbstractSlimSerializer
     filter_backends = [DjangoFilterBackend]
-    filterset_fields = ["id", "pid", "title", "abstract", "submitted_date", "validation_date", "contact_orcid", "contact_affiliation", "contact_lastname", "contact_firstname", "status", "consented", "authors"]
+    filterset_fields = ["id", "pid", "title", "abstract", "callpaper", "submitted_date", "validation_date", "contact_orcid", "contact_affiliation", "contact_lastname", "contact_firstname", "status", "consented", "authors"]
 
     @csrf_exempt
     def create(self, request, *args, **kwargs):

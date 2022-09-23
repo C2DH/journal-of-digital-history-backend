@@ -17,7 +17,7 @@ class AbstractSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Abstract
-        fields = ("id", "pid", "title", "abstract", "submitted_date", "validation_date", "contact_orcid", "contact_affiliation", "contact_email", "contact_lastname", "contact_firstname", "status", "consented", "authors", "datasets")
+        fields = ("id", "pid", "title", "abstract", "callpaper", "submitted_date", "validation_date", "contact_orcid", "contact_affiliation", "contact_email", "contact_lastname", "contact_firstname", "status", "consented", "authors", "datasets")
         extra_kwargs = {'authors': {'required': False}, 'datasets': {'required': False}}
 
     def create(self, validated_data):
@@ -29,5 +29,5 @@ class AbstractSlimSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Abstract
-        fields = ("id", "pid", "title", "abstract", "submitted_date", "validation_date", "contact_orcid", "contact_affiliation", "contact_lastname", "contact_firstname", "status", "consented", "authors", "datasets")
+        fields = ("id", "pid", "title", "abstract", "callpaper", "submitted_date", "validation_date", "contact_orcid", "contact_affiliation", "contact_lastname", "contact_firstname", "status", "consented", "authors", "datasets")
         extra_kwargs = {'authors': {'required': False}, 'datasets': {'required': False}}
