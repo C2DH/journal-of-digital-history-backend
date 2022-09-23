@@ -101,7 +101,7 @@ def GenerateNotebook(request, pid):
 @authentication_classes([])
 @permission_classes([AllowAny])
 def SubmitAbstract(request):
-    logger.info(f'LOG REQUEST"{str(request.body)}')
+    logger.info(f'call of paper {request.data.get("callForPapers")}')
     try:
         document_json_schema.validate(instance=request.data)
     except ValidationError as err:
@@ -117,7 +117,6 @@ def SubmitAbstract(request):
             'message': err.message
         }, status=status.HTTP_400_BAD_REQUEST)
     logger.info('submit abstract validated.')
-    logger.info(f'call of paper {request.data.get("cfp")}')
     contact = request.data.get("contact")
     abstract = Abstract(
         title=request.data.get("title"),

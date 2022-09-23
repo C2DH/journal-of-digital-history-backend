@@ -144,6 +144,14 @@
       "$id": "#/definitions/acceptConditions",
       "type": "boolean",
       "enum": [ true ]
+    },
+    "callForPapers": {
+      "$id": "#/definitions/callForPapers",
+      "type": "string",
+      "default": "",
+      "pattern": "^[0-9a-zA-Z-]*$",
+      "minLength": 0,
+      "maxLength": 100
     }
   },
   "examples": [{
@@ -337,6 +345,9 @@
     },
     "acceptConditions": {
       "$ref": "#/definitions/acceptConditions"
+    },
+    "callForPapers": {
+      "$ref": "#/definitions/callForPapers"
     },
     "token": {
       "$ref": "#/definitions/token"
