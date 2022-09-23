@@ -101,7 +101,7 @@ def GenerateNotebook(request, pid):
 @authentication_classes([])
 @permission_classes([AllowAny])
 def SubmitAbstract(request):
-    logger.info(f'LOG REQUEST"{str(request.build_absolute_uri)}')
+    logger.info(f'LOG REQUEST"{str(request.body)}')
     try:
         document_json_schema.validate(instance=request.data)
     except ValidationError as err:
