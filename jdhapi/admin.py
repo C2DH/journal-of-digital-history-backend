@@ -3,7 +3,7 @@ from django.contrib import admin
 from django.utils.safestring import mark_safe
 
 from .forms import articleForm
-from .models import Author, Abstract, Dataset, Article, Issue, Tag, Role
+from .models import Author, Abstract, Dataset, Article, Issue, Tag, Role, CallOfPaper
 from .filter.languagetagfilter import LanguageTagFilter
 from .tasks import save_article_fingerprint, save_article_specific_content, save_citation, save_libraries
 from import_export.admin import ExportActionMixin
@@ -44,8 +44,13 @@ save_article_package.short_description = "4: Generate tags TOOL/NARRATIVE"
 
 @admin.register(Abstract)
 class AbstractAdmin(ExportActionMixin, admin.ModelAdmin):
-    list_display = ['title', 'contact_email', 'submitted_date', 'status']
-    list_filter = ('status',)
+    list_display = ['title', 'callpaper', 'contact_email', 'submitted_date', 'status']
+    list_filter = ('status', 'callpaper')
+
+
+@admin.register(CallOfPaper)
+class CallOfPaperAdmin(ExportActionMixin, admin.ModelAdmin):
+    list_display = ['title', 'deadline_abstract', 'deadline_article']
 
 
 @admin.register(Author)

@@ -32,6 +32,7 @@
                       <th scope="col">ORCID</th>
                       <th scope="col">Title</th> 
                       <th scope="col">Tools, Code & Data</th>
+                      <th scope="col">Call of Paper</th>
                       <th scope="col">Status</th>
                       <th scope="col" class="col-2"></th>
                     </tr>
@@ -74,7 +75,9 @@
                         <a href="{{ ressource.url}}" target="_blank"  title="{{ressource.url}}"><img src="{% static 'media/link.png' %}"/></a>
                         {% endfor %}
                       </td>
+                      <td>{{abstractsubmission.callpaper}}</td>
                       {% else %}
+                      <td></td>
                       <td></td>
                       <td></td>
                       {% endif%}
