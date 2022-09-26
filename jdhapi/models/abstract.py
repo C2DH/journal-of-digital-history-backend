@@ -1,6 +1,7 @@
 from django.db import models
 from django.conf import settings
 from django.utils import timezone
+from .callofpaper import CallOfPaper
 import shortuuid
 
 
@@ -20,19 +21,21 @@ class Abstract(models.Model):
     id = models.AutoField(primary_key=True, db_column="id")
     pid = models.CharField(max_length=255, default=create_short_url, db_index=True, unique=True)
     title = models.CharField(max_length=250)
-    abstract = models.TextField()
-    submitted_date = models.DateTimeField(default=timezone.now)
-    validation_date = models.DateTimeField(blank=True, null=True)
-    contact_orcid = models.CharField(max_length=50)
-    contact_affiliation = models.CharField(max_length=250)
-    contact_email = models.EmailField(max_length=254)
-    contact_lastname = models.CharField(max_length=50)
-    contact_firstname = models.CharField(max_length=50)
+    callpaper = models.ForeignKey(CallOfPaper, blank=True, null=True, on_delete=models.CASCADE)
     status = models.CharField(
         max_length=15,
         choices=Status.choices,
         default=Status.SUBMITTED,
     )
+    submitted_date = models.DateTimeField(default=timezone.now)
+    validation_date = models.DateTimeField(blank=True, null=True)
+    abstract = models.TextField()
+    contact_orcid = models.CharField(max_length=50)
+    contact_affiliation = models.CharField(max_length=250)
+    contact_email = models.EmailField(max_length=254)
+    contact_lastname = models.CharField(max_length=50)
+    contact_firstname = models.CharField(max_length=50)
+
     authors = models.ManyToManyField('jdhapi.Author', related_name='abstracts', blank=True)
     datasets = models.ManyToManyField('jdhapi.Dataset', related_name='abstracts', blank=True)
     consented = models.BooleanField(default=False)

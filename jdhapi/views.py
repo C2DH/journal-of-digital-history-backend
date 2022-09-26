@@ -10,6 +10,7 @@ from jdhapi.models import Dataset
 from jdhapi.models import Article
 from jdhapi.models import Issue
 from jdhapi.models import Tag
+from jdhapi.models import CallOfPaper
 from jdhapi.serializers.abstract import CreateAbstractSerializer
 from jdhapi.serializers.abstract import AbstractSerializer
 from jdhapi.serializers.abstract import AbstractSlimSerializer
@@ -35,6 +36,7 @@ from jdh.validation import JSONSchema
 from jsonschema.exceptions import SchemaError
 from jsonschema.exceptions import ValidationError
 from django.shortcuts import render, get_object_or_404
+from django.http import Http404
 
 
 document_json_schema = JSONSchema(filepath='submit-abstract.json')
@@ -117,16 +119,35 @@ def SubmitAbstract(request):
         }, status=status.HTTP_400_BAD_REQUEST)
     logger.info('submit abstract validated.')
     contact = request.data.get("contact")
-    abstract = Abstract(
-        title=request.data.get("title"),
-        abstract=request.data.get("abstract"),
-        contact_orcid=contact.get("orcid", ""),
-        contact_affiliation=contact.get("affiliation"),
-        contact_email=contact.get("email"),
-        contact_lastname=contact.get("lastname"),
-        contact_firstname=contact.get("firstname"),
-        consented=request.data.get("acceptConditions")
-    )
+    if(request.data.get("callForPapers")):
+        logger.info(f'call of paper {request.data.get("callForPapers")}')
+        try:
+            call_paper = CallOfPaper.objects.get(
+                folder_name=request.data.get("callForPapers"))
+            abstract = Abstract(
+                title=request.data.get("title"),
+                abstract=request.data.get("abstract"),
+                contact_orcid=contact.get("orcid", ""),
+                contact_affiliation=contact.get("affiliation"),
+                contact_email=contact.get("email"),
+                contact_lastname=contact.get("lastname"),
+                contact_firstname=contact.get("firstname"),
+                consented=request.data.get("acceptConditions"),
+                callpaper=call_paper
+            )
+        except CallOfPaper.DoesNotExist:
+            raise Http404("Call of paper does not exist")
+    else:
+        abstract = Abstract(
+            title=request.data.get("title"),
+            abstract=request.data.get("abstract"),
+            contact_orcid=contact.get("orcid", ""),
+            contact_affiliation=contact.get("affiliation"),
+            contact_email=contact.get("email"),
+            contact_lastname=contact.get("lastname"),
+            contact_firstname=contact.get("firstname"),
+            consented=request.data.get("acceptConditions")
+        )
     abstract.save()
     authors = request.data.get('authors', [])
     for author in authors:
@@ -193,7 +214,7 @@ class AbstractList(generics.ListCreateAPIView):
     permission_classes = [permissions.IsAdminUser]
     serializer_class = AbstractSlimSerializer
     filter_backends = [DjangoFilterBackend]
-    filterset_fields = ["id", "pid", "title", "abstract", "submitted_date", "validation_date", "contact_orcid", "contact_affiliation", "contact_lastname", "contact_firstname", "status", "consented", "authors"]
+    filterset_fields = ["id", "pid", "title", "abstract", "callpaper", "submitted_date", "validation_date", "contact_orcid", "contact_affiliation", "contact_lastname", "contact_firstname", "status", "consented", "authors"]
 
     @csrf_exempt
     def create(self, request, *args, **kwargs):
