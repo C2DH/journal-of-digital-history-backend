@@ -16,7 +16,8 @@ class Abstract(models.Model):
         ACCEPTED = 'ACCEPTED', 'Accepted',
         DECLINED = 'DECLINED', 'Declined',
         ABANDONED = 'ABANDONED', 'Abandoned',
-        SUSPENDED = 'SUSPENDED', 'Suspended'
+        SUSPENDED = 'SUSPENDED', 'Suspended',
+        PUBLISHED = 'PUBLISHED', 'Published'
 
     id = models.AutoField(primary_key=True, db_column="id")
     pid = models.CharField(max_length=255, default=create_short_url, db_index=True, unique=True)

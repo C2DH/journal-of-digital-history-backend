@@ -46,6 +46,23 @@ save_article_package.short_description = "4: Generate tags TOOL/NARRATIVE"
 class AbstractAdmin(ExportActionMixin, admin.ModelAdmin):
     list_display = ['title', 'callpaper', 'contact_email', 'submitted_date', 'status']
     list_filter = ('status', 'callpaper')
+    fieldsets = (
+        (
+            "Information related to the abstract", {
+                "fields": ("pid", "title", "status", "abstract", "submitted_date", "validation_date"),
+            }
+        ),
+        (
+            "Information related to the contact point", {
+                "fields": (("contact_firstname", "contact_lastname"), "contact_email", "contact_affiliation", "contact_orcid")
+            }
+        ),
+        (
+            "Information related to the authors - datasets and others", {
+                "fields": ("authors", "datasets", "consented", 'comment')
+            }
+        )
+    )
 
 
 @admin.register(CallOfPaper)
@@ -67,7 +84,7 @@ class IssueAdmin(admin.ModelAdmin):
 class TagAdmin(admin.ModelAdmin):
     list_display = ['name', 'category']
     list_filter = ('category', LanguageTagFilter,)
-    # list_filter = ('category',)
+
 
 
 @admin.register(Article)
