@@ -19,8 +19,8 @@ class ArticleXml:
         self.authors = get_authors(article_authors, self.affiliations)
         self.authors_concat = CopyrightJDH.getAuthorList(self.authors)
         self.title = title
-        self.doi = get_doi(article_doi)
-        self.publisher_id = get_publisher_id(article_doi)
+        self.doi = get_doi(article_doi).lower()
+        self.publisher_id = get_publisher_id(article_doi).lower()
         self.keywords = keywords
         self.epub = publication_date
         self.copyright_desc = CopyrightJDH.getCopyrightDesc(copyright)
