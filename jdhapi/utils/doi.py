@@ -37,8 +37,8 @@ def get_publisher_id(doi):
             if index == 1:
                 doi_all = element
                 return doi_all
-        else:
-            return doi_all
+    else:
+        return doi_all
 
 
 # DOI 10.1515/JDH.2021.1006.R1

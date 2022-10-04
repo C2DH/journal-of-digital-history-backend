@@ -2,6 +2,7 @@ from django.db import models
 import logging
 import datetime
 from django.core.exceptions import ValidationError
+from . import Abstract
 
 logger = logging.getLogger(__name__)
 
@@ -69,21 +70,5 @@ class Article(models.Model):
 
     def __str__(self):
         return self.abstract.title
-
-    def save(self, *args, **kwargs):
-        # IF PUBLISHED
-        if self.status == Article.Status.PUBLISHED:
-            logger.info("Want to be published status")
-            # Check mandatory fields doi
-            # Set up the publication date
-            self.publication_date = datetime.datetime.now()
-            if self.doi:
-                super(Article, self).save(*args, **kwargs)
-            else:
-                raise ValidationError("For publishing provide a DOI value")
-        else:
-            logger.info(f"status not published but status {self.status }")
-            super(Article, self).save(*args, **kwargs)
-
 
 
