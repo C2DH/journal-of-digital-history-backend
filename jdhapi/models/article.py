@@ -71,21 +71,4 @@ class Article(models.Model):
     def __str__(self):
         return self.abstract.title
 
-    def save(self, *args, **kwargs):
-        # IF PUBLISHED
-        if self.status == Article.Status.PUBLISHED:
-            # Check mandatory fields doi
-            # Set up the publication date
-            self.publication_date = datetime.datetime.now()
-            if self.doi:
-                super(Article, self).save(*args, **kwargs)
-                # Abstract to publish
-                Abstract.objects.filter(pid=self.abstract.pid).update(status=Abstract.Status.PUBLISHED)
-            else:
-                raise ValidationError("For publishing provide a DOI value")
-        else:
-            logger.info(f"status not published but status {self.status }")
-            super(Article, self).save(*args, **kwargs)
-
-
 

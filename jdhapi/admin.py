@@ -44,6 +44,7 @@ save_article_package.short_description = "4: Generate tags TOOL/NARRATIVE"
 
 @admin.register(Abstract)
 class AbstractAdmin(ExportActionMixin, admin.ModelAdmin):
+    search_fields = ("title", )
     list_display = ['title', 'callpaper', 'contact_email', 'submitted_date', 'status']
     list_filter = ('status', 'callpaper')
     fieldsets = (
@@ -86,11 +87,11 @@ class TagAdmin(admin.ModelAdmin):
     list_filter = ('category', LanguageTagFilter,)
 
 
-
 @admin.register(Article)
 class ArticleAdmin(admin.ModelAdmin):
     form = articleForm.ArticleForm
     exclude = ['notebook_commit_hash']
+    search_fields = ("abstract__title", )
     list_display = ['abstract_pid', 'issue', 'abstract_title', 'status']
     list_filter = ('issue', 'status', 'copyright_type')
     actions = [save_notebook_fingerprint, save_notebook_specific_cell, save_article_citation, save_article_package]
