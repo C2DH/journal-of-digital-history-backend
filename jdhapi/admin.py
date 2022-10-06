@@ -50,7 +50,7 @@ class AbstractAdmin(ExportActionMixin, admin.ModelAdmin):
     fieldsets = (
         (
             "Information related to the abstract", {
-                "fields": ("pid", "title", "status", "abstract", "submitted_date", "validation_date"),
+                "fields": ("pid", "title", "callpaper", "status", "abstract", "submitted_date", "validation_date"),
             }
         ),
         (
