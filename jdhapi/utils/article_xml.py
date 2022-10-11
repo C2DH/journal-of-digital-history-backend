@@ -14,7 +14,6 @@ logger = logging.getLogger(__name__)
 class ArticleXml:
 
     def __init__(self, article_authors, title, article_doi, keywords, publication_date, copyright, issue_pid, pid):
-        self.publisher_id = get_publisher_id(article_doi)
         self.affiliations = get_affiliation_json(article_authors, self.publisher_id)
         self.authors = get_authors(article_authors, self.affiliations)
         self.authors_concat = CopyrightJDH.getAuthorList(self.authors)

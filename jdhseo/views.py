@@ -10,11 +10,15 @@ from .utils import parseJupyterNotebook, generate_qrcode
 from .utils import getPlainMetadataFromArticle
 from django.http import HttpResponse
 from jdhapi.utils.article_xml import ArticleXml
-from jdhapi.utils.doi import get_doi, get_publisher_id, get_doi_url_formatted_jdh
+from jdhapi.utils.doi import get_publisher_id, get_doi_url_formatted_jdh
 from jdhapi.utils.copyright import CopyrightJDH
 from jdhapi.utils.affiliation import get_affiliation_json
 import marko
 from lxml import html
+from django.http import FileResponse
+from django.template.response import TemplateResponse
+import io, zipfile
+from django.http import HttpResponse
 
 
 logger = logging.getLogger(__name__)
@@ -136,4 +140,36 @@ def ArticleXmlDG(request, pid):
         }
     except Article.DoesNotExist:
         raise Http404("Article does not exist")
+    # response = render(request, 'jdhseo/dg_template.xml', context, content_type='application/xml')
+    # response['Content-Disposition'] = 'attachment; filename="test.xml"'
+    # return response
     return render(request, 'jdhseo/dg_template.xml', context, content_type='text/xml')
+
+
+def Generate_zip(request, pid):
+    # Get file
+    url = 'https://journalofdigitalhistory.org/en/article/' + pid + '.pdf'
+    response = requests.get(url)
+    # Get filename from doi
+    try:
+        article = Article.objects.get(
+            abstract__pid=pid,
+            status=Article.Status.PUBLISHED)
+    except Article.DoesNotExist:
+        raise Http404("Article does not exist")
+    filename = get_publisher_id(article.doi).lower()
+    filename_pdf = filename + ".pdf"
+    filename_zip = filename + ".zip"
+    # filename = os.path.split(url)[1]
+    # Create zip
+    buffer = io.BytesIO()
+    zip_file = zipfile.ZipFile(buffer, 'w')
+    zip_file.writestr(filename_pdf, response.content)
+    zip_file.close()
+    # Return zip
+    response = HttpResponse(buffer.getvalue())
+    response['Content-Type'] = 'application/x-zip-compressed'
+    response['Content-Disposition'] = f'attachment; filename={filename_zip}'
+    return response
+
+
