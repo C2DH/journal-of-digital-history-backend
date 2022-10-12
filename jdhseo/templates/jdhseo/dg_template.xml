@@ -21,8 +21,7 @@
 			<title-group>
 				<article-title>{{ articleXml.title }}</article-title>
 			</title-group>
-			<contrib-group>
-				{% for contrib in articleXml.authors %}
+			<contrib-group>{% for contrib in articleXml.authors %}
 				<contrib contrib-type="author">
 					<contrib-id contrib-id-type="orcid">{{ contrib.orcid }}</contrib-id>
 						<name>
@@ -33,11 +32,8 @@
 							<sup>{{ contrib.aff_id }}</sup>
 						</xref>
 					</contrib>
-			  {% endfor %}
-			  {% for affiliation in articleXml.affiliations %}
-				<aff id="{{ affiliation.aff_pub_id }}"><sup>{{ affiliation.aff_id }}</sup><institution>{{ affiliation.institution }}</institution> <city>{{ affiliation.city }}</city>,<country country="{{ affiliation.country }}">{{ affiliation.country_name }}</country></aff>
-			  {% endfor %}
-			</contrib-group>
+			  {% endfor %}{% for affiliation in articleXml.affiliations %}<aff id="{{ affiliation.aff_pub_id }}"><sup>{{ affiliation.aff_id }}</sup><institution>{{ affiliation.institution }}</institution> <city>{{ affiliation.city }}</city>,<country country="{{ affiliation.country }}">{{ affiliation.country_name }}</country></aff>
+			{% endfor %}</contrib-group>
 			<pub-date pub-type="epub">
 				<day>{{ articleXml.epub|date:"d"}}</day>
 				<month>{{ articleXml.epub|date:"m"}}</month>
@@ -66,10 +62,8 @@
 			<related-article related-article-type="pdf" xlink:href="{{ articleXml.publisher_id }}.pdf"/>
 			<kwd-group>
 				<title>Keywords</title>
-				{% for item in articleXml.keywords %}
-				<kwd>{% spaceless %}{{ item.keyword }}{% endspaceless %}</kwd>
-				{% endfor %}
-			</kwd-group>
+				{% for item in articleXml.keywords %}<kwd>{% spaceless %}{{ item.keyword }}{% endspaceless %}</kwd>
+			{% endfor %}</kwd-group>
 			<counts>
 				<page-count count="33"/>
 			</counts>
