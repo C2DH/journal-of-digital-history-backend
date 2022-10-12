@@ -143,13 +143,17 @@ def ArticleXmlDG(request, pid):
     # response = render(request, 'jdhseo/dg_template.xml', context, content_type='application/xml')
     # response['Content-Disposition'] = 'attachment; filename="test.xml"'
     # return response
-    return render(request, 'jdhseo/dg_template.xml', context, content_type='text/xml')
+    return render(request, 'jdhseo/dg_template.xml', context, content_type='text/xml; charset=utf-8')
 
 
 def Generate_zip(request, pid):
-    # Get file
-    url = 'https://journalofdigitalhistory.org/en/article/' + pid + '.pdf'
-    response = requests.get(url)
+    # The article's package for DG contains : XML and pdf
+    # pdf
+    url_pdf = 'https://journalofdigitalhistory.org/en/article/' + pid + '.pdf'
+    response_pdf = requests.get(url_pdf)
+    # XML
+    url_XML = 'https://journalofdigitalhistory.org/prerendered/en/article/dg/' + pid
+    response_xml = requests.get(url_XML)
     # Get filename from doi
     try:
         article = Article.objects.get(
@@ -159,12 +163,14 @@ def Generate_zip(request, pid):
         raise Http404("Article does not exist")
     filename = get_publisher_id(article.doi).lower()
     filename_pdf = filename + ".pdf"
+    filename_xml = filename + ".xml"
     filename_zip = filename + ".zip"
     # filename = os.path.split(url)[1]
     # Create zip
     buffer = io.BytesIO()
     zip_file = zipfile.ZipFile(buffer, 'w')
-    zip_file.writestr(filename_pdf, response.content)
+    zip_file.writestr(filename_pdf, response_pdf.content)
+    zip_file.writestr(filename_xml, response_xml.content)
     zip_file.close()
     # Return zip
     response = HttpResponse(buffer.getvalue())
