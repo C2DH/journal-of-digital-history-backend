@@ -1,7 +1,11 @@
 import base64
 import logging
 import requests
+import os
 import urllib.parse
+import marko
+import io, zipfile
+from urllib.parse import urlparse
 from django.http import Http404
 from django.shortcuts import render
 from jdhapi.models import Article, Issue, Author
@@ -13,11 +17,9 @@ from jdhapi.utils.article_xml import ArticleXml
 from jdhapi.utils.doi import get_publisher_id, get_doi_url_formatted_jdh
 from jdhapi.utils.copyright import CopyrightJDH
 from jdhapi.utils.affiliation import get_affiliation_json
-import marko
 from lxml import html
 from django.http import FileResponse
 from django.template.response import TemplateResponse
-import io, zipfile
 from django.http import HttpResponse
 
 
@@ -140,20 +142,42 @@ def ArticleXmlDG(request, pid):
         }
     except Article.DoesNotExist:
         raise Http404("Article does not exist")
-    # response = render(request, 'jdhseo/dg_template.xml', context, content_type='application/xml')
-    # response['Content-Disposition'] = 'attachment; filename="test.xml"'
-    # return response
-    return render(request, 'jdhseo/dg_template.xml', context, content_type='text/xml; charset=utf-8')
+    return render(request, 'jdhseo/article_dg.xml', context, content_type='text/xml; charset=utf-8')
 
 
-def Generate_zip(request, pid):
-    # The article's package for DG contains : XML and pdf
-    # pdf
-    url_pdf = 'https://journalofdigitalhistory.org/en/article/' + pid + '.pdf'
-    response_pdf = requests.get(url_pdf)
-    # XML
-    url_XML = 'https://journalofdigitalhistory.org/prerendered/en/article/dg/' + pid
-    response_xml = requests.get(url_XML)
+def ArticleXmlDG(request, pid):
+    try:
+        article = Article.objects.get(
+            abstract__pid=pid,
+            status=Article.Status.PUBLISHED)
+
+        nbauthors = article.abstract.authors.count()
+        logger.debug(f'Nb Authors(count={nbauthors}) for article {pid}')
+        logger.debug(f'Belongs to issue {article.issue}')
+        keywords = []
+        if 'keywords' in article.data:
+            array_keys = article.data['keywords'][0].replace(';', ',').split(',')
+            for item in array_keys:
+                keyword = {
+                    "keyword": item,
+                }
+                keywords.append(keyword)
+        if 'title' in article.data:
+            articleTitle = html.fromstring(marko.convert(article.data['title'][0])).text_content()
+        context = {
+            'articleXml': ArticleXml(article.abstract.authors.all(), articleTitle, article.doi, keywords, article.publication_date, article.copyright_type, article.issue, pid),
+            'journal_publisher_id': 'jdh',
+            'journal_code': 'jdh',
+            'doi_code': 'jdh',
+            'issn': '2747-5271',
+        }
+    except Article.DoesNotExist:
+        raise Http404("Article does not exist")
+    return render(request, 'jdhseo/article_dg.xml', context, content_type='text/xml; charset=utf-8')
+
+
+def GetArticleContent_from_url(url, pid):
+    response = requests.get(url)
     # Get filename from doi
     try:
         article = Article.objects.get(
@@ -162,20 +186,41 @@ def Generate_zip(request, pid):
     except Article.DoesNotExist:
         raise Http404("Article does not exist")
     filename = get_publisher_id(article.doi).lower()
-    filename_pdf = filename + ".pdf"
-    filename_xml = filename + ".xml"
-    filename_zip = filename + ".zip"
-    # filename = os.path.split(url)[1]
+    path = urlparse(url).path
+    ext = os.path.splitext(path)[1]
+    if ext == '.pdf':
+        filename = f"{filename}.pdf"
+    else:
+        filename = f"{filename}.xml"
+    logger.info(f"{filename}")
+    return response.content, filename
+
+
+def Generate_zip(request, pid):
+    # The article's package for DG contains : XML and pdf
+    # issue xml
+    url_issue = f'https://journalofdigitalhistory.org/prerendered/en/article/dg/{pid}'
+    url_xml = f'https://journalofdigitalhistory.org/prerendered/en/article/dg/{pid}'
+    url_pdf = f'https://journalofdigitalhistory.org/en/article/{pid}.pdf'
+    response_pdf, filename = GetArticleContent_from_url(url_pdf, pid)
+    response_xml, filename = GetArticleContent_from_url(url_xml, pid)
+    response_issue, filename = GetArticleContent_from_url(url_xml, pid)
+
+    filename_pdf = "/" + filename + "/" + filename + ".pdf"
+    filename_xml = "/" + filename + "/" + filename + ".xml"
+    filename_issue = "/issue-files/jdh.2022.2.issue-1.xml"
+    # filename_zip = filename + ".zip"
+    filename_zip = "jdh.2022.2.issue-1.zip"
     # Create zip
     buffer = io.BytesIO()
     zip_file = zipfile.ZipFile(buffer, 'w')
-    zip_file.writestr(filename_pdf, response_pdf.content)
-    zip_file.writestr(filename_xml, response_xml.content)
+    zip_file.writestr(filename_pdf, response_pdf)
+    zip_file.writestr(filename_xml, response_xml)
+    zip_file.writestr(filename_issue, response_issue)
     zip_file.close()
     # Return zip
     response = HttpResponse(buffer.getvalue())
     response['Content-Type'] = 'application/x-zip-compressed'
     response['Content-Disposition'] = f'attachment; filename={filename_zip}'
     return response
-
 

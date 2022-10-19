@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE issue-xml PUBLIC "-//Atypon//DTD Atypon Systems Journal Archiving and Interchange NLM DTD v3.0.2 20101108//EN" "issuexml.dtd">
+<issue-xml>
+	<journal-meta>
+		<journal-id journal-id-type="publisher-id">jdh</journal-id>
+		<journal-id journal-id-type="journal-code">jdh</journal-id>
+		<journal-id journal-id-type="doi-code">jdh</journal-id>
+		<journal-title-group>
+			<journal-title>Journal of Digital History</journal-title>
+		</journal-title-group>
+		<issn pub-type="epub">2747-5271</issn>
+		<publisher>
+			<publisher-name>De Gruyter</publisher-name>
+		</publisher>
+	</journal-meta>
+	<issue-meta>
+		<pub-date pub-type="ppub">
+			<day>01</day>
+			<month>09</month>
+			<year>2021</year>
+		</pub-date>
+		<pub-date pub-type="actual_ppub">
+			<day>01</day>
+			<month>09</month>
+			<year>2021</year>
+		</pub-date>
+		<volume>1</volume>
+		<issue>1</issue>
+		<issue-id pub-id-type="publisher-id">jdh.2021.1.issue-1</issue-id>
+	</issue-meta>
+	<toc toc-type="page-order">
+		<issue-article-meta>
+			<article-id pub-id-type="doi">10.1515/jdh-2021-1008</article-id>
+		</issue-article-meta>
+		<issue-article-meta>
+			<article-id pub-id-type="doi">10.1515/jdh-2021-1002</article-id>
+		</issue-article-meta>
+		<issue-article-meta>
+			<article-id pub-id-type="doi">10.1515/jdh-2021-1000</article-id>
+		</issue-article-meta>
+		<issue-article-meta>
+			<article-id pub-id-type="doi">10.1515/jdh-2021-1003</article-id>
+		</issue-article-meta>
+		<issue-article-meta>
+			<article-id pub-id-type="doi">10.1515/jdh-2021-1004</article-id>
+		</issue-article-meta>
+		<issue-article-meta>
+			<article-id pub-id-type="doi">10.1515/jdh-2021-1006</article-id>
+		</issue-article-meta>
+	</toc>
+</issue-xml>
