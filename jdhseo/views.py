@@ -114,6 +114,16 @@ def IssueDetail(request, pid):
     return render(request, 'jdhseo/issue_detail.html', context)
 
 
+def IssueXmlDG(request, pid):
+    context = {
+        'journal_publisher_id': 'jdh',
+        'journal_code': 'jdh',
+        'doi_code': 'jdh',
+        'issn': '2747-5271',
+    }
+    return render(request, 'jdhseo/issue_dg.xml', context, content_type='text/xml; charset=utf-8')
+
+
 def ArticleXmlDG(request, pid):
     try:
         article = Article.objects.get(
@@ -189,33 +199,42 @@ def GetArticleContent_from_url(url, pid):
     path = urlparse(url).path
     ext = os.path.splitext(path)[1]
     if ext == '.pdf':
-        filename = f"{filename}.pdf"
+        filename = f"/{filename}/{filename}.pdf"
     else:
-        filename = f"{filename}.xml"
-    logger.info(f"{filename}")
+        filename = f"/{filename}/{filename}.xml"
     return response.content, filename
 
 
+def GetIssueContent_from_url(url, pid):
+    response = requests.get(url)
+    # Get filename from doi
+    try:
+        article = Article.objects.get(
+            abstract__pid=pid,
+            status=Article.Status.PUBLISHED)
+    except Article.DoesNotExist:
+        raise Http404("Article does not exist")
+    # filename = get_publisher_id(article.doi).lower()
+    filename_issue = "/issue-files/jdh.2022.2.issue-1.xml"
+    filename_zip = "jdh.2022.2.issue-1.zip"
+    return response.content, filename_issue, filename_zip
+
+
 def Generate_zip(request, pid):
+    logger.info(f"{request.build_absolute_uri()}")
     # The article's package for DG contains : XML and pdf
     # issue xml
-    url_issue = f'https://journalofdigitalhistory.org/prerendered/en/article/dg/{pid}'
+    url_issue = f'http://127.0.0.1:8000/en/issue/dg/{pid}'
+    # url_issue = f'https://journalofdigitalhistory.org/prerendered/en/article/dg/{pid}'
     url_xml = f'https://journalofdigitalhistory.org/prerendered/en/article/dg/{pid}'
     url_pdf = f'https://journalofdigitalhistory.org/en/article/{pid}.pdf'
-    response_pdf, filename = GetArticleContent_from_url(url_pdf, pid)
-    response_xml, filename = GetArticleContent_from_url(url_xml, pid)
-    response_issue, filename = GetArticleContent_from_url(url_xml, pid)
-
-    filename_pdf = "/" + filename + "/" + filename + ".pdf"
-    filename_xml = "/" + filename + "/" + filename + ".xml"
-    filename_issue = "/issue-files/jdh.2022.2.issue-1.xml"
-    # filename_zip = filename + ".zip"
-    filename_zip = "jdh.2022.2.issue-1.zip"
+    response_issue, filename_issue, filename_zip = GetIssueContent_from_url(url_issue, pid)
     # Create zip
     buffer = io.BytesIO()
     zip_file = zipfile.ZipFile(buffer, 'w')
-    zip_file.writestr(filename_pdf, response_pdf)
-    zip_file.writestr(filename_xml, response_xml)
+    for url in [url_xml, url_pdf]:
+        response, filename = GetArticleContent_from_url(url, pid)
+        zip_file.writestr(filename, response)
     zip_file.writestr(filename_issue, response_issue)
     zip_file.close()
     # Return zip
