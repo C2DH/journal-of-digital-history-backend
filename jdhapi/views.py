@@ -1,5 +1,6 @@
-from jdhapi.models.role import Role
 import logging
+from datetime import date
+from jdhapi.models.role import Role
 from django.views.decorators.csrf import csrf_exempt
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters
@@ -20,6 +21,7 @@ from jdhapi.serializers.dataset import DatasetSlimSerializer
 from jdhapi.serializers.article import ArticleSerializer
 from jdhapi.serializers.issue import IssueSerializer
 from jdhapi.serializers.tag import TagSerializer
+from jdhapi.serializers.callofpaper import CallOfPaperSerializer
 from rest_framework import permissions
 from rest_framework import status
 from rest_framework.decorators import api_view
@@ -71,6 +73,7 @@ def api_root(request, format=None):
         'articles': reverse('article-list', request=request, format=format),
         'issues': reverse('issue-list', request=request, format=format),
         'tags': reverse('tag-list', request=request, format=format),
+        'callofpapers': reverse('callofpaper-list', request=request, format=format),
     })
 
 
@@ -297,3 +300,18 @@ class TagList(generics.ListCreateAPIView):
 class TagDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
+
+
+class CallOfPaperList(generics.ListCreateAPIView):
+    queryset = CallOfPaper.objects.filter(deadline_abstract__gte=date.today())
+    serializer_class = CallOfPaperSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ["id", "deadline_abstract", "deadline_article", "title", "folder_name"]
+
+
+class CallOfPaperDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = CallOfPaper.objects.all()
+    serializer_class = CallOfPaperSerializer
+    ordering_fields = ["deadline_abstract", "deadline_article"]
+    lookup_field = "folder_name"
+

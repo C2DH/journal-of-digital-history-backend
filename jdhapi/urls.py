@@ -22,5 +22,7 @@ urlpatterns = [
     path('api/generate-notebook/<str:pid>', views.GenerateNotebook),
     path('api/tags/', views.TagList.as_view(), name='tag-list'),
     path('api/tags/<int:pk>/', views.TagDetail.as_view(), name='tag-detail'),
+    path('api/callofpaper/', views.CallOfPaperList.as_view(), name='callofpaper-list'),
+    path('api/callofpaper/<str:folder_name>/', views.CallOfPaperDetail.as_view(), name='callofpaper-detail'),
 ]
 urlpatterns = format_suffix_patterns(urlpatterns)
