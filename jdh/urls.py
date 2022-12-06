@@ -22,4 +22,5 @@ urlpatterns = [
     path('', include('jdhapi.urls')),
     # add seo urls and views
     path('', include('jdhseo.urls')),
+    path('tasks/', include('jdhtasks.urls')),
 ]
