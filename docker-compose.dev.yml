@@ -1,0 +1,16 @@
+version: '3.7'
+services:
+  redis:
+    image: redis:alpine
+    restart: always
+    entrypoint: redis-server --appendonly yes
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+  postgresdb:
+    image: postgres:12-alpine
+    ports:
+      - "${DATABASE_PORT:-54320}:5432"
+    environment:
+      POSTGRES_USER: ${DATABASE_USER}
+      POSTGRES_DB: ${DATABASE_NAME}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}

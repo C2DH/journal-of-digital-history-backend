@@ -243,3 +243,6 @@ JDHSEO_PROXY_HOST = get_env_variable(
     'JDHSEO_PROXY_HOST', 'https://journalofdigitalhistory.org/')
 JDHSEO_PROXY_PATH_GITHUB = get_env_variable(
     'JDHSEO_PROXY_PATH_GITHUB', '/proxy-githubusercontent')
+
+# jdhtasks
+JDHTASKS_WEBHOOK_SECRET=get_env_variable('JDHTASKS_WEBHOOK_SECRET', 'toomanysecrets')

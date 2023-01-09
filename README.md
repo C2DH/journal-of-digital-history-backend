@@ -12,6 +12,16 @@ pipenv install -r requirements.txt
 make run-dev
 ```
 
+There is a docker-compose.dev.yml file you can use to starts a postgres database and the redis server, with port exposed.
+Credentials are given in the .env file.
+
+In this case use:
+
+```
+make run-dev-standalone
+```
+
+
 ### SEO configuration in development
 THe django app `jdhseo` needs a JDHSEO_PROXY_HOST env variable in the full form
 **without the trailing slash** like `https://local-proxy-domain-name`.
@@ -19,7 +29,6 @@ Plain `http` protocol can also be used.
 The domain name provided should correctly handle the `/proxy-githubusercontent`
 path.
 By default this value is set to `https://journalofdigitalhistory.org`
-
 
 ### Celery tasks in development
 The django app `jdhtasks` is a separate app that should contain all celery tasks.
