@@ -11,6 +11,11 @@ logger = logging.getLogger(__name__)
 
 class ArticleForm(forms.ModelForm):
 
+    abstract = forms.ModelChoiceField(
+        queryset=Abstract.objects.filter(article__isnull=True).order_by('title'),
+        label='Abstract'
+    )
+
     class Meta:
         model = Article
         fields = '__all__'
