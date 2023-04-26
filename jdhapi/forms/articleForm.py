@@ -13,7 +13,8 @@ class ArticleForm(forms.ModelForm):
 
     abstract = forms.ModelChoiceField(
         queryset=Abstract.objects.filter(article__isnull=True).order_by('title'),
-        label='Abstract'
+        label='Abstract',
+        disabled=True
     )
 
     class Meta:
