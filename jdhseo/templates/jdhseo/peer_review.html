@@ -1,0 +1,25 @@
+<div style="position: relative;">
+    <img src="https://journalofdigitalhistory.org/logo192.png" style="position: absolute; top: 0; right: 0;height: 60px;">
+</div>
+<div style="margin-top: 40px;">
+<p>Dear reviewer,</p>
+
+<p>Thank you for agreeing to review {{ articleTitle }}.</p>
+
+<p>There are three ways to access the article:</p>
+
+<ol>
+    <li>On GitHub</li>
+    <p><a href="{{ article.repository_url }}">{{ article.repository_url }}</a></p>
+    <p>From there, you will be able to download the notebook and the attached files, or to launch the notebook on MyBinder by pushing the ‘launch binder’ button.</p>
+    <li>On MyBinder</li>
+    <p><a href="{{ article.binder_url }}">{{ article.binder_url }}</a></p>
+    <p>On MyBinder, bibliographic references will not be visible, but you will be able to run the code. Beware, the loading time can be quite long.</p>
+    <li>Within the Journal of Digital History website</li>
+    <p><a href="https://journalofdigitalhistory.org/en/notebook-viewer/{{ article.notebook_url|add:'/' }}">here</a></p>
+    <p>Please note that the article (the notebook) can be large: expect a rather long loading time.</p>
+</ol>
+
+<p>Best regards,</p>
+<p>Managing editor, Frédéric Clavert,  Journal of Digital History</p>
+</div>
