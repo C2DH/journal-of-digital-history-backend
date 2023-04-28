@@ -6,7 +6,7 @@ import logging
 import datetime
 from django.http import Http404
 from django.utils import timezone
-import weasyprint
+from weasyprint import HTML
 from django.template.loader import render_to_string
 from django.core.mail import EmailMessage
 from django.conf import settings
@@ -74,7 +74,7 @@ class ArticleForm(forms.ModelForm):
                 html_string = render_to_string(template, context)
 
                 # Generate the PDF
-                pdf_file = weasyprint.HTML(string=html_string).write_pdf()
+                pdf_file = HTML(string=html_string).write_pdf()
                 logger.info("Pdf generated")
                 filename = 'peer_review_' + article.abstract.pid + '.pdf'
                 # Save the PDF to a file
