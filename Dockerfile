@@ -5,6 +5,11 @@ ARG GIT_TAG
 ARG GIT_BRANCH
 ARG GIT_REVISION
 
+# Install system-level dependencies
+RUN apt-get update && \
+    apt-get install -y libpango-1.0-0
+
+
 RUN pip install --upgrade pip
 
 RUN apk add --no-cache \
