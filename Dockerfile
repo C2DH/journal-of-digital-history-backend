@@ -22,7 +22,7 @@ RUN apk add --no-cache \
     tiff-dev \
     tk-dev \
     zlib-dev \
-    pango-dev \
+    pango-dev
 
 RUN apk add --no-cache --virtual .build-deps \
     gcc \
