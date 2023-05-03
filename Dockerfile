@@ -40,6 +40,12 @@ RUN apk add --no-cache --virtual .build-deps \
     fribidi-dev \
     libxslt-dev
 
+
+# Additional font
+RUN apk --update --upgrade --no-cache add fontconfig ttf-freefont font-noto terminus-font \
+   && fc-cache -f \
+   && fc-list | sort
+
 COPY jdh ./jdh
 COPY jdhapi ./jdhapi
 COPY jdhseo ./jdhseo
