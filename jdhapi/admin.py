@@ -123,6 +123,13 @@ class ArticleAdmin(admin.ModelAdmin):
         )
     )
 
+    def get_form(self, request, obj=None, **kwargs):
+        form = super().get_form(request, obj, **kwargs)
+        if obj is None:
+            # Limit abstract choices when creating new article instance
+            form.base_fields['abstract'].queryset = Abstract.objects.filter(article__isnull=True)
+        return form
+
     def issue_name(self, obj):
         return obj.issue.name
     issue_name.short_description = 'Issue name'

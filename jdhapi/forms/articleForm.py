@@ -5,23 +5,13 @@ from jdhapi.utils.gitup_repository import is_socialmediacover_exist
 import logging
 import datetime
 from django.http import Http404
-from django.utils import timezone
-from weasyprint import HTML
-from django.template.loader import render_to_string
-from django.core.mail import EmailMessage
 from django.conf import settings
-from lxml import html
+
 
 logger = logging.getLogger(__name__)
 
 
 class ArticleForm(forms.ModelForm):
-
-    abstract = forms.ModelChoiceField(
-        queryset=Abstract.objects.filter(article__isnull=True).order_by('title'),
-        label='Abstract',
-        disabled=True
-    )
 
     class Meta:
         model = Article
@@ -66,32 +56,7 @@ class ArticleForm(forms.ModelForm):
                     raise forms.ValidationError({'notebook_url': "Notebook_url is mandatory if published"})
                 if not notebook_path:
                     raise forms.ValidationError({'notebook_path': "Notebook_url is mandatory if published"})
-                # Render the PDF template
-                template = 'jdhseo/peer_review.html'
-                if 'title' in article.data:
-                    articleTitle = html.fromstring(marko.convert(article.data['title'][0])).text_content()
-                context = {'article': article, 'articleTitle': articleTitle}
-                html_string = render_to_string(template, context)
-
-                # Generate the PDF
-                pdf_file = HTML(string=html_string).write_pdf()
-                logger.info("Pdf generated")
-                filename = 'peer_review_' + article.abstract.pid + '.pdf'
-                # Save the PDF to a file
-                with open(filename, 'wb') as f:
-                    f.write(pdf_file)
-                logger.info("Pdf saved")
-                # Create an email message with the PDF attachment
-                subject = 'Peer review PDF ' + articleTitle
-                body = 'Please find attached the peer review PDF for your article.'
-                from_email = 'jdh.admin@uni.lu'
-                to_email = 'eliselavy@gmail.com'
-                email = EmailMessage(subject, body, from_email, [to_email])
-                email.attach(filename, pdf_file, 'application/pdf')
-
-                # Send the email
-                email.send()
-                logger.info("Email sent")
         else:
             logger.info("no changed fields")
+
 
