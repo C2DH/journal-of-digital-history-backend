@@ -73,6 +73,7 @@ class CallOfPaperAdmin(ExportActionMixin, admin.ModelAdmin):
 
 @admin.register(Author)
 class AuthorAdmin(ExportActionMixin, admin.ModelAdmin):
+    search_fields = ('lastname', 'firstname', 'affiliation', 'orcid', 'email')
     list_display = ['lastname', 'firstname', 'affiliation', 'orcid', 'email']
 
 
