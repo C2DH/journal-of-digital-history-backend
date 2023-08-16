@@ -7,6 +7,7 @@ from rest_framework import routers
 
 urlpatterns = [
     path('api/', views.api_root),
+    path('api/me', views.api_me, name='me'),
     path('api-auth/', include('rest_framework.urls')),
     path('api/authors/', views.AuthorList.as_view(), name='author-list'),
     path('api/authors/<int:pk>/', views.AuthorDetail.as_view(), name='author-detail'),

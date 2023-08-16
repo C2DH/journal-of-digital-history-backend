@@ -73,12 +73,13 @@ class CallOfPaperAdmin(ExportActionMixin, admin.ModelAdmin):
 
 @admin.register(Author)
 class AuthorAdmin(ExportActionMixin, admin.ModelAdmin):
+    search_fields = ('lastname', 'firstname', 'affiliation', 'orcid', 'email')
     list_display = ['lastname', 'firstname', 'affiliation', 'orcid', 'email']
 
 
 @admin.register(Issue)
 class IssueAdmin(admin.ModelAdmin):
-    list_display = ['name', 'volume', 'issue', 'status', 'publication_date']
+    list_display = ['name', 'pid', 'volume', 'issue', 'status', 'publication_date']
 
 
 @admin.register(Tag)
@@ -92,8 +93,8 @@ class ArticleAdmin(admin.ModelAdmin):
     form = articleForm.ArticleForm
     exclude = ['notebook_commit_hash']
     search_fields = ("abstract__title", )
-    list_display = ['abstract_pid', 'issue', 'abstract_title', 'status']
-    list_filter = ('issue', 'status', 'copyright_type')
+    list_display = ['abstract_pid', 'issue_name', 'issue', 'abstract_title', 'status']
+    list_filter = ('issue__name', 'status', 'copyright_type')
     actions = [save_notebook_fingerprint, save_notebook_specific_cell, save_article_citation, save_article_package]
     fieldsets = (
         (
@@ -109,7 +110,7 @@ class ArticleAdmin(admin.ModelAdmin):
                 # Section Description
                 # "description" : "Enter the vehicle information",
                 # Group Make and Model
-                "fields": (("repository_type", "repository_url"), "notebook_url", "notebook_path", "binder_url", "notebook_ipython_url")
+                "fields": (("repository_type", "repository_url"), "notebook_url", "notebook_path", "binder_url", "notebook_ipython_url", "dataverse_url")
             }
         ),
         (
@@ -122,6 +123,17 @@ class ArticleAdmin(admin.ModelAdmin):
             }
         )
     )
+
+    def get_form(self, request, obj=None, **kwargs):
+        form = super().get_form(request, obj, **kwargs)
+        if obj is None:
+            # Limit abstract choices when creating new article instance
+            form.base_fields['abstract'].queryset = Abstract.objects.filter(article__isnull=True)
+        return form
+
+    def issue_name(self, obj):
+        return obj.issue.name
+    issue_name.short_description = 'Issue name'
 
     def abstract_pid(self, obj):
         return obj.abstract.pid

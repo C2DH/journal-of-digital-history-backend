@@ -1,10 +1,12 @@
+import marko
 from django import forms
 from jdhapi.models import Article, article, Abstract
 from jdhapi.utils.gitup_repository import is_socialmediacover_exist
 import logging
 import datetime
 from django.http import Http404
-from django.utils import timezone
+from django.conf import settings
+
 
 logger = logging.getLogger(__name__)
 
@@ -16,6 +18,8 @@ class ArticleForm(forms.ModelForm):
         fields = '__all__'
 
     def clean(self):
+        # Get the article data
+        article = self.instance
         doi = self.cleaned_data['doi']
         status = self.cleaned_data['status']
         repository_url = self.cleaned_data['repository_url']
@@ -54,4 +58,5 @@ class ArticleForm(forms.ModelForm):
                     raise forms.ValidationError({'notebook_path': "Notebook_url is mandatory if published"})
         else:
             logger.info("no changed fields")
+
 

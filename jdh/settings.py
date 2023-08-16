@@ -243,3 +243,6 @@ JDHSEO_PROXY_HOST = get_env_variable(
     'JDHSEO_PROXY_HOST', 'https://journalofdigitalhistory.org/')
 JDHSEO_PROXY_PATH_GITHUB = get_env_variable(
     'JDHSEO_PROXY_PATH_GITHUB', '/proxy-githubusercontent')
+
+DEFAULT_FROM_EMAIL = get_env_variable('DEFAULT_FROM_EMAIL', 'jdh.admin@uni.lu')
+DEFAULT_TO_EMAIL = get_env_variable('DEFAULT_TO_EMAIL', 'jdh.admin@uni.lu')
