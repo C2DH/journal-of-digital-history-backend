@@ -78,6 +78,12 @@ class Article(models.Model):
     tags = models.ManyToManyField('jdhapi.Tag', blank=True)
     authors = models.ManyToManyField('jdhapi.Author', through='Role')
 
+    def get_kernel_language(self):
+        first_tag = self.tags.first()  # Get the first tag related to the article
+        if first_tag:
+            return first_tag.data.get('language', '')
+        return ''  # Default language if no tag or language field is present
+
     def __str__(self):
         return self.abstract.title
 
