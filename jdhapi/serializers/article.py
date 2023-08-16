@@ -26,6 +26,6 @@ class ArticleSerializer(serializers.ModelSerializer):
         fields = [
             "abstract", "repository_url", "status", "publication_date", "repository_type",
             "copyright_type", "notebook_url", "notebook_commit_hash", "notebook_path",
-            "binder_url", "doi", "data", "citation", "kernel_language",
+            "binder_url", "doi", "dataverse_url", "data", "citation", "kernel_language",
             "tags", "issue", "authors", "fingerprint"
         ]

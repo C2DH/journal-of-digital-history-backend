@@ -110,7 +110,7 @@ class ArticleAdmin(admin.ModelAdmin):
                 # Section Description
                 # "description" : "Enter the vehicle information",
                 # Group Make and Model
-                "fields": (("repository_type", "repository_url"), "notebook_url", "notebook_path", "binder_url", "notebook_ipython_url")
+                "fields": (("repository_type", "repository_url"), "notebook_url", "notebook_path", "binder_url", "notebook_ipython_url", "dataverse_url")
             }
         ),
         (
