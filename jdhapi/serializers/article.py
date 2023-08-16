@@ -16,11 +16,16 @@ class ArticleSerializer(serializers.ModelSerializer):
     #    slug_field='pid',
     # )
 
+    kernel_language = serializers.SerializerMethodField()
+
+    def get_kernel_language(self, obj):
+        return obj.get_kernel_language()
+
     class Meta:
         model = Article
         fields = [
             "abstract", "repository_url", "status", "publication_date", "repository_type",
             "copyright_type", "notebook_url", "notebook_commit_hash", "notebook_path",
-            "binder_url", "doi", "data", "fingerprint", "citation",
-            "tags", "issue", "authors"
+            "binder_url", "doi", "dataverse_url", "data", "citation", "kernel_language",
+            "tags", "issue", "authors", "fingerprint"
         ]

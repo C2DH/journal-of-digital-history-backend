@@ -60,6 +60,7 @@ class Article(models.Model):
     notebook_path = models.CharField(max_length=254, null=True, blank=True, help_text="Notebook file name with .ipynb")
     binder_url = models.URLField(max_length=254, null=True, blank=True)
     doi = models.CharField(max_length=254, null=True, blank=True, help_text="Doi received from ScholarOne -  10.1515/JDH.YYYY.XXXX.RX")
+    dataverse_url = models.URLField(max_length=200, blank=True, null=True, help_text="Url to find here https://data.journalofdigitalhistory.org/")  # New field for Dataverse URL
     publication_date = models.DateTimeField(blank=True, null=True)
     copyright_type = models.CharField(
         max_length=15,
@@ -77,6 +78,12 @@ class Article(models.Model):
         default=dict, blank=True)
     tags = models.ManyToManyField('jdhapi.Tag', blank=True)
     authors = models.ManyToManyField('jdhapi.Author', through='Role')
+
+    def get_kernel_language(self):
+        first_tag = self.tags.first()  # Get the first tag related to the article
+        if first_tag:
+            return first_tag.data.get('language', '')
+        return ''  # Default language if no tag or language field is present
 
     def __str__(self):
         return self.abstract.title
