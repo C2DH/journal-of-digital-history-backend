@@ -5,9 +5,11 @@ from django.utils.safestring import mark_safe
 from .forms import articleForm
 from .models import Author, Abstract, Dataset, Article, Issue, Tag, Role, CallOfPaper
 from .filter.languagetagfilter import LanguageTagFilter
+from .filter.dataverseurlfilter import EmptyDataverseURLFilter
 from .tasks import save_article_fingerprint, save_article_specific_content, save_citation, save_libraries
 from import_export.admin import ExportActionMixin
 from .forms import articleForm
+from django.utils.html import format_html
 
 
 def save_notebook_fingerprint(modeladmin, request, queryset):
@@ -74,7 +76,13 @@ class CallOfPaperAdmin(ExportActionMixin, admin.ModelAdmin):
 @admin.register(Author)
 class AuthorAdmin(ExportActionMixin, admin.ModelAdmin):
     search_fields = ('lastname', 'firstname', 'affiliation', 'orcid', 'email')
-    list_display = ['lastname', 'firstname', 'affiliation', 'orcid', 'email']
+    list_display = ['lastname', 'firstname', 'affiliation', 'clickable_orcid', 'email']
+
+    def clickable_orcid(self, obj):
+        if obj.orcid:
+            return format_html('<a href="{}" target="_blank">{}</a>', obj.orcid, obj.orcid)
+        return ''
+    clickable_orcid.short_description = 'Orcid URL'
 
 
 @admin.register(Issue)
@@ -93,8 +101,8 @@ class ArticleAdmin(admin.ModelAdmin):
     form = articleForm.ArticleForm
     exclude = ['notebook_commit_hash']
     search_fields = ("abstract__title", )
-    list_display = ['abstract_pid', 'issue_name', 'issue', 'abstract_title', 'status']
-    list_filter = ('issue__name', 'status', 'copyright_type')
+    list_display = ['abstract_pid', 'issue_name', 'issue', 'abstract_title', 'status', 'clickable_dataverse_url']
+    list_filter = ('issue__name', 'status', 'copyright_type', EmptyDataverseURLFilter)
     actions = [save_notebook_fingerprint, save_notebook_specific_cell, save_article_citation, save_article_package]
     fieldsets = (
         (
@@ -123,6 +131,12 @@ class ArticleAdmin(admin.ModelAdmin):
             }
         )
     )
+
+    def clickable_dataverse_url(self, obj):
+        if obj.dataverse_url:
+            return format_html('<a href="{}" target="_blank">{}</a>', obj.dataverse_url, obj.dataverse_url)
+        return ''
+    clickable_dataverse_url.short_description = 'Dataverse URL'
 
     def get_form(self, request, obj=None, **kwargs):
         form = super().get_form(request, obj, **kwargs)
