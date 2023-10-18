@@ -19,10 +19,17 @@ METADATA_TAGS = ['title', 'abstract', 'contributor', 'disclaimer', 'keywords', '
 
 
 def get_notebook_from_raw_github(raw_url):
-    logger.info(
-        f'get_notebook_from_raw_github - parsing url: {raw_url}')
-    r = requests.get(raw_url)
-    return r.json()
+    try:
+        logger.info(f'get_notebook_from_raw_github - parsing url: {raw_url}')
+        r = requests.get(raw_url)
+        r.raise_for_status()  # Raise an error if the request is not successful (e.g., 404)
+        return r.json()
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Request to {raw_url} failed with exception: {e}")
+    except json.JSONDecodeError as e:
+        logger.error(f"JSON decoding failed with exception: {e}")
+    except Exception as e:
+        logger.error(f"An unexpected error occurred: {e}")
 
 
 def get_notebook_from_github(
