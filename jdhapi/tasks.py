@@ -5,7 +5,7 @@ from jdhapi.models import Abstract
 from django.core.mail import send_mail
 from celery.utils.log import get_task_logger
 from .models import Article
-from jdhapi.utils.articleUtils import get_notebook_stats, get_notebook_specifics_tags, get_citation, generate_tags, generate_narrative_tags
+from jdhapi.utils.articleUtils import get_notebook_stats, get_notebook_specifics_tags, get_citation, generate_tags, generate_narrative_tags, get_notebook_references_fulltext
 
 logger = get_task_logger(__name__)
 
@@ -85,3 +85,18 @@ def save_libraries(article_id):
     feedback_narrative = generate_narrative_tags(article=article)
     logger.info(feedback_tool)
     logger.info(feedback_narrative)
+
+
+
+@shared_task
+def save_references(article_id):
+    logger.info(f'save_article_references:{article_id}')
+    try:
+        article = Article.objects.get(pk=article_id)
+    except Article.DoesNotExist:
+        logger.error(f'save_article_references:{article_id} not found')
+    logger.info("inside save_article_references")
+    references, bibliography, refs = get_notebook_references_fulltext(raw_url=article.notebook_ipython_url)
+    #logger.info(f'References {references}')
+    logger.info(f'ok finish')
+

@@ -31,8 +31,8 @@ def ArticleDetail(request, pid):
     # get ONLY published article matching the pid
     try:
         article = Article.objects.get(
-            abstract__pid=pid,
-            status=Article.Status.PUBLISHED)
+            abstract__pid=pid)
+            #status=Article.Status.PUBLISHED)
     except Article.DoesNotExist:
         raise Http404("Article does not exist")
     # generate qrcode
@@ -242,4 +242,5 @@ def Generate_zip(request, pid):
     response['Content-Type'] = 'application/x-zip-compressed'
     response['Content-Disposition'] = f'attachment; filename={filename_zip}'
     return response
+
 
