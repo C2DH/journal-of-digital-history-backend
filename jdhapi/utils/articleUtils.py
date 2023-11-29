@@ -350,18 +350,8 @@ def get_notebook_references_fulltext(raw_url):
                 r'<cite\s+data-cite=.([/\dA-Z]+).>([^<]*)</cite>',
                 formatInlineCitations, source)
             cell['source'] = updated_source  # Update the cell content with the modified source
-        with open('notebook_with_ref.ipynb', 'w') as outfile:
-            json.dump(notebook, outfile)
-            notebook_file = 'notebook_with_ref.ipynb'
-            output_format = 'pdf'
-            command = f'jupyter nbconvert --to {output_format} {notebook_file}'
-            try:
-                result = subprocess.check_output(command, shell=True, stderr=subprocess.STDOUT, text=True)
-                logger.info("Conversion successful!")
-                logger.info(result)  # Print the entire output
-            except subprocess.CalledProcessError as e:
-                logger.error(f"Error during conversion: {e}")
-                logger.error("Command output:\n", e.output)
+        generate_output_file(notebook, "notebook_with_ref.ipynb")
+        convert_notebook("notebook_with_ref.ipynb", output_format='pdf')
         return {
             'references': references,
             'bibliography': bibliography,
@@ -371,4 +361,19 @@ def get_notebook_references_fulltext(raw_url):
         logger.error(f'Other error occurred: {err}')
 
 
+def generate_output_file(notebook, output_file):
+    with open(output_file, 'w') as outfile:
+        json.dump(notebook, outfile)
 
+    logger.info("Output file generated successfully: %s", output_file)
+
+
+def convert_notebook(notebook_file, output_format='pdf'):
+    try:
+        # Run the nbconvert command to generate the output file
+        command = f'jupyter nbconvert --to {output_format} {notebook_file}'
+        subprocess.run(command, shell=True, check=True, capture_output=True, text=True)
+        logger.info("Conversion successful!")
+    except subprocess.CalledProcessError as e:
+        logger.error(f"Error during conversion: {e}")
+        logger.error("Command output:\n", e.output)
