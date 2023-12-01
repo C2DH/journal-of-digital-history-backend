@@ -350,6 +350,13 @@ def get_notebook_references_fulltext(raw_url):
                 r'<cite\s+data-cite=.([/\dA-Z]+).>([^<]*)</cite>',
                 formatInlineCitations, source)
             cell['source'] = updated_source  # Update the cell content with the modified source
+            # Check if the cell contains <div class="cite2c-biblio"></div>
+            if 'cite2c-biblio' in source:
+            # Log the replacement
+                logger.info(f'Replaced <div class="cite2c-biblio"></div> in cell with bibliography content.')
+                # Convert the array to a string with each element on a separate line
+                bibliography_lines = '\n\n'.join(bibliography)
+                cell['source'] = bibliography_lines
         generate_output_file(notebook, "notebook_with_ref.ipynb")
         convert_notebook("notebook_with_ref.ipynb", output_format='pdf')
         return {
@@ -377,3 +384,5 @@ def convert_notebook(notebook_file, output_format='pdf'):
     except subprocess.CalledProcessError as e:
         logger.error(f"Error during conversion: {e}")
         logger.error("Command output:\n", e.output)
+
+
