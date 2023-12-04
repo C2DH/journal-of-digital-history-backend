@@ -49,7 +49,7 @@ def save_article_references(modeladmin, request, queryset):
         save_references.delay(article_id=article.pk)
 
 
-save_article_references.short_description = "5: Generate notebook with references"
+save_article_references.short_description = "5: Generate pdf"
 
 
 @admin.register(Abstract)
