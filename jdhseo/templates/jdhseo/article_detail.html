@@ -189,6 +189,25 @@
   }
   .email a:link, a:visited, a:focus {
   }
+
+  /* Add this CSS to style the watermark on all pages */
+  @media print {
+    body::after {
+      content: "PEER-REVIEW";
+      position: fixed;
+      transform: rotate(-45deg);
+      opacity: 0.2;
+      font-size: 50pt;
+      color: black;
+      top: 50%;
+      left: 50%;
+      transform-origin: center; /* Center the transform origin */
+      transform: translate(-50%, -50%) rotate(-45deg); /* Center the watermark using transform and translate */
+      z-index: -1;
+      white-space: nowrap;
+      pointer-events: none;
+    }
+  }
   }
 </style>
 {% endblock %}

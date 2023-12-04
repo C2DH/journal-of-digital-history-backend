@@ -11,7 +11,9 @@ from django.shortcuts import render, get_object_or_404
 from jdhapi.utils.doi import get_doi_url_formatted_jdh
 from jdhapi.models import Author, Tag
 from requests.exceptions import HTTPError
+from jdhseo.utils import getReferencesFromJupyterNotebook
 import os
+import subprocess
 
 logger = logging.getLogger(__name__)
 
@@ -327,3 +329,60 @@ def generate_tags(article):
                 article.tags.remove(initial)
     # parse requirements.txt or install.R
     return read_libraries(article)
+
+
+def get_notebook_references_fulltext(raw_url):
+    notebook = get_notebook_from_raw_github(raw_url=raw_url)
+    cells = notebook.get('cells')
+    logger.debug(f'get_notebook_references_fulltext - notebook loaded: {raw_url}')
+    try:
+        references, bibliography, refs = getReferencesFromJupyterNotebook(notebook)
+        def formatInlineCitations(m):
+            parsed_ref = refs.get(m[1], None)
+            if parsed_ref is None:
+                return f'{m[1]}'
+            return parsed_ref
+        num = 0
+        for cell in cells:
+            # check cell metadata
+            source = ''.join(cell.get('source', ''))
+            updated_source = re.sub(
+                r'<cite\s+data-cite=.([/\dA-Z]+).>([^<]*)</cite>',
+                formatInlineCitations, source)
+            cell['source'] = updated_source  # Update the cell content with the modified source
+            # Check if the cell contains <div class="cite2c-biblio"></div>
+            if 'cite2c-biblio' in source:
+            # Log the replacement
+                logger.info(f'Replaced <div class="cite2c-biblio"></div> in cell with bibliography content.')
+                # Convert the array to a string with each element on a separate line
+                bibliography_lines = '\n\n'.join(bibliography)
+                cell['source'] = bibliography_lines
+        generate_output_file(notebook, "notebook_with_ref.ipynb")
+        convert_notebook("notebook_with_ref.ipynb", output_format='pdf')
+        return {
+            'references': references,
+            'bibliography': bibliography,
+            'refs': refs
+        }
+    except Exception as err:
+        logger.error(f'Other error occurred: {err}')
+
+
+def generate_output_file(notebook, output_file):
+    with open(output_file, 'w') as outfile:
+        json.dump(notebook, outfile)
+
+    logger.info("Output file generated successfully: %s", output_file)
+
+
+def convert_notebook(notebook_file, output_format='pdf'):
+    try:
+        # Run the nbconvert command to generate the output file
+        command = f'jupyter nbconvert --to {output_format} {notebook_file}'
+        subprocess.run(command, shell=True, check=True, capture_output=True, text=True)
+        logger.info("Conversion successful!")
+    except subprocess.CalledProcessError as e:
+        logger.error(f"Error during conversion: {e}")
+        logger.error("Command output:\n", e.output)
+
+

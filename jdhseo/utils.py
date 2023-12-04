@@ -4,6 +4,7 @@ import logging
 import base64
 import qrcode
 import requests
+import json
 from io import BytesIO
 from citeproc import formatter
 from citeproc import Citation
@@ -220,3 +221,5 @@ def get_affiliation(orcid):
         logger.error(f'HTTP error occurred: {http_err}')
     except Exception as err:
         logger.error(f'Other error occurred: {err}')
+
+
