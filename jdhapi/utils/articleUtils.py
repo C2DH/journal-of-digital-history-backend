@@ -379,7 +379,9 @@ def convert_notebook(notebook_file, output_format='pdf'):
     try:
         # Run the nbconvert command to generate the output file
         command = f'jupyter nbconvert --to {output_format} {notebook_file}'
-        subprocess.run(command, shell=True, check=True, capture_output=True, text=True)
+        #subprocess.run(command, shell=True, check=True, capture_output=True, text=True)
+        subprocess.check_output(command, shell=True, stderr=subprocess.STDOUT, text=True)
+
         logger.info("Conversion successful!")
     except subprocess.CalledProcessError as e:
         logger.error(f"Error during conversion: {e}")
