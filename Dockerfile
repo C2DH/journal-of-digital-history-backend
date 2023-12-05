@@ -42,7 +42,11 @@ RUN apk add --no-cache --virtual .build-deps \
     fribidi-dev \
     libxslt-dev
 
-RUN apk update && apk add pandoc
+RUN set -x \
+    && apk update \
+    && apk add textlive pandoc \
+    && set +x
+
 
 
 # Additional font
