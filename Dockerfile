@@ -42,7 +42,7 @@ RUN apk add --no-cache --virtual .build-deps \
     fribidi-dev \
     libxslt-dev
 
-RUN apt-get update && apt-get install -y pandoc
+RUN apk update && apk add pandoc
 
 
 # Additional font
