@@ -1,12 +1,18 @@
-FROM python:3.8.0-alpine
+FROM pandoc/core:latest
+
 WORKDIR /journal-of-digital-history-backend
+
+# Install python/pip
+ENV PYTHONUNBUFFERED=1
+RUN apk add --update --no-cache python3 && ln -sf python3 /usr/bin/python
+RUN python3 -m ensurepip
+RUN pip3 install --no-cache --upgrade pip setuptools
 
 ARG GIT_TAG
 ARG GIT_BRANCH
 ARG GIT_REVISION
 
 RUN pip install --upgrade pip
-
 
 
 RUN apk add --no-cache \
@@ -29,6 +35,8 @@ RUN apk add --no-cache \
 RUN apk add --no-cache --virtual .build-deps \
     gcc \
     musl-dev \
+    libxml2-dev \
+    libxslt-dev \
     postgresql-dev \
     jpeg-dev \
     zlib-dev \
@@ -41,12 +49,6 @@ RUN apk add --no-cache --virtual .build-deps \
     harfbuzz-dev \
     fribidi-dev \
     libxslt-dev
-
-RUN set -x \
-    && apk update \
-    && apk add textlive pandoc \
-    && set +x
-
 
 
 # Additional font
@@ -73,5 +75,7 @@ RUN mkdir -p logs
 ENV GIT_TAG=${GIT_TAG}
 ENV GIT_BRANCH=${GIT_BRANCH}
 ENV GIT_REVISION=${GIT_REVISION}
+
+
 
 ENTRYPOINT python ./manage.py runserver
