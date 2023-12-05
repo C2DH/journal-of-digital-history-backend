@@ -22,7 +22,9 @@ RUN apk add --no-cache \
     tiff-dev \
     tk-dev \
     zlib-dev \
-    pango-dev
+    pango-dev \
+    py3-pandas
+
 
 RUN apk add --no-cache --virtual .build-deps \
     gcc \
