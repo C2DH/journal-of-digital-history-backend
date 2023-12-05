@@ -7,6 +7,9 @@ ARG GIT_REVISION
 
 RUN pip install --upgrade pip
 
+# Install pandas
+RUN pip install pandas
+
 RUN apk add --no-cache \
     postgresql-libs \
     libxml2 \
@@ -22,8 +25,8 @@ RUN apk add --no-cache \
     tiff-dev \
     tk-dev \
     zlib-dev \
-    pango-dev \
-    py3-pandas
+    pango-dev
+
 
 RUN apk add --no-cache --virtual .build-deps \
     gcc \
