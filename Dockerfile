@@ -27,7 +27,6 @@ RUN apk add --no-cache \
     pango-dev \
     pandoc
 
-
 RUN apk add --no-cache --virtual .build-deps \
     gcc \
     musl-dev \
