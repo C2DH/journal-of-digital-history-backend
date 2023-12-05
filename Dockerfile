@@ -25,7 +25,6 @@ RUN apk add --no-cache \
     pango-dev \
     py3-pandas
 
-
 RUN apk add --no-cache --virtual .build-deps \
     gcc \
     musl-dev \
