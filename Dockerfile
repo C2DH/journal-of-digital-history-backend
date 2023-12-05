@@ -7,8 +7,7 @@ ARG GIT_REVISION
 
 RUN pip install --upgrade pip
 
-# Install pandas
-RUN pip install pandas
+
 
 RUN apk add --no-cache \
     postgresql-libs \
@@ -30,7 +29,11 @@ RUN apk add --no-cache \
 
 RUN apk add --no-cache --virtual .build-deps \
     gcc \
+# Panda dependencies
+    build-base \
     musl-dev \
+    libffi-dev \
+    openssl-dev \
     postgresql-dev \
     jpeg-dev \
     zlib-dev \
@@ -44,6 +47,9 @@ RUN apk add --no-cache --virtual .build-deps \
     fribidi-dev \
     libxslt-dev
 
+
+# Install pandas
+RUN pip install pandas
 
 # Additional font
 RUN apk --update --upgrade --no-cache add fontconfig ttf-freefont font-noto terminus-font \
