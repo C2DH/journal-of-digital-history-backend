@@ -24,8 +24,7 @@ RUN apk add --no-cache \
     tiff-dev \
     tk-dev \
     zlib-dev \
-    pango-dev \
-    pandoc
+    pango-dev
 
 RUN apk add --no-cache --virtual .build-deps \
     gcc \
@@ -43,7 +42,7 @@ RUN apk add --no-cache --virtual .build-deps \
     fribidi-dev \
     libxslt-dev
 
-
+RUN apt-get update && apt-get install -y pandoc
 
 
 # Additional font
