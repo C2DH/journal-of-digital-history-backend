@@ -24,16 +24,13 @@ RUN apk add --no-cache \
     tiff-dev \
     tk-dev \
     zlib-dev \
-    pango-dev
+    pango-dev \
+    pandoc
 
 
 RUN apk add --no-cache --virtual .build-deps \
     gcc \
-# Panda dependencies
-    build-base \
     musl-dev \
-    libffi-dev \
-    openssl-dev \
     postgresql-dev \
     jpeg-dev \
     zlib-dev \
@@ -48,8 +45,7 @@ RUN apk add --no-cache --virtual .build-deps \
     libxslt-dev
 
 
-# Install pandas
-RUN pip install pandas
+
 
 # Additional font
 RUN apk --update --upgrade --no-cache add fontconfig ttf-freefont font-noto terminus-font \
