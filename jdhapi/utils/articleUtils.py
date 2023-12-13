@@ -346,11 +346,28 @@ def get_notebook_references_fulltext(raw_url):
         for cell in cells:
             # check cell metadata
             source = ''.join(cell.get('source', ''))
-            updated_source = re.sub(
-                r'<cite\s+data-cite=.([/\dA-Z]+).>([^<]*)</cite>',
-                formatInlineCitations, source)
-            cell['source'] = updated_source  # Update the cell content with the modified source
+            # check if the cell is tagged as hermeneutics
+            tags = cell.get('metadata').get('tags', [])
+            if 'hermeneutics' in tags:
+                # logger.info(f'Found hermeneutics cell: {source}')
+                # insert start hermeneutics at the beginning of the cell
+                hermeneutics_source = "START HERMENEUTICS \n" + source
+                # insert end hermeneutics at the end of the cell
+                hermeneutics_source += "\n END HERMENEUTICS\n"
+                cell['source'] = hermeneutics_source
+            # check if the cell contains <cite data-cite="..."></cite>
+            if re.search(r'<cite\s+data-cite=.([/\dA-Z]+).>([^<]*)</cite>', source):
+                updated_source = re.sub(
+                    r'<cite\s+data-cite=.([/\dA-Z]+).>([^<]*)</cite>',
+                    formatInlineCitations, source)
+                cell['source'] = updated_source
+
             # Check if the cell contains <div class="cite2c-biblio"></div>
+            if 'cite2c-biblio' in source:
+                logger.info('Replaced <div class="cite2c-biblio"></div> in cell with bibliography content.')
+                # Convert the array to a string with each element on a separate line
+                bibliography_lines = '\n\n'.join(bibliography)
+                cell['source'] = bibliography_lines
             if 'cite2c-biblio' in source:
             # Log the replacement
                 logger.info(f'Replaced <div class="cite2c-biblio"></div> in cell with bibliography content.')
