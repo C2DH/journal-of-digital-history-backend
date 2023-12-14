@@ -351,9 +351,9 @@ def get_notebook_references_fulltext(raw_url):
             if 'hermeneutics' in tags:
                 # logger.info(f'Found hermeneutics cell: {source}')
                 # insert start hermeneutics at the beginning of the cell
-                hermeneutics_source = "START HERMENEUTICS \n " + source
+                hermeneutics_source = "START HERMENEUTICS\n\n" + source
                 # insert end hermeneutics at the end of the cell
-                hermeneutics_source += " \n END HERMENEUTICS \n "
+                hermeneutics_source += "\nEND HERMENEUTICS\n\n "
                 cell['source'] = hermeneutics_source
             # check if the cell contains <cite data-cite="..."></cite>
             if re.search(r'<cite\s+data-cite=.([/\dA-Z]+).>([^<]*)</cite>', source):
