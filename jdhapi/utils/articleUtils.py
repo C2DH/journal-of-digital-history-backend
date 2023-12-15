@@ -348,13 +348,34 @@ def get_notebook_references_fulltext(raw_url):
             source = ''.join(cell.get('source', ''))
             # check if the cell is tagged as hermeneutics
             tags = cell.get('metadata').get('tags', [])
+            # Remove markdown image
+            # if (https://orcid.org/sites/default/files/images/orcid_16x16.png) remove it
+            # if(https://licensebuttons.net/*)
+            if re.search(r'https://orcid.org/sites/default/files/images/orcid_16x16.png', source):
+                updated_source = re.sub(
+                    r'!\[.*\]\(https://orcid.org/sites/default/files/images/orcid_16x16.png\)',
+                    '', source)
+                cell['source'] = updated_source
+            if re.search(r'https://licensebuttons.net/', source):
+                updated_source = re.sub(
+                    r'!\[.*\]\(https://licensebuttons.net/.*\)',
+                    '', source)
+                cell['source'] = updated_source
             if 'hermeneutics' in tags:
-                # logger.info(f'Found hermeneutics cell: {source}')
-                # insert start hermeneutics at the beginning of the cell
-                hermeneutics_source = "START HERMENEUTICS\n\n" + source
-                # insert end hermeneutics at the end of the cell
-                hermeneutics_source += "\nEND HERMENEUTICS\n\n "
-                cell['source'] = hermeneutics_source
+                if cell['cell_type'] == "markdown":
+                    # Concatenate the strings in the 'source' array to form a single string
+                    source_text = ''.join(source)
+                    # insert start hermeneutics at the beginning of the cell
+                    hermeneutics_source = "START HERMENEUTICS\n\n" + source_text
+                    # insert end hermeneutics at the end of the cell
+                    hermeneutics_source += "\n\nEND HERMENEUTICS\n\n "
+                    cell['source'] = [hermeneutics_source]
+                else:
+                    source_code = ''.join(source)
+                    hermeneutics_source = "#START HERMENEUTICS\n\n" + source_code
+                    # insert end hermeneutics at the end of the cell
+                    hermeneutics_source += "\n\n#END HERMENEUTICS\n\n "
+                    cell['source'] = [hermeneutics_source]
             # check if the cell contains <cite data-cite="..."></cite>
             if re.search(r'<cite\s+data-cite=.([/\dA-Z]+).>([^<]*)</cite>', source):
                 updated_source = re.sub(

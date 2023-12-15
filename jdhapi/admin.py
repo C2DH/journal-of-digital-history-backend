@@ -54,8 +54,8 @@ save_article_references.short_description = "5: Generate pdf"
 
 @admin.register(Abstract)
 class AbstractAdmin(ExportActionMixin, admin.ModelAdmin):
-    search_fields = ("title", )
-    list_display = ['title', 'callpaper', 'contact_email', 'submitted_date', 'status']
+    search_fields = ("title", "pid" )
+    list_display = ['pid','title', 'callpaper', 'contact_email', 'submitted_date', 'status']
     list_filter = ('status', 'callpaper')
     fieldsets = (
         (
