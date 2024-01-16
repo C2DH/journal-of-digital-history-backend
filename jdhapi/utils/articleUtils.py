@@ -33,27 +33,34 @@ def get_notebook_from_raw_github(raw_url):
     except Exception as e:
         logger.error(f"An unexpected error occurred: {e}")
 
-
 def get_notebook_from_github(
     repository_url, host='https://raw.githubusercontent.com'
 ):
-    logger.info(
-        f'get_notebook_from_github - parsing repository_url: {repository_url}')
-    result = re.search(
-        r'github\.com\/([^\/]+)\/([^\/]+)\/(blob\/)?(.*\.ipynb$)',
-        repository_url
-    )
-    github_user = result.group(1)
-    github_repo = result.group(2)
-    github_filepath = result.group(4)
-    raw_url = f'{host}/{github_user}/{github_repo}/{github_filepath}'
-    # https://raw.githubusercontent.com/jdh-observer/jdh001-WBqfZzfi7nHK/blob/8315a108416f4a5e9e6da0c5e9f18b5e583ed825/scripts/Digital_epigraphy_cite2c_biblio.ipynb
-    # Match github.com/<github_user abc>/<github_filepath XXX/yyy/zzz.ipynb>
-    # and exclude the `/blob/` part of the url if any.
-    # then extract the gighub username nd the filepath to download
-    # conveniently from githubusercontent server.
-    logger.info(f'get_notebook_from_github - requesting raw_url: {raw_url}...')
-    return get_notebook_from_raw_github(raw_url)
+    try:
+        logger.info(
+            f'get_notebook_from_github - parsing repository_url: {repository_url}')
+        result = re.search(
+            r'github\.com\/([^\/]+)\/([^\/]+)\/(blob\/)?(.*\.ipynb$)',
+            repository_url
+        )
+        github_user = result.group(1)
+        github_repo = result.group(2)
+        github_filepath = result.group(4)
+        github_full_url = f'https://github.com/{github_user}/{github_repo}'
+        raw_url = f'{host}/{github_user}/{github_repo}/{github_filepath}'
+
+        logger.info(f'get_notebook_from_github - requesting github_filepath: {github_filepath}...')
+        logger.info(f'get_notebook_from_github - requesting github_repo: {github_full_url}...')
+        logger.info(f'get_notebook_from_github - requesting raw_url: {raw_url}...')
+
+        return github_full_url, github_filepath, raw_url
+
+    except requests.exceptions.RequestException as e:
+        logger.error(f'Error accessing GitHub URL: {e}')
+        return None
+    except Exception as e:
+        logger.error(f'An unexpected error occurred: {e}')
+        return None
 
 
 # Method to use to generate the fingerprint datas
@@ -417,7 +424,6 @@ def convert_notebook(notebook_file, output_format='pdf'):
     try:
         # Run the nbconvert command to generate the output file
         command = f'jupyter nbconvert --to {output_format} {notebook_file}'
-        #subprocess.run(command, shell=True, check=True, capture_output=True, text=True)
         subprocess.check_output(command, shell=True, stderr=subprocess.STDOUT, text=True)
 
         logger.info("Conversion successful!")

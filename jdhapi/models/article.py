@@ -11,6 +11,7 @@ from django.core.mail import EmailMessage
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from lxml import html
+from django.dispatch import receiver
 from model_utils import FieldTracker
 
 logger = logging.getLogger(__name__)
@@ -43,8 +44,9 @@ class Article(models.Model):
         choices=Status.choices,
         default=Status.DRAFT,
     )
-    tracker = FieldTracker(fields=['status'])
+
     issue = models.ForeignKey('jdhapi.Issue', on_delete=models.CASCADE)
+    full_url_article_path = models.CharField(max_length=254, null=True, blank=True, help_text="Full URL of the article")
     repository_url = models.URLField(max_length=254, null=True, blank=True, help_text="GitHub's repository URL ")
     repository_type = models.CharField(
         max_length=15,
@@ -78,6 +80,8 @@ class Article(models.Model):
         default=dict, blank=True)
     tags = models.ManyToManyField('jdhapi.Tag', blank=True)
     authors = models.ManyToManyField('jdhapi.Author', through='Role')
+
+    tracker = FieldTracker(fields=['status','full_url_article_path'])
 
     def get_kernel_language(self):
         tool_tags = self.tags.filter(category='tool')
@@ -120,3 +124,5 @@ class Article(models.Model):
                     logger.info("Email sent")
                 except Exception as e:
                     print(f'Error sending email: {str(e)}')
+
+

@@ -112,6 +112,8 @@ class ArticleAdmin(admin.ModelAdmin):
     list_display = ['abstract_pid', 'issue_name', 'issue', 'abstract_title', 'status', 'clickable_dataverse_url']
     list_filter = ('issue__name', 'status', 'copyright_type', EmptyDataverseURLFilter)
     actions = [save_notebook_fingerprint, save_notebook_specific_cell, save_article_citation, save_article_package, save_article_references]
+    #readonly_fields = ("notebook_url", "notebook_path", "binder_url", "notebook_ipython_url")
+
     fieldsets = (
         (
             "Information related to the article", {
@@ -126,7 +128,12 @@ class ArticleAdmin(admin.ModelAdmin):
                 # Section Description
                 # "description" : "Enter the vehicle information",
                 # Group Make and Model
-                "fields": (("repository_type", "repository_url"), "notebook_url", "notebook_path", "binder_url", "notebook_ipython_url", "dataverse_url")
+                "fields": (("repository_type", "full_url_article_path"), ("repository_url", "notebook_url", "notebook_path", "binder_url", "notebook_ipython_url"))
+            }
+        ),
+ (
+            "Information related to the dataverse repository", {
+                "fields": ("dataverse_url",)
             }
         ),
         (

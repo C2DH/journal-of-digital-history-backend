@@ -17,9 +17,10 @@ class ArticleForm(forms.ModelForm):
         model = Article
         fields = '__all__'
 
-    def clean(self):
+    """ def clean(self):
         # Get the article data
         article = self.instance
+        full_url_article_path = self.cleaned_data['full_url_article_path']
         doi = self.cleaned_data['doi']
         status = self.cleaned_data['status']
         repository_url = self.cleaned_data['repository_url']
@@ -29,6 +30,7 @@ class ArticleForm(forms.ModelForm):
         notebook_ipython_url = self.cleaned_data['notebook_ipython_url']
         if self.has_changed():
             logger.info("The following fields changed: %s" % ", ".join(self.changed_data))
+
             if 'status' in self.changed_data:
                 # IF PUBLISHED
                 if status == Article.Status.PUBLISHED:
@@ -60,3 +62,4 @@ class ArticleForm(forms.ModelForm):
             logger.info("no changed fields")
 
 
+ """
