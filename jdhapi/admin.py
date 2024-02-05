@@ -95,7 +95,7 @@ class AuthorAdmin(ExportActionMixin, admin.ModelAdmin):
 
 @admin.register(Issue)
 class IssueAdmin(admin.ModelAdmin):
-    list_display = ['name', 'pid', 'volume', 'issue', 'status', 'publication_date']
+    list_display = ['name', 'pid', 'volume', 'issue', 'status', 'publication_date', 'is_open_ended']
 
 
 @admin.register(Tag)

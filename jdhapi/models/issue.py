@@ -17,6 +17,7 @@ class Issue(models.Model):
     publication_date = models.DateTimeField(blank=True, null=True)
     cover_date = models.DateTimeField(blank=True, null=True)
     data = models.JSONField(verbose_name=u'data contents', help_text='JSON format', default=dict, blank=True)
+    is_open_ended =models.BooleanField(default=True)
     # YEAR OF PUBLICATION
     # 2021  - volume 1
     # 2022 -  volume 2
