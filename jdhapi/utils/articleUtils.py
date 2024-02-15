@@ -11,7 +11,9 @@ from django.shortcuts import render, get_object_or_404
 from jdhapi.utils.doi import get_doi_url_formatted_jdh
 from jdhapi.models import Author, Tag
 from requests.exceptions import HTTPError
+from jdhseo.utils import getReferencesFromJupyterNotebook
 import os
+import subprocess
 
 logger = logging.getLogger(__name__)
 
@@ -19,10 +21,17 @@ METADATA_TAGS = ['title', 'abstract', 'contributor', 'disclaimer', 'keywords', '
 
 
 def get_notebook_from_raw_github(raw_url):
-    logger.info(
-        f'get_notebook_from_raw_github - parsing url: {raw_url}')
-    r = requests.get(raw_url)
-    return r.json()
+    try:
+        logger.info(f'get_notebook_from_raw_github - parsing url: {raw_url}')
+        r = requests.get(raw_url)
+        r.raise_for_status()  # Raise an error if the request is not successful (e.g., 404)
+        return r.json()
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Request to {raw_url} failed with exception: {e}")
+    except json.JSONDecodeError as e:
+        logger.error(f"JSON decoding failed with exception: {e}")
+    except Exception as e:
+        logger.error(f"An unexpected error occurred: {e}")
 
 
 def get_notebook_from_github(
@@ -320,3 +329,100 @@ def generate_tags(article):
                 article.tags.remove(initial)
     # parse requirements.txt or install.R
     return read_libraries(article)
+
+
+def get_notebook_references_fulltext(raw_url):
+    notebook = get_notebook_from_raw_github(raw_url=raw_url)
+    cells = notebook.get('cells')
+    logger.debug(f'get_notebook_references_fulltext - notebook loaded: {raw_url}')
+    try:
+        references, bibliography, refs = getReferencesFromJupyterNotebook(notebook)
+        def formatInlineCitations(m):
+            parsed_ref = refs.get(m[1], None)
+            if parsed_ref is None:
+                return f'{m[1]}'
+            return parsed_ref
+        num = 0
+        for cell in cells:
+            # check cell metadata
+            source = ''.join(cell.get('source', ''))
+            # check if the cell is tagged as hermeneutics
+            tags = cell.get('metadata').get('tags', [])
+            # Remove markdown image
+            # if (https://orcid.org/sites/default/files/images/orcid_16x16.png) remove it
+            # if(https://licensebuttons.net/*)
+            if re.search(r'https://orcid.org/sites/default/files/images/orcid_16x16.png', source):
+                updated_source = re.sub(
+                    r'!\[.*\]\(https://orcid.org/sites/default/files/images/orcid_16x16.png\)',
+                    '', source)
+                cell['source'] = updated_source
+            if re.search(r'https://licensebuttons.net/', source):
+                updated_source = re.sub(
+                    r'!\[.*\]\(https://licensebuttons.net/.*\)',
+                    '', source)
+                cell['source'] = updated_source
+            if 'hermeneutics' in tags:
+                if cell['cell_type'] == "markdown":
+                    # Concatenate the strings in the 'source' array to form a single string
+                    source_text = ''.join(source)
+                    # insert start hermeneutics at the beginning of the cell
+                    hermeneutics_source = "START HERMENEUTICS\n\n" + source_text
+                    # insert end hermeneutics at the end of the cell
+                    hermeneutics_source += "\n\nEND HERMENEUTICS\n\n "
+                    cell['source'] = [hermeneutics_source]
+                else:
+                    source_code = ''.join(source)
+                    hermeneutics_source = "#START HERMENEUTICS\n\n" + source_code
+                    # insert end hermeneutics at the end of the cell
+                    hermeneutics_source += "\n\n#END HERMENEUTICS\n\n "
+                    cell['source'] = [hermeneutics_source]
+            # check if the cell contains <cite data-cite="..."></cite>
+            if re.search(r'<cite\s+data-cite=.([/\dA-Z]+).>([^<]*)</cite>', source):
+                updated_source = re.sub(
+                    r'<cite\s+data-cite=.([/\dA-Z]+).>([^<]*)</cite>',
+                    formatInlineCitations, source)
+                cell['source'] = updated_source
+
+            # Check if the cell contains <div class="cite2c-biblio"></div>
+            if 'cite2c-biblio' in source:
+                logger.info('Replaced <div class="cite2c-biblio"></div> in cell with bibliography content.')
+                # Convert the array to a string with each element on a separate line
+                bibliography_lines = '\n\n'.join(bibliography)
+                cell['source'] = bibliography_lines
+            if 'cite2c-biblio' in source:
+            # Log the replacement
+                logger.info(f'Replaced <div class="cite2c-biblio"></div> in cell with bibliography content.')
+                # Convert the array to a string with each element on a separate line
+                bibliography_lines = '\n\n'.join(bibliography)
+                cell['source'] = bibliography_lines
+        generate_output_file(notebook, "notebook_with_ref.ipynb")
+        convert_notebook("notebook_with_ref.ipynb", output_format='pdf')
+        return {
+            'references': references,
+            'bibliography': bibliography,
+            'refs': refs
+        }
+    except Exception as err:
+        logger.error(f'Other error occurred: {err}')
+
+
+def generate_output_file(notebook, output_file):
+    with open(output_file, 'w') as outfile:
+        json.dump(notebook, outfile)
+
+    logger.info("Output file generated successfully: %s", output_file)
+
+
+def convert_notebook(notebook_file, output_format='pdf'):
+    try:
+        # Run the nbconvert command to generate the output file
+        command = f'jupyter nbconvert --to {output_format} {notebook_file}'
+        #subprocess.run(command, shell=True, check=True, capture_output=True, text=True)
+        subprocess.check_output(command, shell=True, stderr=subprocess.STDOUT, text=True)
+
+        logger.info("Conversion successful!")
+    except subprocess.CalledProcessError as e:
+        logger.error(f"Error during conversion: {e}")
+        logger.error("Command output:\n", e.output)
+
+

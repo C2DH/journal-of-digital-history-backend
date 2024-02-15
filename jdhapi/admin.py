@@ -6,7 +6,7 @@ from .forms import articleForm
 from .models import Author, Abstract, Dataset, Article, Issue, Tag, Role, CallOfPaper
 from .filter.languagetagfilter import LanguageTagFilter
 from .filter.dataverseurlfilter import EmptyDataverseURLFilter
-from .tasks import save_article_fingerprint, save_article_specific_content, save_citation, save_libraries
+from .tasks import save_article_fingerprint, save_article_specific_content, save_citation, save_libraries, save_references
 from import_export.admin import ExportActionMixin
 from .forms import articleForm
 from django.utils.html import format_html
@@ -44,10 +44,18 @@ def save_article_package(modeladmin, request, queryset):
 save_article_package.short_description = "4: Generate tags TOOL/NARRATIVE"
 
 
+def save_article_references(modeladmin, request, queryset):
+    for article in queryset:
+        save_references.delay(article_id=article.pk)
+
+
+save_article_references.short_description = "5: Generate pdf"
+
+
 @admin.register(Abstract)
 class AbstractAdmin(ExportActionMixin, admin.ModelAdmin):
-    search_fields = ("title", )
-    list_display = ['title', 'callpaper', 'contact_email', 'submitted_date', 'status']
+    search_fields = ("title", "pid" )
+    list_display = ['pid','title', 'callpaper', 'contact_email', 'submitted_date', 'status']
     list_filter = ('status', 'callpaper')
     fieldsets = (
         (
@@ -87,7 +95,7 @@ class AuthorAdmin(ExportActionMixin, admin.ModelAdmin):
 
 @admin.register(Issue)
 class IssueAdmin(admin.ModelAdmin):
-    list_display = ['name', 'pid', 'volume', 'issue', 'status', 'publication_date']
+    list_display = ['name', 'pid', 'volume', 'issue', 'status', 'publication_date', 'is_open_ended']
 
 
 @admin.register(Tag)
@@ -103,7 +111,7 @@ class ArticleAdmin(admin.ModelAdmin):
     search_fields = ("abstract__title", )
     list_display = ['abstract_pid', 'issue_name', 'issue', 'abstract_title', 'status', 'clickable_dataverse_url']
     list_filter = ('issue__name', 'status', 'copyright_type', EmptyDataverseURLFilter)
-    actions = [save_notebook_fingerprint, save_notebook_specific_cell, save_article_citation, save_article_package]
+    actions = [save_notebook_fingerprint, save_notebook_specific_cell, save_article_citation, save_article_package, save_article_references]
     fieldsets = (
         (
             "Information related to the article", {

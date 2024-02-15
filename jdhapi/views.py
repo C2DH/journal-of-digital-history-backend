@@ -245,10 +245,21 @@ class AbstractDetail(generics.RetrieveUpdateDestroyAPIView):
     lookup_field = "pid"
 
 
+class IsOwnerFilterBackend(filters.BaseFilterBackend):
+    """
+    Filter that only allows users to see their own objects.
+    """
+    def filter_queryset(self, request, queryset, view):
+        if request.user.is_staff:
+            return queryset  # Staff members can see all articles
+        else:
+            return queryset.filter(status=Article.Status.PUBLISHED)
+
+
 class ArticleList(generics.ListCreateAPIView):
     queryset = Article.objects.all()
     serializer_class = ArticleSerializer
-    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    filter_backends = [IsOwnerFilterBackend, filters.OrderingFilter]
     filterset_fields = ["issue", "abstract", "status", "tags", "authors", "copyright_type"]
     ordering_fields = ["issue__publication_date", "publication_date"]
     ordering = ["-issue__publication_date", "-publication_date"]
@@ -258,12 +269,11 @@ class ArticleList(generics.ListCreateAPIView):
         Optionally restricts the returned articles to a given issue,
         by filtering against a `pid` query parameter in the URL.
         """
-        queryset = Article.objects.all()
+        queryset = super().get_queryset()
         pid = self.request.query_params.get('pid')
         if pid is not None:
             queryset = queryset.filter(issue__pid=pid)
         return queryset
-
 
 class ArticleDetail(generics.RetrieveUpdateDestroyAPIView):
     # TO UPDATE OR DELETE need to be authenticated
@@ -277,8 +287,8 @@ class IssueList(generics.ListCreateAPIView):
     queryset = Issue.objects.all()
     serializer_class = IssueSerializer
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
-    filterset_fields = ["id", "pid", "name", "description", "creation_date", "publication_date", "cover_date", "status", "volume", "issue"]
-    ordering_fields = ["creation_date", "publication_date"]
+    filterset_fields = ["id", "pid", "name", "description", "creation_date", "publication_date", "cover_date", "status", "volume", "issue","is_open_ended"]
+    ordering_fields = ["creation_date", "publication_date", "pid"]
 
 
 class IssueDetail(generics.RetrieveUpdateDestroyAPIView):
