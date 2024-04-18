@@ -23,7 +23,9 @@
 			</title-group>
 			<contrib-group>{% for contrib in articleXml.authors %}
 				<contrib contrib-type="author">
-					<contrib-id contrib-id-type="orcid">{{ contrib.orcid }}</contrib-id>
+					{% if contrib.orcid %}
+                    <contrib-id contrib-id-type="orcid">{{ contrib.orcid }}</contrib-id>
+					{% endif %}
 						<name>
 							<surname>{{ contrib.surname }}</surname>
 							<given-names>{{ contrib.given_names }}</given-names>
@@ -49,7 +51,7 @@
 				<month>{{ articleXml.issue_date|date:"m"}}</month>
 				<year>{{ articleXml.issue_date|date:"Y" }}</year>
 			</pub-date>
-			<volume>{{ articleXml.volume }}</volume>
+			<volume content-type="open-issue">{{ articleXml.volume }}</volume>
 			<issue>{{ articleXml.issue }}</issue>
 			<elocation-id seq="{{ articleXml.seq }}">{{ articleXml.elocation_id }}</elocation-id>
 			<permissions>

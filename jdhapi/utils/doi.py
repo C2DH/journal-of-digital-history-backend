@@ -58,7 +58,7 @@ def get_doi_url_formatted(doi):
 # http://www.wiki.degruyter.de/production/files/dg_variables_and_id.xhtml#elocation-id
 def get_elocation_id(publisher_id):
     # PublisherId: jdh-2021-1000
-    elocation_id = publisher_id.replace("-", "").replace("JDH", "")
+    elocation_id = publisher_id.replace("-", "").replace("jdh", "")
     return elocation_id
 
 
