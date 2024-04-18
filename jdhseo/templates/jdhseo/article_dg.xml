@@ -23,7 +23,9 @@
 			</title-group>
 			<contrib-group>{% for contrib in articleXml.authors %}
 				<contrib contrib-type="author">
-					<contrib-id contrib-id-type="orcid">{{ contrib.orcid }}</contrib-id>
+					{% if contrib.orcid %}
+                    <contrib-id contrib-id-type="orcid">{{ contrib.orcid }}</contrib-id>
+					{% endif %}
 						<name>
 							<surname>{{ contrib.surname }}</surname>
 							<given-names>{{ contrib.given_names }}</given-names>
