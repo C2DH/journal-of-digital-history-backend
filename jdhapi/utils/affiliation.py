@@ -2,6 +2,7 @@ import logging
 from re import I
 import pycountry
 from jdhseo.utils import get_affiliation
+from jdhapi.models import Author
 logger = logging.getLogger(__name__)
 
 
@@ -24,7 +25,7 @@ def get_authors(article_authors, affiliations):
     return authors
 
 
-def get_affiliation_json_one(orcid_url, affiliation):
+def get_affiliation_json_one(author_id, orcid_url, affiliation):
     default_affiliation = {
         "institution": affiliation,
         "city": "NOT FOUND",
@@ -50,7 +51,18 @@ def get_affiliation_json_one(orcid_url, affiliation):
         else:
             affiliation = default_affiliation
     else:
-        return default_affiliation
+        # go to retrieve from the author
+        author = Author.objects.get(
+                id=author_id)
+        if author.city and author.country:
+            affiliation = {
+                "institution": affiliation,
+                "city": author.city,
+                "country": author.country,
+                "country_name": author.country.name
+            }
+        else:
+            return default_affiliation
     return affiliation
 
 
@@ -62,7 +74,7 @@ def get_affiliation_json(authors, publisher_id):
     affiliations = []
     i = 1
     for author in authors:
-        affiliation_one = get_affiliation_json_one(author.orcid, author.affiliation)
+        affiliation_one = get_affiliation_json_one(author.id, author.orcid, author.affiliation)
         if len(affiliations) == 0:
             affiliation_one["aff_id"] = i
             affiliation_one["authors_link"] = [author.lastname]

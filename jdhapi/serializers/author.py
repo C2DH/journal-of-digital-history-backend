@@ -15,4 +15,4 @@ class AuthorSlimSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Author
-        fields = ['id', 'lastname', 'firstname', 'affiliation', 'orcid']
+        fields = ['id', 'lastname', 'firstname', 'affiliation', 'orcid', 'city', 'country']
