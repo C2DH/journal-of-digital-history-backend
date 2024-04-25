@@ -86,3 +86,12 @@ def get_affiliation_json(authors, publisher_id):
                 affiliations.append(affiliation_one)
     # logger.info(f'affiliations: {affiliations}')
     return affiliations
+
+
+# method to check if affiliation is default_affiliation or not
+def is_default_affiliation(affiliations):
+    for affiliation in affiliations:
+        # if in the affiliation the city is NOT FOUND  or country is NOT FOUND or country_name is NOT FOUND return True
+        if affiliation["city"] == "NOT FOUND" or affiliation["country"] == "NOT FOUND" or affiliation["country_name"] == "NOT FOUND":
+            return True
+    return False
