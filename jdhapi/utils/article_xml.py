@@ -21,8 +21,11 @@ class ArticleXml:
         if is_default_affiliation(self.affiliations):
             # display error message - to fill country / city
             error_message = "Warning: Please fill the country and city in the affiliation"
-            affiliations_str = '\n'.join(json.dumps(affiliation, indent=4) for affiliation in self.affiliations)  # Convert list of affiliations to a comma-separated string
-            raise Http404("Default affiliation \n" + error_message + ".\nAffiliations: " + affiliations_str)
+            authors = []
+            for author in article_authors:
+                authors.append(author.lastname + " " + author.firstname)
+            authors_str = ', '.join(authors)
+            raise Http404("Default affiliation \n" + error_message + ".\nAuthors: " + authors_str)
         self.authors = get_authors(article_authors, self.affiliations)
         self.authors_concat = CopyrightJDH.getAuthorList(self.authors)
         self.title = title

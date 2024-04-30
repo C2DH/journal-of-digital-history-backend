@@ -26,6 +26,7 @@ def get_authors(article_authors, affiliations):
 
 
 def get_affiliation_json_one(author_id, orcid_url, affiliation):
+    logger.debug('START get_affiliation_json_one')
     default_affiliation = {
         "institution": affiliation,
         "city": "NOT FOUND",
@@ -49,12 +50,26 @@ def get_affiliation_json_one(author_id, orcid_url, affiliation):
                 "country_name": country_name
             }
         else:
-            affiliation = default_affiliation
+            # go to retrieve from the author
+            author = Author.objects.get(
+                id=author_id)
+            if author.city and author.country:
+                logger.debug(f'ORCID but no city and country found - find in DB {author.lastname}')
+                affiliation = {
+                "institution": affiliation,
+                "city": author.city,
+                "country": author.country,
+                "country_name": author.country.name
+            }
+            else:
+                logger.debug(f'ORCID but no city and country found - NOT found in DB - default_affiliation {author.lastname}')
+                affiliation= default_affiliation
     else:
         # go to retrieve from the author
         author = Author.objects.get(
                 id=author_id)
         if author.city and author.country:
+            logger.debug(f'NO ORCID but no city and country found - find in DB {author.lastname}')
             affiliation = {
                 "institution": affiliation,
                 "city": author.city,
@@ -62,7 +77,9 @@ def get_affiliation_json_one(author_id, orcid_url, affiliation):
                 "country_name": author.country.name
             }
         else:
+            logger.debug(f'NO ORCID but no city and country found - NOT found in DB - default_affiliation {author.lastname}')
             return default_affiliation
+    logger.debug('END get_affiliation_json_one')
     return affiliation
 
 
