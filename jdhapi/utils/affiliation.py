@@ -2,6 +2,7 @@ import logging
 from re import I
 import pycountry
 from jdhseo.utils import get_affiliation
+from jdhapi.models import Author
 logger = logging.getLogger(__name__)
 
 
@@ -24,7 +25,8 @@ def get_authors(article_authors, affiliations):
     return authors
 
 
-def get_affiliation_json_one(orcid_url, affiliation):
+def get_affiliation_json_one(author_id, orcid_url, affiliation):
+    logger.debug('START get_affiliation_json_one')
     default_affiliation = {
         "institution": affiliation,
         "city": "NOT FOUND",
@@ -48,9 +50,36 @@ def get_affiliation_json_one(orcid_url, affiliation):
                 "country_name": country_name
             }
         else:
-            affiliation = default_affiliation
+            # go to retrieve from the author
+            author = Author.objects.get(
+                id=author_id)
+            if author.city and author.country:
+                logger.debug(f'ORCID but no city and country found - find in DB {author.lastname}')
+                affiliation = {
+                "institution": affiliation,
+                "city": author.city,
+                "country": author.country,
+                "country_name": author.country.name
+            }
+            else:
+                logger.debug(f'ORCID but no city and country found - NOT found in DB - default_affiliation {author.lastname}')
+                affiliation= default_affiliation
     else:
-        return default_affiliation
+        # go to retrieve from the author
+        author = Author.objects.get(
+                id=author_id)
+        if author.city and author.country:
+            logger.debug(f'NO ORCID but no city and country found - find in DB {author.lastname}')
+            affiliation = {
+                "institution": affiliation,
+                "city": author.city,
+                "country": author.country,
+                "country_name": author.country.name
+            }
+        else:
+            logger.debug(f'NO ORCID but no city and country found - NOT found in DB - default_affiliation {author.lastname}')
+            return default_affiliation
+    logger.debug('END get_affiliation_json_one')
     return affiliation
 
 
@@ -62,7 +91,7 @@ def get_affiliation_json(authors, publisher_id):
     affiliations = []
     i = 1
     for author in authors:
-        affiliation_one = get_affiliation_json_one(author.orcid, author.affiliation)
+        affiliation_one = get_affiliation_json_one(author.id, author.orcid, author.affiliation)
         if len(affiliations) == 0:
             affiliation_one["aff_id"] = i
             affiliation_one["authors_link"] = [author.lastname]
@@ -86,3 +115,12 @@ def get_affiliation_json(authors, publisher_id):
                 affiliations.append(affiliation_one)
     # logger.info(f'affiliations: {affiliations}')
     return affiliations
+
+
+# method to check if affiliation is default_affiliation or not
+def is_default_affiliation(affiliations):
+    for affiliation in affiliations:
+        # if in the affiliation the city is NOT FOUND  or country is NOT FOUND or country_name is NOT FOUND return True
+        if affiliation["city"] == "NOT FOUND" or affiliation["country"] == "NOT FOUND" or affiliation["country_name"] == "NOT FOUND":
+            return True
+    return False

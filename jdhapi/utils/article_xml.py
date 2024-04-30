@@ -1,7 +1,8 @@
 import re
+import json
 from jdhapi.utils.copyright import CopyrightJDH
 from jdhapi.utils.doi import get_doi, get_publisher_id, get_elocation_id
-from jdhapi.utils.affiliation import get_authors, get_affiliation_json
+from jdhapi.utils.affiliation import get_authors, get_affiliation_json, is_default_affiliation
 from jdhapi.utils.publication_date import get_order_publication
 from jdhapi.models import Issue
 from django.http import Http404
@@ -16,6 +17,15 @@ class ArticleXml:
     def __init__(self, article_authors, title, article_doi, keywords, publication_date, copyright, issue_pid, pid):
         self.publisher_id = get_publisher_id(article_doi).lower()
         self.affiliations = get_affiliation_json(article_authors, self.publisher_id)
+        # if default affiliation - raise exception
+        if is_default_affiliation(self.affiliations):
+            # display error message - to fill country / city
+            error_message = "Warning: Please fill the country and city in the affiliation"
+            authors = []
+            for author in article_authors:
+                authors.append(author.lastname + " " + author.firstname)
+            authors_str = ', '.join(authors)
+            raise Http404("Default affiliation \n" + error_message + ".\nAuthors: " + authors_str)
         self.authors = get_authors(article_authors, self.affiliations)
         self.authors_concat = CopyrightJDH.getAuthorList(self.authors)
         self.title = title

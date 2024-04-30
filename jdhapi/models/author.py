@@ -1,6 +1,7 @@
 from django.db import models
 from django.conf import settings
 from django.utils import timezone
+from django_countries.fields import CountryField
 import shortuuid
 
 
@@ -11,6 +12,8 @@ class Author(models.Model):
     firstname = models.CharField(max_length=50)
     orcid = models.CharField(max_length=50, null=True, blank=True)
     affiliation = models.CharField(max_length=250)
+    city = models.CharField(max_length=100, null=True, blank=True)
+    country = CountryField(blank=True)
 
     class Meta:
         ordering = ['lastname']
