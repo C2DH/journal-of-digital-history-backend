@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     'crispy_forms',
     'drf_recaptcha',
     'django_filters',
+    'django_countries',
 ]
 
 REST_FRAMEWORK = {

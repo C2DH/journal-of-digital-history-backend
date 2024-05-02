@@ -187,6 +187,7 @@ def generate_qrcode(pid):
 
 def get_affiliation(orcid):
     try:
+        logger("START get_affiliation- call API ORCID")
         TOKEN_ID = settings.JDH_ORCID_API_TOKEN
         API_URL = "https://pub.orcid.org/v3.0"
         headers = CaseInsensitiveDict()
@@ -217,6 +218,7 @@ def get_affiliation(orcid):
                             # actual formation
                             last = summary['education-summary']['organization']
                             return(f"{last['address']['city']} - {last['address']['country']}")
+        logger("END get_affiliation- call API ORCID")
     except HTTPError as http_err:
         logger.error(f'HTTP error occurred: {http_err}')
     except Exception as err:

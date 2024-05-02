@@ -84,7 +84,7 @@ class CallOfPaperAdmin(ExportActionMixin, admin.ModelAdmin):
 @admin.register(Author)
 class AuthorAdmin(ExportActionMixin, admin.ModelAdmin):
     search_fields = ('lastname', 'firstname', 'affiliation', 'orcid', 'email')
-    list_display = ['lastname', 'firstname', 'affiliation', 'clickable_orcid', 'email']
+    list_display = ['lastname', 'firstname', 'affiliation', 'city', 'country', 'clickable_orcid', 'email']
 
     def clickable_orcid(self, obj):
         if obj.orcid:
