@@ -186,42 +186,47 @@ def generate_qrcode(pid):
 
 
 def get_affiliation(orcid):
+    logger.debug("START get_affiliation- call API ORCID")
+    TOKEN_ID = settings.JDH_ORCID_API_TOKEN
+    API_URL = "https://pub.orcid.org/v3.0"
+    headers = CaseInsensitiveDict()
+    headers["Content-Type"] = "application/orcid+json"
+    headers["Authorization"] = f"Bearer {TOKEN_ID}"
     try:
-        logger("START get_affiliation- call API ORCID")
-        TOKEN_ID = settings.JDH_ORCID_API_TOKEN
-        API_URL = "https://pub.orcid.org/v3.0"
-        headers = CaseInsensitiveDict()
-        headers["Content-Type"] = "application/orcid+json"
-        headers["Authorization"] = f"Bearer {TOKEN_ID}"
-        # first check employments
-        url = f"{API_URL}/{orcid}/" + "employments"
-        resp = requests.get(url, headers=headers)
-        resp.raise_for_status()
-        jsonResponse = resp.json()
-        if jsonResponse["affiliation-group"]:
-            for summaries in jsonResponse["affiliation-group"]:
-                for summary in summaries['summaries']:
-                    if summary['employment-summary']['end-date'] is None:
-                        # actual formation
-                        last = summary['employment-summary']['organization']
-                        return(f"{last['address']['city']} - {last['address']['country']}")
-        else:
-            # call the education's part
-            url = f"{API_URL}/{orcid}/" + "educations"
-            resp = requests.get(url, headers=headers)
-            resp.raise_for_status()
-            jsonResponse = resp.json()
-            if jsonResponse["affiliation-group"]:
-                for summaries in jsonResponse["affiliation-group"]:
-                    for summary in summaries['summaries']:
-                        if summary['education-summary']['end-date'] is None:
-                            # actual formation
-                            last = summary['education-summary']['organization']
-                            return(f"{last['address']['city']} - {last['address']['country']}")
-        logger("END get_affiliation- call API ORCID")
+        affiliation = get_employment_affiliation(orcid, API_URL, headers)
+        if affiliation is None:
+            affiliation = get_education_affiliation(orcid, API_URL, headers)
+        logger.debug("END get_affiliation- call API ORCID")
+        return affiliation
     except HTTPError as http_err:
         logger.error(f'HTTP error occurred: {http_err}')
     except Exception as err:
         logger.error(f'Other error occurred: {err}')
+
+def get_employment_affiliation(orcid, api_url, headers):
+    url = f"{api_url}/{orcid}/employments"
+    resp = requests.get(url, headers=headers)
+    resp.raise_for_status()
+    json_response = resp.json()
+    if json_response["affiliation-group"]:
+        for summaries in json_response["affiliation-group"]:
+            for summary in summaries['summaries']:
+                if summary['employment-summary']['end-date'] is None:
+                    last = summary['employment-summary']['organization']
+                    return f"{last['address']['city']} - {last['address']['country']}"
+    return None
+
+def get_education_affiliation(orcid, api_url, headers):
+    url = f"{api_url}/{orcid}/educations"
+    resp = requests.get(url, headers=headers)
+    resp.raise_for_status()
+    json_response = resp.json()
+    if json_response["affiliation-group"]:
+        for summaries in json_response["affiliation-group"]:
+            for summary in summaries['summaries']:
+                if summary['education-summary']['end-date'] is None:
+                    last = summary['education-summary']['organization']
+                    return f"{last['address']['city']} - {last['address']['country']}"
+    return None
 
 
