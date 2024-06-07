@@ -8,5 +8,5 @@ jdhapi/test/test-httpie.py
 .env
 .env.*
 !.env.example
-
+outputs/
 .vscode

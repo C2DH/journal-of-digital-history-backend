@@ -331,7 +331,7 @@ def generate_tags(article):
     return read_libraries(article)
 
 
-def get_notebook_references_fulltext(raw_url):
+def get_notebook_references_fulltext(article_id, raw_url):
     notebook = get_notebook_from_raw_github(raw_url=raw_url)
     cells = notebook.get('cells')
     logger.debug(f'get_notebook_references_fulltext - notebook loaded: {raw_url}')
@@ -391,12 +391,12 @@ def get_notebook_references_fulltext(raw_url):
                 cell['source'] = bibliography_lines
             if 'cite2c-biblio' in source:
             # Log the replacement
-                logger.info(f'Replaced <div class="cite2c-biblio"></div> in cell with bibliography content.')
+                logger.info('Replaced <div class="cite2c-biblio"></div> in cell with bibliography content.')
                 # Convert the array to a string with each element on a separate line
                 bibliography_lines = '\n\n'.join(bibliography)
                 cell['source'] = bibliography_lines
-        generate_output_file(notebook, "notebook_with_ref.ipynb")
-        convert_notebook("notebook_with_ref.ipynb", output_format='pdf')
+        generate_output_file(notebook, f'/outputs/{article_id}.ipynb')
+        convert_notebook(f'/outputs/{article_id}.ipynb', output_format='pdf')
         return {
             'references': references,
             'bibliography': bibliography,

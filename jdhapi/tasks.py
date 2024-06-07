@@ -96,7 +96,7 @@ def save_references(article_id):
     except Article.DoesNotExist:
         logger.error(f'save_article_references:{article_id} not found')
     logger.info("inside save_article_references")
-    references, bibliography, refs = get_notebook_references_fulltext(raw_url=article.notebook_ipython_url)
+    references, bibliography, refs = get_notebook_references_fulltext(article_id,raw_url=article.notebook_ipython_url)
     #logger.info(f'References {references}')
     logger.info(f'ok finish')
 
