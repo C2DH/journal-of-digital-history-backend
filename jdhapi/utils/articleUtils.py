@@ -395,8 +395,8 @@ def get_notebook_references_fulltext(article_id, raw_url):
                 # Convert the array to a string with each element on a separate line
                 bibliography_lines = '\n\n'.join(bibliography)
                 cell['source'] = bibliography_lines
-        generate_output_file(notebook, f'/outputs/{article_id}.ipynb')
-        convert_notebook(f'/outputs/{article_id}.ipynb', output_format='pdf')
+        generate_output_file(notebook, f'{article_id}.ipynb')
+        convert_notebook(f'{article_id}.ipynb', output_format='pdf')
         return {
             'references': references,
             'bibliography': bibliography,
@@ -407,11 +407,13 @@ def get_notebook_references_fulltext(article_id, raw_url):
 
 
 def generate_output_file(notebook, output_file):
-    with open(output_file, 'w') as outfile:
+    output_dir = 'outputs'
+    os.makedirs(output_dir, exist_ok=True)
+    output_file_path = os.path.join(output_dir, output_file)
+    with open(output_file_path, 'w') as outfile:
         json.dump(notebook, outfile)
 
-    logger.info("Output file generated successfully: %s", output_file)
-
+    logger.info("Output file generated successfully: %s", output_file_path)
 
 def convert_notebook(notebook_file, output_format='pdf'):
     try:
