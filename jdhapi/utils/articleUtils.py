@@ -331,7 +331,7 @@ def generate_tags(article):
     return read_libraries(article)
 
 
-def get_notebook_references_fulltext(raw_url):
+def get_notebook_references_fulltext(article_id, raw_url):
     notebook = get_notebook_from_raw_github(raw_url=raw_url)
     cells = notebook.get('cells')
     logger.debug(f'get_notebook_references_fulltext - notebook loaded: {raw_url}')
@@ -391,12 +391,11 @@ def get_notebook_references_fulltext(raw_url):
                 cell['source'] = bibliography_lines
             if 'cite2c-biblio' in source:
             # Log the replacement
-                logger.info(f'Replaced <div class="cite2c-biblio"></div> in cell with bibliography content.')
+                logger.info('Replaced <div class="cite2c-biblio"></div> in cell with bibliography content.')
                 # Convert the array to a string with each element on a separate line
                 bibliography_lines = '\n\n'.join(bibliography)
                 cell['source'] = bibliography_lines
-        generate_output_file(notebook, "notebook_with_ref.ipynb")
-        convert_notebook("notebook_with_ref.ipynb", output_format='pdf')
+        generate_output_file(notebook, f'{article_id}.ipynb')
         return {
             'references': references,
             'bibliography': bibliography,
@@ -407,11 +406,14 @@ def get_notebook_references_fulltext(raw_url):
 
 
 def generate_output_file(notebook, output_file):
-    with open(output_file, 'w') as outfile:
+    output_dir = 'outputs'
+    os.makedirs(output_dir, exist_ok=True)
+    output_file_path = os.path.join(output_dir, output_file)
+    with open(output_file_path, 'w') as outfile:
         json.dump(notebook, outfile)
 
-    logger.info("Output file generated successfully: %s", output_file)
-
+    logger.info("Output file generated successfully: %s", output_file_path)
+    convert_notebook(output_file_path, output_format='pdf')
 
 def convert_notebook(notebook_file, output_format='pdf'):
     try:

@@ -56,11 +56,13 @@ COPY dbconnection.py .
 COPY manage.py .
 COPY requirements.txt .
 
+
 RUN pip install -r requirements.txt
 
 RUN apk del --no-cache .build-deps
 
 RUN mkdir -p logs
+RUN mkdir -p outputs
 
 ENV GIT_TAG=${GIT_TAG}
 ENV GIT_BRANCH=${GIT_BRANCH}
