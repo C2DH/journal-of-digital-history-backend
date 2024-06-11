@@ -396,7 +396,6 @@ def get_notebook_references_fulltext(article_id, raw_url):
                 bibliography_lines = '\n\n'.join(bibliography)
                 cell['source'] = bibliography_lines
         generate_output_file(notebook, f'{article_id}.ipynb')
-        convert_notebook(f'{article_id}.ipynb', output_format='pdf')
         return {
             'references': references,
             'bibliography': bibliography,
@@ -414,6 +413,7 @@ def generate_output_file(notebook, output_file):
         json.dump(notebook, outfile)
 
     logger.info("Output file generated successfully: %s", output_file_path)
+    convert_notebook(output_file_path, output_format='pdf')
 
 def convert_notebook(notebook_file, output_format='pdf'):
     try:
