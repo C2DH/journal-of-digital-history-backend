@@ -5,7 +5,7 @@ ARG GIT_TAG
 ARG GIT_BRANCH
 ARG GIT_REVISION
 
-RUN pip install --upgrade pip
+RUN pip install pip==23.1.2
 
 RUN apk add --no-cache \
     postgresql-libs \
