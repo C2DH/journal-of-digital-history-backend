@@ -2,6 +2,8 @@ import os
 from django.contrib import admin
 from django.utils.safestring import mark_safe
 
+from jdhapi.filter.issuenamepidfilter import IssueNamePIDFilter
+
 from .forms import articleForm
 from .models import Author, Abstract, Dataset, Article, Issue, Tag, Role, CallOfPaper
 from .filter.languagetagfilter import LanguageTagFilter
@@ -110,7 +112,7 @@ class ArticleAdmin(admin.ModelAdmin):
     exclude = ['notebook_commit_hash']
     search_fields = ("abstract__title", )
     list_display = ['abstract_pid', 'issue_name', 'issue', 'abstract_title', 'status', 'clickable_dataverse_url']
-    list_filter = ('issue__name', 'status', 'copyright_type', EmptyDataverseURLFilter)
+    list_filter = (IssueNamePIDFilter, 'status', 'copyright_type', EmptyDataverseURLFilter)
     actions = [save_notebook_fingerprint, save_notebook_specific_cell, save_article_citation, save_article_package, save_article_references]
     fieldsets = (
         (
