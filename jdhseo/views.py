@@ -73,9 +73,15 @@ def ArticleDetail(request, pid):
         remote_url = urllib.parse.urljoin(
             settings.JDHSEO_PROXY_HOST, notebook_url)
         try:
-            res = requests.get(remote_url)
+            res = requests.get(remote_url, timeout=10)
             # add NB paragraphs to context
-            context.update({'nb': parseJupyterNotebook(res.json(), contact_orcid)})
+            try:
+                notebook_data = res.json()
+                context.update({'nb': parseJupyterNotebook(notebook_data, contact_orcid)})
+            except ValueError as e:
+                logger.error(f'Error parsing JSON for article pk={article.pk} notebook remote_url={remote_url}')
+                logger.exception(e)
+                raise Http404(f'Error parsing JSON for article pk={article.pk} notebook remote_url={remote_url}')
         except Exception as e:
             logger.error(
                 f'Error occurred on article pk={article.pk}'
@@ -142,40 +148,9 @@ def ArticleXmlDG(request, pid):
                 }
                 keywords.append(keyword)
         if 'title' in article.data:
-            articleTitle = html.fromstring(marko.convert(article.data['title'][0])).text_content()
+            article_title = html.fromstring(marko.convert(article.data['title'][0])).text_content()
         context = {
-            'articleXml': ArticleXml(article.abstract.authors.all(), articleTitle, article.doi, keywords, article.publication_date, article.copyright_type, article.issue, pid),
-            'journal_publisher_id': 'jdh',
-            'journal_code': 'jdh',
-            'doi_code': 'jdh',
-            'issn': '2747-5271',
-        }
-    except Article.DoesNotExist:
-        raise Http404("Article does not exist")
-    return render(request, 'jdhseo/article_dg.xml', context, content_type='text/xml; charset=utf-8')
-
-
-def ArticleXmlDG(request, pid):
-    try:
-        article = Article.objects.get(
-            abstract__pid=pid,
-            status=Article.Status.PUBLISHED)
-
-        nbauthors = article.abstract.authors.count()
-        logger.debug(f'Nb Authors(count={nbauthors}) for article {pid}')
-        logger.debug(f'Belongs to issue {article.issue}')
-        keywords = []
-        if 'keywords' in article.data:
-            array_keys = article.data['keywords'][0].replace(';', ',').split(',')
-            for item in array_keys:
-                keyword = {
-                    "keyword": item,
-                }
-                keywords.append(keyword)
-        if 'title' in article.data:
-            articleTitle = html.fromstring(marko.convert(article.data['title'][0])).text_content()
-        context = {
-            'articleXml': ArticleXml(article.abstract.authors.all(), articleTitle, article.doi, keywords, article.publication_date, article.copyright_type, article.issue, pid),
+            'articleXml': ArticleXml(article.abstract.authors.all(), article_title, article.doi, keywords, article.publication_date, article.copyright_type, article.issue, pid),
             'journal_publisher_id': 'jdh',
             'journal_code': 'jdh',
             'doi_code': 'jdh',
