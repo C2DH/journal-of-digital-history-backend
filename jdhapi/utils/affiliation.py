@@ -39,8 +39,70 @@ def get_authors(article_authors, affiliations):
         # logger.debug(f'authors {authors}')
     return authors
 
+def get_affiliation_from_orcid(orcid_url, affiliation):
+    """
+    Retrieve the affiliation details from ORCID.
 
-# ici qu'il faut chnger
+    Args:
+        orcid_url (str): The ORCID URL of the author.
+        affiliation (str): The institution affiliation of the author.
+
+    Returns:
+        dict or None: A dictionary containing the affiliation details if found, otherwise None.
+    """
+    ORCID_URL = "https://orcid.org/"
+    logger.debug(f"ORCID URL: {orcid_url}")
+    orcid = orcid_url.partition(ORCID_URL)[2]
+    city_country = get_affiliation(orcid)
+    if city_country:
+        city = city_country.partition("-")[0].strip()
+        country = city_country.partition("-")[2].strip()
+        country_name = pycountry.countries.get(alpha_2=country).name
+        affiliation = {
+            "institution": affiliation,
+            "city": city,
+            "country": country,
+            "country_name": country_name,
+        }
+        logger.debug(f"Affiliation found in ORCID for author {orcid}")
+        return affiliation
+    logger.debug(f"No affiliation found in ORCID for author {orcid}")
+    return None
+
+def check_database_for_affiliation(author_id):
+    """
+    Check the database for an affiliation for the given author ID.
+
+    Args:
+        author_id (int): The ID of the author.
+
+    Returns:
+        dict or None: A dictionary containing the affiliation details if found, otherwise None.
+    """
+    try:
+        author = Author.objects.get(id=author_id)
+        if author.city and author.country:
+            logger.debug(
+                f"Affiliation found in DB for author {author.lastname}"
+            )
+            affiliation = {
+                "institution": author.affiliation,
+                "city": author.city,
+                "country": author.country,
+                "country_name": author.country.name,
+            }
+            return affiliation
+        else:
+            logger.debug(
+                f"City and country not found in DB for author {author.lastname}"
+            )
+            return None
+    except Author.DoesNotExist:
+        logger.debug(f"Author with ID {author_id} does not exist in the database.")
+        return None
+
+
+
 def get_affiliation_json_one(author_id, orcid_url, affiliation):
     """
     Retrieve the affiliation details for an author based on ORCID URL or database information.
@@ -51,73 +113,28 @@ def get_affiliation_json_one(author_id, orcid_url, affiliation):
         affiliation (str): The institution affiliation of the author.
 
     Returns:
-        dict: A dictionary containing the affiliation details with keys:
-            - "institution" (str): The institution affiliation.
-            - "city" (str): The city of the institution.
-            - "country" (str): The country code of the institution.
-            - "country_name" (str): The full country name of the institution.
+        dict: A dictionary containing the affiliation details.
     """
-    logger.debug("START get_affiliation_json_one")
+    logger.debug('START get_affiliation_json_one')
+
+    # Check in the database if there is an affiliation
+    db_affiliation = check_database_for_affiliation(author_id)
+    if db_affiliation:
+        return db_affiliation
+
+    # Call ORCID URL if no affiliation in the database
+    orcid_affiliation = get_affiliation_from_orcid(orcid_url, affiliation)
+    if orcid_affiliation:
+        return orcid_affiliation
+
+    # Return default affiliation if no answer from ORCID URL
     default_affiliation = {
         "institution": affiliation,
         "city": "NOT FOUND",
         "country": "NOT FOUND",
-        "country_name": "NOT FOUND",
+        "country_name": "NOT FOUND"
     }
-    if orcid_url:
-        # contact_orcid
-        ORCID_URL = "https://orcid.org/"
-        orcid = orcid_url.partition(ORCID_URL)[2]
-        city_country = get_affiliation(orcid)
-        if city_country:
-            # if city_country.find('-') != -1:
-            city = city_country.partition("-")[0].strip()
-            country = city_country.partition("-")[2].strip()
-            country_name = pycountry.countries.get(alpha_2=country).name
-            affiliation = {
-                "institution": affiliation,
-                "city": city,
-                "country": country,
-                "country_name": country_name,
-            }
-        else:
-            # go to retrieve from the author
-            author = Author.objects.get(id=author_id)
-            if author.city and author.country:
-                logger.debug(
-                    f"ORCID but no city and country found - find in DB {author.lastname}"
-                )
-                affiliation = {
-                    "institution": affiliation,
-                    "city": author.city,
-                    "country": author.country,
-                    "country_name": author.country.name,
-                }
-            else:
-                logger.debug(
-                    f"ORCID but no city and country found - NOT found in DB - default_affiliation {author.lastname}"
-                )
-                affiliation = default_affiliation
-    else:
-        # go to retrieve from the author
-        author = Author.objects.get(id=author_id)
-        if author.city and author.country:
-            logger.debug(
-                f"NO ORCID but no city and country found - find in DB {author.lastname}"
-            )
-            affiliation = {
-                "institution": affiliation,
-                "city": author.city,
-                "country": author.country,
-                "country_name": author.country.name,
-            }
-        else:
-            logger.debug(
-                f"NO ORCID but no city and country found - NOT found in DB - default_affiliation {author.lastname}"
-            )
-            return default_affiliation
-    logger.debug("END get_affiliation_json_one")
-    return affiliation
+    return default_affiliation
 
 
 def get_aff_pub_id(publisher_id, aff_id):
