@@ -45,9 +45,6 @@ def ArticleDetail(request, pid):
     # decode notebook url
     notebook_url = urllib.parse.unquote(
         base64.b64decode(article.notebook_url).decode('utf-8'))
-    # contact_orcid
-    ORCID_URL = "https://orcid.org/"
-    contact_orcid = article.abstract.contact_orcid.partition(ORCID_URL)[2]
     if 'keywords' in article.data:
         array_keys = "<b>Keywords: </b>" + article.data['keywords'][0].replace(';', ',')
     logger.info(f"keywords {array_keys}")
