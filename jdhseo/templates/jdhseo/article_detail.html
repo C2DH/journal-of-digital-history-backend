@@ -237,7 +237,7 @@
     <div class="contributors mb5">
       {% for t in nb.contributor %}
         <div class="contributor mr10">
-        {{ t }}
+          {{ t|safe }}
         </div>
       {% endfor %}
     </div>

@@ -10,7 +10,7 @@ from django.http import Http404
 from django.shortcuts import render
 from jdhapi.models import Article, Issue, Author
 from django.conf import settings
-from .utils import parseJupyterNotebook, generate_qrcode
+from .utils import parseJupyterNotebook, generate_qrcode, merge_authors_affiliations
 from .utils import getPlainMetadataFromArticle
 from django.http import HttpResponse
 from jdhapi.utils.article_xml import ArticleXml
@@ -64,9 +64,10 @@ def ArticleDetail(request, pid):
             pid=pid
         )
         authors = article_xml.authors
-        logger.info(f"authors {authors}")
         affiliations = article_xml.affiliations
-        logger.info(f"affiliations {affiliations}")
+        merged_authors_affiliations = merge_authors_affiliations(authors, affiliations)
+        logger.info(f"merged_authors_affiliations {merged_authors_affiliations}")
+
     except Http404 as e:
         raise Http404(f"Error initializing ArticleXml: {str(e)}")
     # fill the context for the template file.
@@ -81,7 +82,7 @@ def ArticleDetail(request, pid):
         'published_date': published_date,
         'keywords': array_keys,
         'authors': authors,
-        'affiliations': affiliations
+        'authors_affiliations': merged_authors_affiliations
     }
     # check if it is a github url
     context.update({'proxy': 'github', 'host': settings.JDHSEO_PROXY_HOST})
@@ -96,7 +97,7 @@ def ArticleDetail(request, pid):
             # add NB paragraphs to context
             try:
                 notebook_data = res.json()
-                context.update({'nb': parseJupyterNotebook(notebook_data, contact_orcid)})
+                context.update({'nb': parseJupyterNotebook(notebook_data, merged_authors_affiliations)})
             except ValueError as e:
                 logger.error(f'Error parsing JSON for article pk={article.pk} notebook remote_url={remote_url}')
                 logger.exception(e)

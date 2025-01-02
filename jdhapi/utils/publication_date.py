@@ -41,7 +41,6 @@ def get_order_publication(pid, issue_pid):
         if check_if_editorial(pid):
             return "1"
         else:
-            logger.info("not an editorial")
             seq = "UNDEFINED"
             articles = Article.objects.filter(status=Article.Status.PUBLISHED, issue__pid=issue_pid).exclude(tags__name="editorial").order_by('publication_date').values("abstract__pid", 'abstract__title')
             # Start index from 2 because editorials are given the position 1
