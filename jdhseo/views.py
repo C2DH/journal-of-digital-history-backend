@@ -51,6 +51,24 @@ def ArticleDetail(request, pid):
     if 'keywords' in article.data:
         array_keys = "<b>Keywords: </b>" + article.data['keywords'][0].replace(';', ',')
     logger.info(f"keywords {array_keys}")
+    # Initialize ArticleXml to get authors and affiliations
+    try:
+        article_xml = ArticleXml(
+            article_authors=article.abstract.authors.all(),
+            title=article.data.get('title', [''])[0],
+            article_doi=article.doi,
+            keywords=article.data.get('keywords', []),
+            publication_date=article.publication_date,
+            copyright=article.copyright_type,
+            issue_pid=article.issue.pid,
+            pid=pid
+        )
+        authors = article_xml.authors
+        logger.info(f"authors {authors}")
+        affiliations = article_xml.affiliations
+        logger.info(f"affiliations {affiliations}")
+    except Http404 as e:
+        raise Http404(f"Error initializing ArticleXml: {str(e)}")
     # fill the context for the template file.
     context = {
         'article': article,
@@ -61,10 +79,11 @@ def ArticleDetail(request, pid):
         'media_url': settings.MEDIA_URL,
         'doi_url': doi_url,
         'published_date': published_date,
-        'keywords': array_keys
+        'keywords': array_keys,
+        'authors': authors,
+        'affiliations': affiliations
     }
     # check if it is a github url
-
     context.update({'proxy': 'github', 'host': settings.JDHSEO_PROXY_HOST})
     if notebook_url.startswith(settings.JDHSEO_PROXY_PATH_GITHUB):
         # load contents from remote link (it uses nginx cache if availeble.
