@@ -10,7 +10,7 @@ from django.http import Http404
 from django.shortcuts import render
 from jdhapi.models import Article, Issue, Author
 from django.conf import settings
-from .utils import parseJupyterNotebook, generate_qrcode
+from .utils import parseJupyterNotebook, generate_qrcode, merge_authors_affiliations
 from .utils import getPlainMetadataFromArticle
 from django.http import HttpResponse
 from jdhapi.utils.article_xml import ArticleXml
@@ -45,12 +45,28 @@ def ArticleDetail(request, pid):
     # decode notebook url
     notebook_url = urllib.parse.unquote(
         base64.b64decode(article.notebook_url).decode('utf-8'))
-    # contact_orcid
-    ORCID_URL = "https://orcid.org/"
-    contact_orcid = article.abstract.contact_orcid.partition(ORCID_URL)[2]
     if 'keywords' in article.data:
         array_keys = "<b>Keywords: </b>" + article.data['keywords'][0].replace(';', ',')
     logger.info(f"keywords {array_keys}")
+    # Initialize ArticleXml to get authors and affiliations
+    try:
+        article_xml = ArticleXml(
+            article_authors=article.abstract.authors.all(),
+            title=article.data.get('title', [''])[0],
+            article_doi=article.doi,
+            keywords=article.data.get('keywords', []),
+            publication_date=article.publication_date,
+            copyright=article.copyright_type,
+            issue_pid=article.issue.pid,
+            pid=pid
+        )
+        authors = article_xml.authors
+        affiliations = article_xml.affiliations
+        merged_authors_affiliations = merge_authors_affiliations(authors, affiliations)
+        logger.info(f"merged_authors_affiliations {merged_authors_affiliations}")
+
+    except Http404 as e:
+        raise Http404(f"Error initializing ArticleXml: {str(e)}")
     # fill the context for the template file.
     context = {
         'article': article,
@@ -61,10 +77,11 @@ def ArticleDetail(request, pid):
         'media_url': settings.MEDIA_URL,
         'doi_url': doi_url,
         'published_date': published_date,
-        'keywords': array_keys
+        'keywords': array_keys,
+        'authors': authors,
+        'authors_affiliations': merged_authors_affiliations
     }
     # check if it is a github url
-
     context.update({'proxy': 'github', 'host': settings.JDHSEO_PROXY_HOST})
     if notebook_url.startswith(settings.JDHSEO_PROXY_PATH_GITHUB):
         # load contents from remote link (it uses nginx cache if availeble.
@@ -73,9 +90,15 @@ def ArticleDetail(request, pid):
         remote_url = urllib.parse.urljoin(
             settings.JDHSEO_PROXY_HOST, notebook_url)
         try:
-            res = requests.get(remote_url)
+            res = requests.get(remote_url, timeout=10)
             # add NB paragraphs to context
-            context.update({'nb': parseJupyterNotebook(res.json(), contact_orcid)})
+            try:
+                notebook_data = res.json()
+                context.update({'nb': parseJupyterNotebook(notebook_data, merged_authors_affiliations)})
+            except ValueError as e:
+                logger.error(f'Error parsing JSON for article pk={article.pk} notebook remote_url={remote_url}')
+                logger.exception(e)
+                raise Http404(f'Error parsing JSON for article pk={article.pk} notebook remote_url={remote_url}')
         except Exception as e:
             logger.error(
                 f'Error occurred on article pk={article.pk}'
@@ -142,40 +165,9 @@ def ArticleXmlDG(request, pid):
                 }
                 keywords.append(keyword)
         if 'title' in article.data:
-            articleTitle = html.fromstring(marko.convert(article.data['title'][0])).text_content()
+            article_title = html.fromstring(marko.convert(article.data['title'][0])).text_content()
         context = {
-            'articleXml': ArticleXml(article.abstract.authors.all(), articleTitle, article.doi, keywords, article.publication_date, article.copyright_type, article.issue, pid),
-            'journal_publisher_id': 'jdh',
-            'journal_code': 'jdh',
-            'doi_code': 'jdh',
-            'issn': '2747-5271',
-        }
-    except Article.DoesNotExist:
-        raise Http404("Article does not exist")
-    return render(request, 'jdhseo/article_dg.xml', context, content_type='text/xml; charset=utf-8')
-
-
-def ArticleXmlDG(request, pid):
-    try:
-        article = Article.objects.get(
-            abstract__pid=pid,
-            status=Article.Status.PUBLISHED)
-
-        nbauthors = article.abstract.authors.count()
-        logger.debug(f'Nb Authors(count={nbauthors}) for article {pid}')
-        logger.debug(f'Belongs to issue {article.issue}')
-        keywords = []
-        if 'keywords' in article.data:
-            array_keys = article.data['keywords'][0].replace(';', ',').split(',')
-            for item in array_keys:
-                keyword = {
-                    "keyword": item,
-                }
-                keywords.append(keyword)
-        if 'title' in article.data:
-            articleTitle = html.fromstring(marko.convert(article.data['title'][0])).text_content()
-        context = {
-            'articleXml': ArticleXml(article.abstract.authors.all(), articleTitle, article.doi, keywords, article.publication_date, article.copyright_type, article.issue, pid),
+            'articleXml': ArticleXml(article.abstract.authors.all(), article_title, article.doi, keywords, article.publication_date, article.copyright_type, article.issue, pid),
             'journal_publisher_id': 'jdh',
             'journal_code': 'jdh',
             'doi_code': 'jdh',

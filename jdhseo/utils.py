@@ -82,13 +82,10 @@ def getReferencesFromJupyterNotebook(notebook):
     return references, sorted(bibliography, key=lambda x: re.sub('[^A-Za-z]+', '', x).lower()), inline_references_table
 
 
-def parseJupyterNotebook(notebook, contact_orcid):
-    logger.info(f'CONTACT ORCID: {contact_orcid}')
-    affiliation = get_affiliation(contact_orcid)
+def parseJupyterNotebook(notebook, merged_authors_affiliations):
     cells = notebook.get('cells')
     title = []
     abstract = []
-    contributor = []
     disclaimer = []
     paragraphs = []
     collaborators = []
@@ -100,6 +97,18 @@ def parseJupyterNotebook(notebook, contact_orcid):
         if parsed_ref is None:
             return f'{m[1]}'
         return parsed_ref
+
+    # Build contributor array based on merged_authors_affiliations
+    contributor = []
+    for author in merged_authors_affiliations:
+        contributor_html = (
+            f'<h3>{author["given_names"]} {author["surname"]} '
+            f'<a href="{author["orcid"]}">'
+            f'<img src="https://orcid.org/sites/default/files/images/orcid_16x16.png" alt="orcid" /></a></h3>\n'
+            f'<p>{author["institution"]}, {author["city"]}, {author["country_name"]}</p>\n'
+        )
+        contributor.append(contributor_html)
+
     num = 0
     for cell in cells:
         # check cell metadata
@@ -108,17 +117,12 @@ def parseJupyterNotebook(notebook, contact_orcid):
         source = re.sub(
             r'<cite\s+data-cite=.([/\dA-Z]+).>([^<]*)</cite>',
             formatInlineCitations, source)
-        if 'hidden' in tags:
+        if 'hidden' in tags or 'contributor' in tags:
             continue
         if 'title' in tags:
             title.append(marko.convert(source))
         elif 'abstract' in tags:
             abstract.append(marko.convert(source))
-        elif 'contributor' in tags:
-            if affiliation:
-                contributor.append(marko.convert(source + ' - ' + affiliation))
-            else:
-                contributor.append(marko.convert(source))
         elif 'disclaimer' in tags:
             disclaimer.append(marko.convert(source))
         elif 'collaborators' in tags:
@@ -132,7 +136,7 @@ def parseJupyterNotebook(notebook, contact_orcid):
             elif cell.get('cell_type') == 'code':
                 num = num + 1
                 paragraphs.append({"numCode": num, "code": marko.convert(source)})
-
+    logger.info(f"contributors {contributor}")
     return {
         'title': title,
         'title_plain': strip_tags(''.join(title)).strip(),
@@ -228,5 +232,33 @@ def get_education_affiliation(orcid, api_url, headers):
                     last = summary['education-summary']['organization']
                     return f"{last['address']['city']} - {last['address']['country']}"
     return None
+
+def merge_authors_affiliations(authors, affiliations):
+    """
+    Merge authors and affiliations information into a single structure.
+
+    Args:
+        authors (list): A list of author dictionaries.
+        affiliations (list): A list of affiliation dictionaries.
+
+    Returns:
+        list: A list of dictionaries, each containing merged author and affiliation information.
+    """
+    merged_list = []
+    for author in authors:
+        for affiliation in affiliations:
+            if author['aff_id'] == affiliation['aff_id']:
+                merged_info = {
+                    'given_names': author['given_names'],
+                    'surname': author['surname'],
+                    'orcid': author['orcid'],
+                    'institution': affiliation['institution'],
+                    'city': affiliation['city'],
+                    'country': affiliation['country'],
+                    'country_name': affiliation['country_name']
+                }
+                merged_list.append(merged_info)
+                break
+    return merged_list
 
 
