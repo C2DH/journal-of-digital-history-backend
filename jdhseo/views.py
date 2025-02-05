@@ -223,7 +223,10 @@ def get_issue_content_from_url(url, pid):
     except Article.DoesNotExist:
         raise Http404("Article does not exist")
     filename = get_publisher_id(article.doi).lower()
-    filename_issue = "/issue-files/jdh.2022.2.issue-1.xml"
+    # convention for the filename_issue: {journal-code}.{issue.publication_date |date:”Y”}.{issue.volume}.issue-{issue.issue}.xml
+    issue = article.issue
+    publication_year = issue.publication_date.year if issue.publication_date else 'unknown'
+    filename_issue = f"/issue-files/{JOURNAL_CODE}.{publication_year}.{issue.volume}.issue-{issue.issue}.xml"
     # {journal_code}_{filename}_oi_YYYY-MM-DD--HH-MM-SS.zip
     timestamp = datetime.now().strftime("%Y-%m-%d--%H-%M-%S")
     filename_zip = f"{JOURNAL_CODE}_{filename}_oi_{timestamp}.zip"
