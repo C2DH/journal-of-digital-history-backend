@@ -243,13 +243,23 @@ def generate_zip(request, pid):
     zip_file = zipfile.ZipFile(buffer, 'w')
     for url in [url_xml, url_pdf]:
         response, filename = get_article_content_from_url(url, pid)
+        filename = filename.lstrip('/')  # Remove leading slash
         zip_file.writestr(filename, response)
+        logger.debug(f"Added {filename} to zip")
+    filename_issue = filename_issue.lstrip('/')  # Remove leading slash
     zip_file.writestr(filename_issue, response_issue)
+    logger.debug(f"Added {filename_issue} to zip")
     zip_file.close()
+
+    # List all elements in the zip file
+    buffer.seek(0)
+    with zipfile.ZipFile(buffer, 'r') as z:
+        logger.debug("Contents of the zip file:")
+        for file_info in z.infolist():
+            logger.debug(file_info.filename)
+
     # Return zip
-    response = HttpResponse(buffer.getvalue())
-    response['Content-Type'] = 'application/x-zip-compressed'
+    response = HttpResponse(buffer.getvalue(), content_type='application/zip')
     response['Content-Disposition'] = f'attachment; filename={filename_zip}'
     return response
-
 
