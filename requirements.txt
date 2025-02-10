@@ -11,6 +11,7 @@ click-didyoumean==0.0.3
 click-plugins==1.1.1
 click-repl==0.1.6
 click==7.1.2
+cython==3.0
 django-countries==7.6.1
 django-crispy-forms==1.10.0
 django-filter==2.4.0
@@ -28,8 +29,7 @@ jsonschema==3.2.0
 jupyter-core==4.7.1
 jupyter-contrib-nbextensions==0.5.1
 kombu==5.0.2
-m3-libxml2-python==2.6.9
-lxml==4.6.3
+lxml==5.3.1
 marko==1.0.3
 nbconvert==6.4.4
 nbformat==5.0.8
