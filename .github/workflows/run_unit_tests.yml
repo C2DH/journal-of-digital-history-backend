@@ -38,7 +38,7 @@ jobs:
 
       - name: Django Test
         run : |
-          pipenv run python3 manage.py test
+          python3 manage.py test
 
           
 
