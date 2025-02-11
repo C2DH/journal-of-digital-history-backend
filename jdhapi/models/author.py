@@ -13,11 +13,10 @@ class Author(models.Model):
     orcid = models.CharField(max_length=50, null=True, blank=True)
     affiliation = models.CharField(max_length=250)
     city = models.CharField(max_length=100, null=True, blank=True)
-    country = CountryField(blank=True)
+    country = CountryField(blank=True, null=True)
 
     class Meta:
-        ordering = ['lastname']
+        ordering = ["lastname"]
 
     def __str__(self):
         return self.lastname
-
