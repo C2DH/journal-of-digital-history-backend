@@ -37,7 +37,7 @@ notebook==6.2.0
 packaging==21.3
 Pillow==10.1.0
 prompt-toolkit==3.0.8
-psycopg2-binary==2.8.6
+psycopg2-binary==2.9.7
 pycountry==22.3.5
 pyrsistent==0.17.3
 pytz==2020.4
