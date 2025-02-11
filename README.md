@@ -56,3 +56,7 @@ pipenv run ./manage.py echo "It was a bright cold day in July ..."
 Be sure to have your environment activate (if not, do `source .venv/bin/activate`) and then :
 
 `python3 manage.py test`
+
+### To generate et requirements.txt from the pipfile
+
+`pipenv requirements --dev --exclude-markers > requirements.txt`
