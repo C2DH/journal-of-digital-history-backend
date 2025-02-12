@@ -57,6 +57,10 @@ Be sure to have your environment activate (if not, do `source .venv/bin/activate
 
 `python3 manage.py test`
 
-### To generate et requirements.txt from the pipfile
+or with Pip:
+
+`pipenv run ./manage.py test`
+
+### To generate requirements.txt from the pipfile
 
 `pipenv requirements --dev --exclude-markers > requirements.txt`
