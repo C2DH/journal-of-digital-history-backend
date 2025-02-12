@@ -1,3 +1,4 @@
+:
 name: Django CI
 
 on: 
@@ -29,7 +30,7 @@ jobs:
           --health-retries 5
 
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
         with:
           fetch-depth: 1
 
@@ -44,24 +45,23 @@ jobs:
           pip install pipenv
           pipenv install --dev
 
-      - name: Create .env file
-        run: |
-          echo "SECRET_KEY=default-secret-key-for-testing" >> .env
-          echo "DATABASE_ENGINE=django.db.backends.postgresql_psycopg2" >> .env
-          echo "DATABASE_NAME=test_db" >> .env
-          echo "DATABASE_USER=postgres" >> .env
-          echo "DATABASE_PASSWORD=postgres" >> .env
-          echo "DATABASE_HOST=localhost" >> .env
-          echo "DATABASE_PORT=5432" >> .env
-          echo "ALLOWED_HOSTS=localhost,127.0.0.1" >> .env
-          echo "DRF_RECAPTCHA_SECRET_KEY=default-recaptcha-secret-key" >> .env
-          echo "EMAIL_HOST=smtp.example.com" >> .env
-          echo "EMAIL_PORT=587" >> .env
-          echo "EMAIL_USE_TLS=True" >> .env
-          echo "EMAIL_HOST_USER=user@example.com" >> .env
-          echo "EMAIL_HOST_PASSWORD=password" >> .env
-
       - name: Run tests
+        env:
+          SECRET_KEY: default-secret-key-for-testing
+          DATABASE_ENGINE: django.db.backends.postgresql_psycopg2
+          DATABASE_NAME: test_db
+          DATABASE_USER: postgres
+          DATABASE_PASSWORD: postgres
+          DATABASE_HOST: localhost
+          DATABASE_PORT: 5432
+          ALLOWED_HOSTS: localhost
+          DRF_RECAPTCHA_SECRET_KEY: default-recaptcha-secret-key
+          EMAIL_HOST: smtp.example.com
+          EMAIL_PORT: 587
+          EMAIL_USE_TLS: True
+          EMAIL_HOST_USER: user@example.com
+          EMAIL_HOST_PASSWORD: password
+          JDH_ORCID_API_TOKEN: default-token
         run: |
           pipenv run ./manage.py test
      
