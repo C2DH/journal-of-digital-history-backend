@@ -13,6 +13,21 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: test_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - uses: actions/checkout@v1
         with:
@@ -29,11 +44,24 @@ jobs:
           pip install pipenv
           pipenv install --dev
 
+      - name: Create .env file
+        run: |
+          echo "SECRET_KEY=default-secret-key-for-testing" >> .env
+          echo "DATABASE_ENGINE=django.db.backends.postgresql_psycopg2" >> .env
+          echo "DATABASE_NAME=test_db" >> .env
+          echo "DATABASE_USER=postgres" >> .env
+          echo "DATABASE_PASSWORD=postgres" >> .env
+          echo "DATABASE_HOST=localhost" >> .env
+          echo "DATABASE_PORT=5432" >> .env
+          echo "ALLOWED_HOSTS=localhost,127.0.0.1" >> .env
+          echo "DRF_RECAPTCHA_SECRET_KEY=default-recaptcha-secret-key" >> .env
+          echo "EMAIL_HOST=smtp.example.com" >> .env
+          echo "EMAIL_PORT=587" >> .env
+          echo "EMAIL_USE_TLS=True" >> .env
+          echo "EMAIL_HOST_USER=user@example.com" >> .env
+          echo "EMAIL_HOST_PASSWORD=password" >> .env
+
       - name: Run tests
-        env:
-          SECRET_KEY: default-secret-key-for-testing
-          ALLOWED_HOSTS: localhost
-          DRF_RECAPTCHA_SECRET_KEY: default-recaptcha-secret-key
         run: |
           pipenv run ./manage.py test
      
