@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "920f98646cc4ad7fbadfa2a6088fd1a33abbd51fa69c274b6cc6e7239cc56a4a"
+            "sha256": "a9bd17570ed9fd5585c865b88bc3152c83f44dd39debdcc21347ad44ffdb741e"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -526,6 +526,15 @@
             "markers": "python_version >= '3.8'",
             "version": "==0.2.2"
         },
+        "crispy-bootstrap4": {
+            "hashes": [
+                "sha256:138a97884044ae4c4799c80595b36c42066e4e933431e2e971611e251c84f96c",
+                "sha256:503e8922b0f3b5262a6fdf303a3a94eb2a07514812f1ca130b88f7c02dd25e2b"
+            ],
+            "index": "pypi",
+            "markers": "python_version >= '3.8'",
+            "version": "==2024.10"
+        },
         "cssselect2": {
             "hashes": [
                 "sha256:1ccd984dab89fc68955043aca4e1b03e0cf29cad9880f6e28e3ba7a74b14aa5a",
@@ -592,12 +601,12 @@
         },
         "django": {
             "hashes": [
-                "sha256:ad33ed68db9398f5dfb33282704925bce044bef4261cd4fb59e4e7f9ae505a78",
-                "sha256:c36e2ab12824e2ac36afa8b2515a70c53c7742f0d6eaefa7311ec379558db997"
+                "sha256:1e39eafdd1b185e761d9fab7a9f0b9fa00af1b37b25ad980a8aa0dac13535690",
+                "sha256:8d203400bc2952fbfb287c2bbda630297d654920c72a73cc82a9ad7926feaad5"
             ],
             "index": "pypi",
-            "markers": "python_version >= '3.8'",
-            "version": "==4.2"
+            "markers": "python_version >= '3.10'",
+            "version": "==5.1.6"
         },
         "django-countries": {
             "hashes": [
@@ -2120,7 +2129,7 @@
                 "sha256:24894909e88cdb28bd1636c6887801df64cb485bd593f2fd83ef29075a81d694",
                 "sha256:7e127113816800496f027041c570f50bcd464a020098a3b6b199517772303639"
             ],
-            "markers": "python_version >= '2'",
+            "markers": "python_version >= '3.9'",
             "version": "==2025.1"
         },
         "uri-template": {
