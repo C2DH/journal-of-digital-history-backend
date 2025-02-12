@@ -52,7 +52,7 @@ jobs:
           DATABASE_PASSWORD: postgres
           DATABASE_HOST: localhost
           DATABASE_PORT: 5432
-          ALLOWED_HOSTS: localhost, 127.0.0.1
+          ALLOWED_HOSTS: localhost
           DRF_RECAPTCHA_SECRET_KEY: default-recaptcha-secret-key
           EMAIL_HOST: smtp.example.com
           EMAIL_PORT: 587
