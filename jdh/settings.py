@@ -30,7 +30,7 @@ DEBUG = get_env_variable("DEBUG", "True")
 
 DJANGO_LOG_LEVEL = get_env_variable("DJANGO_LOG_LEVEL", "DEBUG")
 
-ALLOWED_HOSTS = get_env_variable("ALLOWED_HOSTS", "localhost").split(",")
+ALLOWED_HOSTS = get_env_variable("ALLOWED_HOSTS", "").split(",")
 
 DRF_RECAPTCHA_SECRET_KEY = get_env_variable("DRF_RECAPTCHA_SECRET_KEY")
 
@@ -45,12 +45,13 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "dashboard.apps.DashboardConfig",
-    "rest_framework",
+    "import_export",
     "jdhapi.apps.JdhapiConfig",
     "jdhseo.apps.JdhseoConfig",
     "jdhtasks.apps.JdhtasksConfig",
-    # to use Bootsrap
+    "rest_framework",
     "crispy_forms",
+    "crispy_bootstrap4",
     "drf_recaptcha",
     "django_filters",
     "django_countries",
