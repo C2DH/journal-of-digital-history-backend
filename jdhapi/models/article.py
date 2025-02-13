@@ -1,14 +1,10 @@
 import logging
 import marko
-import requests
 
 from django.conf import settings
 
 from django.core.mail import EmailMessage
-from django.core.exceptions import ValidationError
 from django.db import models
-from django.db.models.signals import pre_save
-from django.dispatch import receiver
 from django.template.loader import render_to_string
 
 from lxml import html
@@ -181,27 +177,3 @@ class Article(models.Model):
                     logger.info("Email sent")
                 except Exception as e:
                     print(f"Error sending email: {str(e)}")
-
-
-@receiver(pre_save, sender=Article)
-def validate_urls(sender, instance, **kwargs):
-    def check_github_url(url):
-        if url:
-            response = requests.get(url)
-            if response.status_code == 200:
-                return False
-        return True
-
-    def check_notebook_url(pk):
-        if pk:
-            article = Article.objects.get(pk=instance.pk)
-            db_notebook_url = article.notebook_url
-        else:
-            db_notebook_url = None
-        return db_notebook_url
-
-    if instance.notebook_url != check_notebook_url(instance.pk):
-        raise ValidationError("Notebook URL is not correct")
-
-    if instance.notebook_url and check_github_url(instance.repository_url):
-        raise ValidationError("Repository url is not correct")
