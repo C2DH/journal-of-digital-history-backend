@@ -3,7 +3,9 @@ import requests
 from django.core.exceptions import ValidationError
 from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
+
 from jdhapi.models import Article
+from jdhapi.utils.articleUtils import convert_string_to_base64
 
 
 @receiver(post_save, sender=Article)
@@ -25,17 +27,26 @@ def validate_urls_for_article_submission(sender, instance, **kwargs):
                 return False
         return True
 
-    # TODO: modify this function to check the notebook_url
-    def check_notebook_url(primary_key):
-        if primary_key:
-            article = Article.objects.get(pk=primary_key)
-            db_notebook_url = article.notebook_url
-        else:
-            db_notebook_url = None
-        return db_notebook_url
+    def check_notebook_url(notebook_url, repository_url):
+        substring_to_remove = "https://github.com/jdh-observer/"
+        string_to_convert = (
+            repository_url.replace(
+                substring_to_remove, "%2Fproxy-githubusercontent%2Fjdh-observer%2F"
+            )
+            + "%2Fmain%2Farticle.ipynb"
+        )
 
-    if instance.notebook_url != check_notebook_url(instance.pk):
-        raise ValidationError("Notebook URL is not correct")
+        # TODO: add with skim-article comparaison
+
+        if notebook_url == convert_string_to_base64(string_to_convert):
+            return False
+        else:
+            return True
 
     if instance.notebook_url and check_github_url(instance.repository_url):
         raise ValidationError("Repository url is not correct")
+
+    if instance.notebook_url and check_notebook_url(
+        instance.notebook_url, instance.repository_url
+    ):
+        raise ValidationError("Notebook url is not correct")
