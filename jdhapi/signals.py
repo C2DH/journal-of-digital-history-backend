@@ -25,9 +25,10 @@ def validate_urls_for_article_submission(sender, instance, **kwargs):
                 return False
         return True
 
-    def check_notebook_url(pk):
-        if pk:
-            article = Article.objects.get(pk=instance.pk)
+    # TODO: modify this function to check the notebook_url
+    def check_notebook_url(primary_key):
+        if primary_key:
+            article = Article.objects.get(pk=primary_key)
             db_notebook_url = article.notebook_url
         else:
             db_notebook_url = None

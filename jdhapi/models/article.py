@@ -15,6 +15,37 @@ logger = logging.getLogger(__name__)
 
 
 class Article(models.Model):
+    """
+    Represents an article in the Journal of Digital History.
+
+    Attributes:
+        abstract (OneToOneField): A one-to-one relationship with the Abstract model.
+        status (CharField): The current status of the article, with choices defined in the Status inner class.
+        tracker (FieldTracker): Tracks changes to the status field.
+        issue (ForeignKey): A foreign key relationship to the Issue model.
+        repository_url (URLField): The URL of the article's repository (e.g., GitHub).
+        repository_type (CharField): The type of repository, with choices defined in the RepositoryType inner class.
+        notebook_url (CharField): The URL of the article's preview.
+        notebook_ipython_url (URLField): The URL of the raw GitHub ipynb file.
+        notebook_commit_hash (CharField): The git commit hash of the notebook.
+        notebook_path (CharField): The file name of the notebook with .ipynb extension.
+        binder_url (URLField): The URL for Binder.
+        doi (CharField): The DOI received from ScholarOne.
+        dataverse_url (URLField): The URL for Dataverse.
+        publication_date (DateTimeField): The publication date of the article.
+        copyright_type (CharField): The type of copyright, with choices defined in the CopyrightType inner class.
+        data (JSONField): JSON data contents of the article.
+        fingerprint (JSONField): JSON fingerprint contents of the article.
+        citation (JSONField): JSON citation contents of the article.
+        tags (ManyToManyField): Tags associated with the article.
+        authors (ManyToManyField): Authors of the article, through the Role model.
+
+    Methods:
+        get_kernel_language(): Returns the kernel language based on the 'tool' tag.
+        __str__(): Returns the title of the abstract.
+        send_email_if_peer_review(): Sends an email with a PDF attachment if the article is in peer review status.
+    """
+
     class Status(models.TextChoices):
         DRAFT = (
             "DRAFT",
