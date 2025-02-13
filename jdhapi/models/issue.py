@@ -1,13 +1,16 @@
 from django.db import models
-from django.conf import settings
+
 from django.utils import timezone
 
 
 class Issue(models.Model):
 
     class Status(models.TextChoices):
-        DRAFT = 'DRAFT', 'Draft',
-        PUBLISHED = 'PUBLISHED', 'Published'
+        DRAFT = (
+            "DRAFT",
+            "Draft",
+        )
+        PUBLISHED = "PUBLISHED", "Published"
 
     id = models.AutoField(primary_key=True, db_column="id")
     pid = models.CharField(max_length=10, unique=True, default="jdh001")
@@ -16,10 +19,12 @@ class Issue(models.Model):
     creation_date = models.DateTimeField(default=timezone.now)
     publication_date = models.DateTimeField(blank=True, null=True)
     cover_date = models.DateTimeField(blank=True, null=True)
-    data = models.JSONField(verbose_name=u'data contents', help_text='JSON format', default=dict, blank=True)
-    is_open_ended =models.BooleanField(default=True)
+    data = models.JSONField(
+        verbose_name="data contents", help_text="JSON format", default=dict, blank=True
+    )
+    is_open_ended = models.BooleanField(default=True)
     # YEAR OF PUBLICATION
-    # 2021  - volume 1
+    # 2021 - volume 1
     # 2022 -  volume 2
     volume = models.PositiveSmallIntegerField(null=True)
     # ISSUE
