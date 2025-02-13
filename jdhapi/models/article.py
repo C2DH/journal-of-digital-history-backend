@@ -141,7 +141,9 @@ class Article(models.Model):
         if tool_tags.exists():
             first_tool_tag = tool_tags.first()
             return first_tool_tag.data.get("language", "")
-        return ""  # Default language if no 'tool' tag or language field is present
+        # Default language if no 'tool' tag or
+        # language field present
+        return ""
 
     def __str__(self):
         return self.abstract.title
@@ -183,17 +185,23 @@ class Article(models.Model):
 
 @receiver(pre_save, sender=Article)
 def validate_urls(sender, instance, **kwargs):
-    def check_if_url_not_exist(url):
+    def check_github_url(url):
         if url:
-            response = requests.get(
-                "https://journalofdigitalhistory.org/en/notebook-viewer/" + url
-            )
-            if str(instance.abstract) in response.text:
-
-                return True
-            else:
+            response = requests.get(url)
+            if response.status_code == 200:
                 return False
-        return False
+        return True
 
-    if instance.notebook_url and check_if_url_not_exist(instance.notebook_url):
-        raise ValidationError("Notebook URL does not exist")
+    def check_notebook_url(pk):
+        if pk:
+            article = Article.objects.get(pk=instance.pk)
+            db_notebook_url = article.notebook_url
+        else:
+            db_notebook_url = None
+        return db_notebook_url
+
+    if instance.notebook_url != check_notebook_url(instance.pk):
+        raise ValidationError("Notebook URL is not correct")
+
+    if instance.notebook_url and check_github_url(instance.repository_url):
+        raise ValidationError("Repository url is not correct")
