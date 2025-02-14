@@ -4,6 +4,26 @@ from django.utils import timezone
 
 
 class Issue(models.Model):
+    """
+    Represents an issue in the journal of digital history.
+
+    Attributes:
+        id (AutoField): Primary key for the issue.
+        pid (CharField): Unique identifier for the issue, default is "jdh001".
+        name (CharField): Name of the issue.
+        description (TextField): Description of the issue, can be null or blank.
+        creation_date (DateTimeField): Date and time when the issue was created, defaults to the current time.
+        publication_date (DateTimeField): Date and time when the issue was published, can be null or blank.
+        cover_date (DateTimeField): Date and time for the cover date of the issue, can be null or blank.
+        data (JSONField): JSON formatted data contents, defaults to an empty dictionary.
+        is_open_ended (BooleanField): Indicates if the issue is open-ended, defaults to True.
+        volume (PositiveSmallIntegerField): Volume number of the issue, can be null.
+        issue (PositiveSmallIntegerField): Issue number within the volume, can be null.
+        status (CharField): Status of the issue, choices are 'DRAFT' or 'PUBLISHED', defaults to 'DRAFT'.
+
+    Methods:
+        __str__(): Returns the unique identifier (pid) of the issue as its string representation.
+    """
 
     class Status(models.TextChoices):
         DRAFT = (
