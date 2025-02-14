@@ -29,16 +29,14 @@ def validate_urls_for_article_submission(sender, instance, **kwargs):
 
     def check_notebook_url(notebook_url, repository_url):
         substring_to_remove = "https://github.com/jdh-observer/"
-        string_to_convert = (
-            repository_url.replace(
-                substring_to_remove, "%2Fproxy-githubusercontent%2Fjdh-observer%2F"
-            )
-            + "%2Fmain%2Farticle.ipynb"
+        prefix_to_add = "%2Fproxy-githubusercontent%2Fjdh-observer%2F"
+        suffix_to_add = f"%2Fmain%2F{instance.notebook_path}"
+
+        converted_string = (
+            repository_url.replace(substring_to_remove, prefix_to_add) + suffix_to_add
         )
 
-        # TODO: add with skim-article comparaison
-
-        if notebook_url == convert_string_to_base64(string_to_convert):
+        if notebook_url == convert_string_to_base64(converted_string):
             return False
         else:
             return True
