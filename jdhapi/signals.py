@@ -47,4 +47,5 @@ def validate_urls_for_article_submission(sender, instance, **kwargs):
     if instance.notebook_url and check_notebook_url(
         instance.notebook_url, instance.repository_url
     ):
+
         raise ValidationError("Notebook url is not correct")

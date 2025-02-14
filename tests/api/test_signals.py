@@ -1,14 +1,20 @@
+from django.core.exceptions import ValidationError
 from django.test import TestCase
 from jdhapi.models import Article, Abstract, Issue
+from .fixtures.fixture_signals import (
+    date,
+    repository_url,
+    notebook_url,
+    notebook_url_skim,
+    false_repository_url,
+    false_notebook_url,
+)
 from unittest.mock import patch, Mock
-from django.utils import timezone
-
-date = timezone.make_aware(timezone.datetime(2023, 10, 1))
 
 
 class TestSignal(TestCase):
-    def setUp(self):
 
+    def setUp(self):
         self.abstract = Abstract.objects.create(
             title="Test Abstract",
             abstract="This is a test abstract",
@@ -23,25 +29,77 @@ class TestSignal(TestCase):
             publication_date=date,
         )
 
-    def test_validate_urls_for_article_submission_valid_urls(self):
-        repository_url = "https://github.com/jdh-observer/repositoryUrl"
-        notebook_url = "JTJGcHJveHktZ2l0aHVidXNlcmNvbnRlbnQlMkZqZGgtb2JzZXJ2ZXIlMkZyZXBvc2l0b3J5VXJsJTJGbWFpbiUyRmFydGljbGUuaXB5bmI="
+    def create_article(self, notebook_url, repository_url, notebook_path):
+        return Article.objects.create(
+            status=Article.Status.DRAFT,
+            notebook_url=notebook_url,
+            repository_url=repository_url,
+            notebook_path=notebook_path,
+            publication_date=date,
+            abstract=self.abstract,
+            issue=self.issue,
+        )
+
+    def test_validate_urls_for_article_submission(self):
 
         with patch("jdhapi.signals.requests.get") as mock_get:
             mock_response = Mock()
             mock_response.status_code = 200
             mock_get.return_value = mock_response
 
-            self.article = Article.objects.create(
-                status=Article.Status.DRAFT,
-                notebook_url=notebook_url,
-                repository_url=repository_url,
-                notebook_path="article.ipynb",
-                abstract=self.abstract,
-                publication_date=date,
-                issue=self.issue,
+            article = self.create_article(
+                notebook_url,
+                repository_url,
+                "article.ipynb",
             )
-            self.article.save()
+            article.save()
 
-            self.assertEqual(self.article.notebook_url, notebook_url)
-            self.assertEqual(self.article.repository_url, repository_url)
+            self.assertEqual(article.notebook_url, notebook_url)
+            self.assertEqual(article.repository_url, repository_url)
+
+    def test_validate_urls_for_skim_article_submission(self):
+
+        with patch("jdhapi.signals.requests.get") as mock_get:
+            mock_response = Mock()
+            mock_response.status_code = 200
+            mock_get.return_value = mock_response
+
+            article = self.create_article(
+                notebook_url_skim,
+                repository_url,
+                "skim-article.ipynb",
+            )
+            article.save()
+
+            self.assertEqual(article.notebook_url, notebook_url_skim)
+            self.assertEqual(article.repository_url, repository_url)
+
+    def test_false_repository_url_for_article_submission(self):
+
+        with patch("jdhapi.signals.requests.get") as mock_get:
+            mock_response = Mock()
+            mock_response.status_code = 404
+            mock_get.return_value = mock_response
+
+            with self.assertRaises(ValidationError):
+                article = self.create_article(
+                    notebook_url,
+                    false_repository_url,
+                    "article.ipynb",
+                )
+                article.save()
+
+    def test_false_notebook_url_for_article_submission(self):
+
+        with patch("jdhapi.signals.requests.get") as mock_get:
+            mock_response = Mock()
+            mock_response.status_code = 404
+            mock_get.return_value = mock_response
+
+            with self.assertRaises(ValidationError):
+                article = self.create_article(
+                    false_notebook_url,
+                    repository_url,
+                    "article.ipynb",
+                )
+                article.save()
