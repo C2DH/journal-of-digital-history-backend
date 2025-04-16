@@ -84,6 +84,7 @@ class AbstractAdmin(ExportActionMixin, admin.ModelAdmin):
                     "abstract",
                     "submitted_date",
                     "validation_date",
+                    "language_preference"
                 ),
             },
         ),
@@ -94,7 +95,6 @@ class AbstractAdmin(ExportActionMixin, admin.ModelAdmin):
                     ("contact_firstname", "contact_lastname"),
                     "contact_email",
                     "contact_affiliation",
-                    "contact_orcid",
                 )
             },
         ),

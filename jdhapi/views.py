@@ -120,8 +120,19 @@ def SubmitAbstract(request):
             'error': 'SchemaError',
             'message': err.message
         }, status=status.HTTP_400_BAD_REQUEST)
+    
     logger.info('submit abstract validated.')
-    contact = request.data.get("contact")
+
+    contact_list = request.data.get("contact", [])
+    if contact_list:
+        contact = contact_list[0]
+        logger.info('Contact information access.')
+    else:
+        return Response({
+            'error': 'ValidationError',
+            'message': 'Contact information is required.'
+        }, status=status.HTTP_400_BAD_REQUEST)
+
     if(request.data.get("callForPapers")):
         logger.info(f'call of paper {request.data.get("callForPapers")}')
         try:
@@ -130,28 +141,30 @@ def SubmitAbstract(request):
             abstract = Abstract(
                 title=request.data.get("title"),
                 abstract=request.data.get("abstract"),
-                contact_orcid=contact.get("orcid", ""),
                 contact_affiliation=contact.get("affiliation"),
                 contact_email=contact.get("email"),
                 contact_lastname=contact.get("lastname"),
                 contact_firstname=contact.get("firstname"),
-                consented=request.data.get("acceptConditions"),
+                language_preference=request.data.get("languagePreference"),
+                consented=request.data.get("termsAccepted"),
                 callpaper=call_paper
             )
         except CallOfPaper.DoesNotExist:
             raise Http404("Call of paper does not exist")
+        
     else:
         abstract = Abstract(
             title=request.data.get("title"),
             abstract=request.data.get("abstract"),
-            contact_orcid=contact.get("orcid", ""),
             contact_affiliation=contact.get("affiliation"),
             contact_email=contact.get("email"),
             contact_lastname=contact.get("lastname"),
             contact_firstname=contact.get("firstname"),
-            consented=request.data.get("acceptConditions")
+            language_preference=request.data.get("languagePreference"),
+            consented=request.data.get("termsAccepted")
         )
     abstract.save()
+
     authors = request.data.get('authors', [])
     for author in authors:
         new_author = Author(
@@ -159,18 +172,23 @@ def SubmitAbstract(request):
             firstname=author['firstname'],
             email=author.get('email', ''),
             affiliation=author['affiliation'],
-            orcid=author.get('orcid', '')
+            orcid=author.get('orcidUrl', ''),
+            github_id=author['githubId'],
+            bluesky_id=author.get('blueskyId', ''),
+            facebook_id=author.get('facebookId', ''),
         )
         new_author.save()
         abstract.authors.add(new_author)
+
     datasets = request.data.get('datasets', [])
     for dataset in datasets:
         new_dataset = Dataset(
-            url=dataset['url'],
+            url=dataset['link'],
             description=dataset['description']
         )
         new_dataset.save()
         abstract.datasets.add(new_dataset)
+
     logger.info("End submit abstract")
     # Send an email of confirmation
     sendmailAbstractReceived(abstract.title, abstract.contact_email, abstract.contact_firstname, abstract.contact_lastname)
@@ -226,7 +244,7 @@ class AbstractList(generics.ListCreateAPIView):
     permission_classes = [permissions.IsAdminUser]
     serializer_class = AbstractSlimSerializer
     filter_backends = [DjangoFilterBackend]
-    filterset_fields = ["id", "pid", "title", "abstract", "callpaper", "submitted_date", "validation_date", "contact_orcid", "contact_affiliation", "contact_lastname", "contact_firstname", "status", "consented", "authors"]
+    filterset_fields = ["id", "pid", "title", "abstract", "callpaper", "submitted_date", "validation_date", "language_preference", "contact_affiliation", "contact_lastname", "contact_firstname", "status", "consented", "authors"]
 
     @csrf_exempt
     def create(self, request, *args, **kwargs):

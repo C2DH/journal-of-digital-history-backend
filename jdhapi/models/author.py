@@ -1,9 +1,5 @@
 from django.db import models
-from django.conf import settings
-from django.utils import timezone
 from django_countries.fields import CountryField
-import shortuuid
-
 
 class Author(models.Model):
     id = models.AutoField(primary_key=True, db_column="id")
@@ -12,6 +8,9 @@ class Author(models.Model):
     firstname = models.CharField(max_length=50)
     orcid = models.CharField(max_length=50, null=True, blank=True)
     affiliation = models.CharField(max_length=250)
+    github_id = models.CharField(max_length=39, default="default_github_id")
+    bluesky_id = models.CharField(max_length=26, null=True, blank=True)
+    facebook_id = models.CharField(max_length=50, null=True, blank=True)
     city = models.CharField(max_length=100, null=True, blank=True)
     country = CountryField(blank=True, null=True)
 
