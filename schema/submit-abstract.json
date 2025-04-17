@@ -59,10 +59,10 @@
       "$id": "#/definitions/token",
       "type": "string",
       "title": "A recaptcha token",
-      "description": "Max 1000 characters",
+      "description": "Max 1200 characters",
       "default": "",
       "examples": ["03AGdBq25p8daIHp8-V7dvO3MEOshLJphGtGIEfymURe1Sq2VSgmL87MYi..."],
-      "maxLength": 1000
+      "maxLength": 1200
     },
     "datetime": {
       "$id": "#/definitions/datetime",
