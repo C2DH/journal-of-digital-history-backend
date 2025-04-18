@@ -8,7 +8,7 @@ class Author(models.Model):
     firstname = models.CharField(max_length=50)
     orcid = models.CharField(max_length=50, null=True, blank=True)
     affiliation = models.CharField(max_length=250)
-    github_id = models.CharField(max_length=39, default="default_github_id")
+    github_id = models.CharField(max_length=39,  null=True, blank=True)
     bluesky_id = models.CharField(max_length=26, null=True, blank=True)
     facebook_id = models.CharField(max_length=50, null=True, blank=True)
     city = models.CharField(max_length=100, null=True, blank=True)

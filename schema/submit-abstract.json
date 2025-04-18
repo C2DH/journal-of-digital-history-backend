@@ -65,10 +65,16 @@
             "pattern": "^https?://orcid.org/[0-9]{4}-[0-9]{4}-[0-9]{4}-[0-9X]{4}$"
           },
           "githubId": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 39,
-            "pattern": "^(?!-)(?!.*--)[a-z0-9-]{1,39}(?<!-)$"
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 39,
+                "pattern": "^(?!-)(?!.*--)[a-z0-9-]{1,39}(?<!-)$"
+              },
+              { "type": "null" },
+              { "type": "string", "maxLength": 0 }
+            ]
           },
           "blueskyId": {
             "anyOf": [
@@ -100,8 +106,7 @@
           "lastname",
           "affiliation",
           "email",
-          "orcidUrl",
-          "githubId"
+          "orcidUrl"
         ]
       },
       "minItems": 1,
