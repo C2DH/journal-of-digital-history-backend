@@ -40,132 +40,24 @@ def sendmailAbstractReceived(subject, sent_to, firstname, lastname):
 @permission_classes([AllowAny])
 def SubmitAbstract(request):
     try:
-        logger.info('Start JSON validation')
-        with transaction.atomic():  # Single transaction block for the entire function
-            try:
-                document_json_schema.validate(instance=request.data)
-                logger.info('Abstract validated')
-            except ValidationError as err:
-                logger.exception("Validation error in request data.")
-                raise ValidationError(f"Invalid data: {err.message}, validation schema : {err.schema}")
-            except SchemaError as err:
-                logger.exception("Schema error in JSON validation.")
-                raise ValidationError(f"Schema issue: {err.message}")
-
-            logger.info('Handle contact information')
-            contact_list = request.data.get("contact", [])
-            if not isinstance(contact_list, list) or not contact_list:
-                raise ValidationError("Contact information is required and must be a non-empty list.")
-
-            contact = contact_list[0]
-            required_contact_fields = ['firstname', 'lastname', 'email', 'affiliation']
-            missing_contact_fields = [field for field in required_contact_fields if field not in contact]
-            if missing_contact_fields:
-                raise ValidationError(f"Missing required contact fields: {', '.join(missing_contact_fields)}")
-
-            logger.info('Handle call for paper')
-            call_for_papers = request.data.get("callForPapers")
-            if call_for_papers:
-                logger.info(f'Processing call for paper: {call_for_papers}')
-                try:
-                    call_paper = CallOfPaper.objects.get(folder_name=call_for_papers)
-                except CallOfPaper.DoesNotExist:
-                    logger.error(f"Call for paper '{call_for_papers}' does not exist.")
-                    raise Exception(f"Call for paper '{call_for_papers}' does not exist.")
-
-                abstract = Abstract(
-                    title=request.data.get("title"),
-                    abstract=request.data.get("abstract"),
-                    contact_affiliation=contact.get("affiliation"),
-                    contact_email=contact.get("email"),
-                    contact_lastname=contact.get("lastname"),
-                    contact_firstname=contact.get("firstname"),
-                    language_preference=request.data.get("languagePreference"),
-                    consented=request.data.get("termsAccepted"),
-                    callpaper=call_paper
-                )
-            else:
-                abstract = Abstract(
-                    title=request.data.get("title"),
-                    abstract=request.data.get("abstract"),
-                    contact_affiliation=contact.get("affiliation"),
-                    contact_email=contact.get("email"),
-                    contact_lastname=contact.get("lastname"),
-                    contact_firstname=contact.get("firstname"),
-                    language_preference=request.data.get("languagePreference"),
-                    consented=request.data.get("termsAccepted")
-                )
-            abstract.save()
-            logger.info('Basic abstract information saved')
-
-            logger.info('Handle authors')
-            authors = request.data.get('authors', [])
-            if not isinstance(authors, list):
-                raise ValidationError("Authors must be provided as a list.")
-
-            at_least_one_github_id = False
-            for author in authors:
-                required_author_fields = ['lastname', 'firstname', 'email', 'affiliation', 'orcidUrl']
-                missing_author_fields = [field for field in required_author_fields if field not in author]
-                if missing_author_fields:
-                    raise ValidationError(f"Missing required author fields: {', '.join(missing_author_fields)}")
-
-                if author.get('githubId'):
-                    at_least_one_github_id = True
-
-                orcid = author.get('orcidUrl', '')
-                author_instance, created = Author.objects.update_or_create(
-                    orcid=orcid,
-                    defaults={
-                        'lastname': author['lastname'],
-                        'firstname': author['firstname'],
-                        'email': author['email'],
-                        'affiliation': author['affiliation'],
-                        'github_id': author.get('githubId', ''),
-                        'bluesky_id': author.get('blueskyId', ''),
-                        'facebook_id': author.get('facebookId', '')
-                    }
-                )
-                abstract.authors.add(author_instance)
-
-            if not at_least_one_github_id:
-                raise ValidationError("At least one author must have a GitHub ID.")
-            logger.info('Authors saved')
-
-            logger.info('Handle datasets')
-            datasets = request.data.get('datasets', [])
-            if not isinstance(datasets, list):
-                raise ValidationError("Datasets must be provided as a list.")
-
-            for dataset in datasets:
-                if 'link' not in dataset or 'description' not in dataset:
-                    raise ValidationError('Each dataset must include "link" and "description" fields.')
-
-                new_dataset = Dataset(
-                    url=dataset['link'],
-                    description=dataset['description']
-                )
-                new_dataset.save()
-                abstract.datasets.add(new_dataset)
-            logger.info('Datasets saved')
-
-            logger.info("Start sending email confirmation")
-            sendmailAbstractReceived(
-                abstract.title,
-                abstract.contact_email,
-                abstract.contact_firstname,
-                abstract.contact_lastname
-            )
-            logger.info("End sending email confirmation")
-
-        logger.info("End submit abstract")
-        serializer = AbstractSerializer(abstract)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-
+        data = validate_and_submit_abstract(request)
+        return Response(data, status=status.HTTP_201_CREATED)
     except ValidationError as e:
         logger.exception("Validation error occurred.")
         return Response({
             'error': 'ValidationError',
+            'message': str(e)
+        }, status=status.HTTP_400_BAD_REQUEST)
+    except SchemaError as e:
+        logger.exception("Schema error occurred.")
+        return Response({
+            'error': 'SchemaError',
+            'message': str(e)
+        }, status=status.HTTP_400_BAD_REQUEST)
+    except (KeyError, IndexError) as e:
+        logger.exception("Data invalid after validation")
+        return Response({
+            'error': 'KeyError',
             'message': str(e)
         }, status=status.HTTP_400_BAD_REQUEST)
     except Exception as e:
@@ -174,3 +66,100 @@ def SubmitAbstract(request):
             'error': 'InternalError',
             'message': 'An unexpected error occurred. Please try again later.'
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+
+def validate_and_submit_abstract(request):
+    logger.info('Start JSON validation')
+    with transaction.atomic():  # Single transaction block for the entire function
+        document_json_schema.validate(instance=request.data)
+
+        logger.info('Handle contact information')
+        contact_list = request.data["contact"]
+        contact = contact_list[0]
+
+        logger.info('Handle call for paper')
+        call_for_papers = request.data.get("callForPapers")
+        if call_for_papers:
+            logger.info(f'Processing call for paper: {call_for_papers}')
+            try:
+                call_paper = CallOfPaper.objects.get(folder_name=call_for_papers)
+            except CallOfPaper.DoesNotExist:
+                logger.error(f"Call for paper '{call_for_papers}' does not exist.")
+                raise Exception(f"Call for paper '{call_for_papers}' does not exist.")
+
+            abstract = Abstract(
+                title=request.data.get("title"),
+                abstract=request.data.get("abstract"),
+                contact_affiliation=contact.get("affiliation"),
+                contact_email=contact.get("email"),
+                contact_lastname=contact.get("lastname"),
+                contact_firstname=contact.get("firstname"),
+                language_preference=request.data.get("languagePreference"),
+                consented=request.data.get("termsAccepted"),
+                callpaper=call_paper
+            )
+        else:
+            abstract = Abstract(
+                title=request.data.get("title"),
+                abstract=request.data.get("abstract"),
+                contact_affiliation=contact.get("affiliation"),
+                contact_email=contact.get("email"),
+                contact_lastname=contact.get("lastname"),
+                contact_firstname=contact.get("firstname"),
+                language_preference=request.data.get("languagePreference"),
+                consented=request.data.get("termsAccepted")
+            )
+        abstract.save()
+        logger.info('Basic abstract information saved')
+
+        logger.info('Handle authors')
+        authors = request.data['authors']
+
+        at_least_one_github_id = False
+        for author in authors:
+            if author['githubId']:
+                at_least_one_github_id = True
+
+            orcid = author.get('orcidUrl', '')
+            author_instance, created = Author.objects.update_or_create(
+                orcid=orcid,
+                defaults={
+                    'lastname': author['lastname'],
+                    'firstname': author['firstname'],
+                    'email': author['email'],
+                    'affiliation': author['affiliation'],
+                    'github_id': author.get('githubId', ''),
+                    'bluesky_id': author.get('blueskyId', ''),
+                    'facebook_id': author.get('facebookId', '')
+                }
+            )
+            abstract.authors.add(author_instance)
+
+        if not at_least_one_github_id:
+            raise ValidationError("At least one author must have a GitHub ID.")
+        logger.info('Authors saved')
+
+        logger.info('Handle datasets')
+        datasets = request.data.get('datasets', [])
+
+        for dataset in datasets:
+            new_dataset = Dataset(
+                url=dataset['link'],
+                description=dataset['description']
+            )
+            new_dataset.save()
+            abstract.datasets.add(new_dataset)
+        logger.info('Datasets saved')
+
+        logger.info("Start sending email confirmation")
+        sendmailAbstractReceived(
+            abstract.title,
+            abstract.contact_email,
+            abstract.contact_firstname,
+            abstract.contact_lastname
+        )
+        logger.info("End sending email confirmation")
+
+    logger.info("End submit abstract")
+    serializer = AbstractSerializer(abstract)
+    return serializer.data
