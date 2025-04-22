@@ -47,7 +47,7 @@ def SubmitAbstract(request):
                 logger.info('Abstract validated')
             except ValidationError as err:
                 logger.exception("Validation error in request data.")
-                raise ValidationError(f"Invalid data: {err.message}", details=err.schema)
+                raise ValidationError(f"Invalid data: {err.message}, validation schema : {err.schema}")
             except SchemaError as err:
                 logger.exception("Schema error in JSON validation.")
                 raise ValidationError(f"Schema issue: {err.message}")
@@ -71,7 +71,7 @@ def SubmitAbstract(request):
                     call_paper = CallOfPaper.objects.get(folder_name=call_for_papers)
                 except CallOfPaper.DoesNotExist:
                     logger.error(f"Call for paper '{call_for_papers}' does not exist.")
-                    raise NotFoundError(f"Call for paper '{call_for_papers}' does not exist.")
+                    raise Exception(f"Call for paper '{call_for_papers}' does not exist.")
 
                 abstract = Abstract(
                     title=request.data.get("title"),

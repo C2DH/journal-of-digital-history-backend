@@ -26,7 +26,7 @@ urlpatterns = [
     ),
     path("api/issues/", views.IssueList.as_view(), name="issue-list"),
     path("api/issues/<str:pid>/", views.IssueDetail.as_view(), name="issue-detail"),
-    path("api/submit-abstract/", views.SubmitAbstract),
+    path("api/submit-abstract/", views.SubmitAbstract, name="submit-abstract"),
     path("api/generate-notebook/<str:pid>", views.GenerateNotebook),
     path("api/tags/", views.TagList.as_view(), name="tag-list"),
     path("api/tags/<int:pk>/", views.TagDetail.as_view(), name="tag-detail"),
