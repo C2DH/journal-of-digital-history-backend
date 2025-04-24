@@ -1,5 +1,4 @@
 from django.db import models
-from django.conf import settings
 from django.utils import timezone
 from .callofpaper import CallOfPaper
 import shortuuid
@@ -12,12 +11,27 @@ def create_short_url():
 class Abstract(models.Model):
 
     class Status(models.TextChoices):
-        SUBMITTED = 'SUBMITTED', 'Submitted',
-        ACCEPTED = 'ACCEPTED', 'Accepted',
-        DECLINED = 'DECLINED', 'Declined',
-        ABANDONED = 'ABANDONED', 'Abandoned',
-        SUSPENDED = 'SUSPENDED', 'Suspended',
-        PUBLISHED = 'PUBLISHED', 'Published'
+        SUBMITTED = (
+            "SUBMITTED",
+            "Submitted",
+        )
+        ACCEPTED = (
+            "ACCEPTED",
+            "Accepted",
+        )
+        DECLINED = (
+            "DECLINED",
+            "Declined",
+        )
+        ABANDONED = (
+            "ABANDONED",
+            "Abandoned",
+        )
+        SUSPENDED = (
+            "SUSPENDED",
+            "Suspended",
+        )
+        PUBLISHED = "PUBLISHED", "Published"
 
     class Language(models.TextChoices):
         PYTHON = 'Python',
@@ -26,9 +40,13 @@ class Abstract(models.Model):
 
 
     id = models.AutoField(primary_key=True, db_column="id")
-    pid = models.CharField(max_length=255, default=create_short_url, db_index=True, unique=True)
+    pid = models.CharField(
+        max_length=255, default=create_short_url, db_index=True, unique=True
+    )
     title = models.CharField(max_length=250)
-    callpaper = models.ForeignKey(CallOfPaper, blank=True, null=True, on_delete=models.CASCADE)
+    callpaper = models.ForeignKey(
+        CallOfPaper, blank=True, null=True, on_delete=models.CASCADE
+    )
     status = models.CharField(
         max_length=15,
         choices=Status.choices,
@@ -49,7 +67,7 @@ class Abstract(models.Model):
     comment = models.TextField(blank=True, null=True)
 
     class Meta:
-        ordering = ['submitted_date']
+        ordering = ["submitted_date"]
 
     def accepted(self):
         self.validation_date = timezone.now()
