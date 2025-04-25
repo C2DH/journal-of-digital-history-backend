@@ -16,13 +16,13 @@ logger = get_logger()
 
 document_json_schema = JSONSchema(filepath='submit-abstract.json')
 
-def getDefaultBody(subject, firstname, lastname):
-    defaultBody = "Dear " + firstname + " " + lastname + ',' + '\n\n' + "Your submission " + subject + " has been sent to the managing editor of the Journal of Digital History. We will contact you back in a few days to discuss the feasibility of your article, as the JDH's layered articles imply to publish an hermeneutics and a data layer." + "\n\n" + "Best regard," + "\n\n" + "The JDH team."
-    return defaultBody
+def get_default_body(subject, firstname, lastname):
+    default_body = "Dear " + firstname + " " + lastname + ',' + '\n\n' + "Your submission " + subject + " has been sent to the managing editor of the Journal of Digital History. We will contact you back in a few days to discuss the feasibility of your article, as the JDH's layered articles imply to publish an hermeneutics and a data layer." + "\n\n" + "Best regard," + "\n\n" + "The JDH team."
+    return default_body
 
 
-def sendmailAbstractReceived(subject, sent_to, firstname, lastname):
-    body = getDefaultBody(subject, firstname, lastname)
+def send_mail_abstract_received(subject, sent_to, firstname, lastname):
+    body = get_default_body(subject, firstname, lastname)
     try:
         send_mail(
             subject,
@@ -73,15 +73,16 @@ def validate_and_submit_abstract(request):
     with transaction.atomic():  # Single transaction block for the entire function
         document_json_schema.validate(instance=request.data)
 
-        logger.info('Handle contact information')
-        contact_list = request.data["contact"]
-        contact = contact_list[0]
-
         logger.info('Handle call for paper')
         call_for_papers = request.data.get("callForPapers")
+
+        if call_for_papers == 'openSubmission':
+            call_for_papers = ''
+
         if call_for_papers:
             logger.info(f'Processing call for paper: {call_for_papers}')
             try:
+
                 call_paper = CallOfPaper.objects.get(folder_name=call_for_papers)
             except CallOfPaper.DoesNotExist:
                 logger.error(f"Call for paper '{call_for_papers}' does not exist.")
@@ -90,10 +91,10 @@ def validate_and_submit_abstract(request):
             abstract = Abstract(
                 title=request.data.get("title"),
                 abstract=request.data.get("abstract"),
-                contact_affiliation=contact.get("affiliation"),
-                contact_email=contact.get("email"),
-                contact_lastname=contact.get("lastname"),
-                contact_firstname=contact.get("firstname"),
+                contact_affiliation='',
+                contact_email='',
+                contact_lastname='',
+                contact_firstname='',
                 language_preference=request.data.get("languagePreference"),
                 consented=request.data.get("termsAccepted"),
                 callpaper=call_paper
@@ -102,24 +103,35 @@ def validate_and_submit_abstract(request):
             abstract = Abstract(
                 title=request.data.get("title"),
                 abstract=request.data.get("abstract"),
-                contact_affiliation=contact.get("affiliation"),
-                contact_email=contact.get("email"),
-                contact_lastname=contact.get("lastname"),
-                contact_firstname=contact.get("firstname"),
+                contact_affiliation='',
+                contact_email='',
+                contact_lastname='',
+                contact_firstname='',
                 language_preference=request.data.get("languagePreference"),
                 consented=request.data.get("termsAccepted")
             )
         abstract.save()
-        logger.info('Basic abstract information saved')
+        logger.info('Abstract details saved: title, abstract, language preference, and consent.')
 
         logger.info('Handle authors')
         authors = request.data['authors']
 
         at_least_one_github_id = False
+        at_least_one_primary_contact = False
+
         for author in authors:
             if author['githubId']:
                 at_least_one_github_id = True
 
+            if author['primaryContact']:  
+                at_least_one_primary_contact = True
+                abstract.contact_affiliation = author['affiliation']
+                abstract.contact_email = author['email']
+                abstract.contact_lastname = author['lastname']
+                abstract.contact_firstname = author['firstname']
+                abstract.save()
+                logger.info('Primary contact information updated')
+            
             orcid = author.get('orcidUrl', '')
             author_instance, created = Author.objects.update_or_create(
                 orcid=orcid,
@@ -137,6 +149,9 @@ def validate_and_submit_abstract(request):
 
         if not at_least_one_github_id:
             raise ValidationError("At least one author must have a GitHub ID.")
+        if not at_least_one_primary_contact:
+            raise ValidationError("At least one author must be marked as the primary contact.")
+        
         logger.info('Authors saved')
 
         logger.info('Handle datasets')
@@ -152,7 +167,7 @@ def validate_and_submit_abstract(request):
         logger.info('Datasets saved')
 
         logger.info("Start sending email confirmation")
-        sendmailAbstractReceived(
+        send_mail_abstract_received(
             abstract.title,
             abstract.contact_email,
             abstract.contact_firstname,
