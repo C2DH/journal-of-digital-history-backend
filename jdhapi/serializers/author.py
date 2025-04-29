@@ -8,7 +8,7 @@ class CountrySerializer(serializers.Serializer):
     country = CountryField()
 
 
-class AuthorSerializer(serializers.ModelSerializer):
+class AuthorAbstractsSerializer(serializers.ModelSerializer):
     abstracts = AbstractSerializer(many=True, read_only=True)
 
     class Meta:
@@ -20,6 +20,9 @@ class AuthorSerializer(serializers.ModelSerializer):
             "affiliation",
             "email",
             "orcid",
+            "github_id",
+            "bluesky_id",
+            "facebook_id",
             "abstracts",
         ]
 
@@ -41,4 +44,7 @@ class AuthorSlimSerializer(serializers.ModelSerializer):
             "orcid",
             "city",
             "country",
+            "github_id",
+            "bluesky_id",
+            "facebook_id",
         ]

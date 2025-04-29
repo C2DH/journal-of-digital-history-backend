@@ -4,7 +4,7 @@ from jdhapi.models import Abstract
 from rest_framework.response import Response
 
 @api_view(['GET'])
-def GenerateNotebook(request, pid):
+def generate_notebook(request, pid):
     abstractsubmission = get_object_or_404(Abstract, pid=pid)
     return Response({
         "nbformat": 4,
