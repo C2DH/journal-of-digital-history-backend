@@ -45,7 +45,7 @@ class AbstractSerializer(serializers.ModelSerializer):
     def get_authors(self, obj):
         from jdhapi.serializers.author import AuthorSlimSerializer
 
-        return AuthorSlimSerializer(obj.authors.all(), many=True).data
+        return AuthorSlimSerializer(obj.authors.all().order_by("id"), many=True).data
 
     def get_datasets(self, obj):
         from jdhapi.serializers.dataset import DatasetSlimSerializer

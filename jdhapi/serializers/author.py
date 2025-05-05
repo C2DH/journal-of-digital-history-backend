@@ -41,6 +41,7 @@ class AuthorSlimSerializer(serializers.ModelSerializer):
             "lastname",
             "firstname",
             "affiliation",
+            "email",
             "orcid",
             "city",
             "country",
