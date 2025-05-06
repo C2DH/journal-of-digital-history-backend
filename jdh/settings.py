@@ -30,6 +30,8 @@ DEBUG = get_env_variable("DEBUG", "True")
 
 DJANGO_LOG_LEVEL = get_env_variable("DJANGO_LOG_LEVEL", "DEBUG")
 
+CSRF_TRUSTED_ORIGINS = get_env_variable("CSRF_TRUSTED_ORIGINS", "").split(",")
+
 ALLOWED_HOSTS = get_env_variable("ALLOWED_HOSTS", "").split(",")
 
 DRF_RECAPTCHA_SECRET_KEY = get_env_variable(
