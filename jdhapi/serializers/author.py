@@ -7,16 +7,38 @@ from django_countries.serializer_fields import CountryField
 class CountrySerializer(serializers.Serializer):
     country = CountryField()
 
+
 class AuthorSerializer(serializers.ModelSerializer):
     abstracts = AbstractSerializer(many=True, read_only=True)
 
     class Meta:
         model = Author
-        fields = ['id', 'lastname', 'firstname', 'affiliation', 'email', 'orcid', 'abstracts']
+        fields = [
+            "id",
+            "lastname",
+            "firstname",
+            "affiliation",
+            "email",
+            "orcid",
+            "abstracts",
+        ]
 
 
 class AuthorSlimSerializer(serializers.ModelSerializer):
 
+    country = serializers.SerializerMethodField()
+
+    def get_country(self, obj):
+        return str(obj.country)
+
     class Meta:
         model = Author
-        fields = ['id', 'lastname', 'firstname', 'affiliation', 'orcid','city','country']
+        fields = [
+            "id",
+            "lastname",
+            "firstname",
+            "affiliation",
+            "orcid",
+            "city",
+            "country",
+        ]

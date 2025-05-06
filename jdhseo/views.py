@@ -28,11 +28,11 @@ logger = logging.getLogger(__name__)
 
 def ArticleDetail(request, pid):
     published_date = ""
+    array_keys = ""
     # get ONLY published article matching the pid
     try:
-        article = Article.objects.get(
-            abstract__pid=pid)
-            #status=Article.Status.PUBLISHED)
+        article = Article.objects.get(abstract__pid=pid)
+        # status=Article.Status.PUBLISHED)
     except Article.DoesNotExist:
         raise Http404("Article does not exist")
     # generate qrcode
@@ -40,142 +40,166 @@ def ArticleDetail(request, pid):
     # get doi url format for DG
     doi_url = get_doi_url_formatted_jdh(article.doi)
     # Publish online
-    if (article.publication_date):
+    if article.publication_date:
         published_date = article.publication_date.date()
     # decode notebook url
     notebook_url = urllib.parse.unquote(
-        base64.b64decode(article.notebook_url).decode('utf-8'))
-    if 'keywords' in article.data:
-        array_keys = "<b>Keywords: </b>" + article.data['keywords'][0].replace(';', ',')
-    logger.info(f"keywords {array_keys}")
+        base64.b64decode(article.notebook_url).decode("utf-8")
+    )
+    if (
+        "keywords" in article.data
+        and isinstance(article.data["keywords"], list)
+        and article.data["keywords"]
+    ):
+        array_keys = "<b>Keywords: </b>" + article.data["keywords"][0].replace(";", ",")
+        logger.info(f"keywords {array_keys}")
     # Initialize ArticleXml to get authors and affiliations
     try:
         article_xml = ArticleXml(
             article_authors=article.abstract.authors.all(),
-            title=article.data.get('title', [''])[0],
+            title=article.data.get("title", [""])[0],
             article_doi=article.doi,
-            keywords=article.data.get('keywords', []),
+            keywords=article.data.get("keywords", []),
             publication_date=article.publication_date,
             copyright=article.copyright_type,
             issue_pid=article.issue.pid,
-            pid=pid
+            pid=pid,
         )
         authors = article_xml.authors
         affiliations = article_xml.affiliations
         merged_authors_affiliations = merge_authors_affiliations(authors, affiliations)
-        logger.info(f"merged_authors_affiliations {merged_authors_affiliations}")
+        # logger.info(f"merged_authors_affiliations {merged_authors_affiliations}")
 
     except Http404 as e:
         raise Http404(f"Error initializing ArticleXml: {str(e)}")
     # fill the context for the template file.
     context = {
-        'article': article,
-        'article_absolute_url':
-            f"https://journalofdigitalhistory.org/en/article/"
-            f"{article.abstract.pid}",
-        'qr_code': qrCodebase64,
-        'media_url': settings.MEDIA_URL,
-        'doi_url': doi_url,
-        'published_date': published_date,
-        'keywords': array_keys,
-        'authors': authors,
-        'authors_affiliations': merged_authors_affiliations
+        "article": article,
+        "article_absolute_url": f"https://journalofdigitalhistory.org/en/article/"
+        f"{article.abstract.pid}",
+        "qr_code": qrCodebase64,
+        "media_url": settings.MEDIA_URL,
+        "doi_url": doi_url,
+        "published_date": published_date,
+        "keywords": array_keys,
+        "authors": authors,
+        "authors_affiliations": merged_authors_affiliations,
     }
     # check if it is a github url
-    context.update({'proxy': 'github', 'host': settings.JDHSEO_PROXY_HOST})
+    context.update({"proxy": "github", "host": settings.JDHSEO_PROXY_HOST})
     if notebook_url.startswith(settings.JDHSEO_PROXY_PATH_GITHUB):
         # load contents from remote link (it uses nginx cache if availeble.
         # this can be improved using local cacle mechanism
         # Cf. https://docs.djangoproject.com/en/3.2/topics/cache/
-        remote_url = urllib.parse.urljoin(
-            settings.JDHSEO_PROXY_HOST, notebook_url)
+        remote_url = urllib.parse.urljoin(settings.JDHSEO_PROXY_HOST, notebook_url)
         try:
             res = requests.get(remote_url, timeout=10)
             # add NB paragraphs to context
             try:
                 notebook_data = res.json()
-                context.update({'nb': parseJupyterNotebook(notebook_data, merged_authors_affiliations)})
+                context.update(
+                    {
+                        "nb": parseJupyterNotebook(
+                            notebook_data, merged_authors_affiliations
+                        )
+                    }
+                )
             except ValueError as e:
-                logger.error(f'Error parsing JSON for article pk={article.pk} notebook remote_url={remote_url}')
+                logger.error(
+                    f"Error parsing JSON for article pk={article.pk} notebook remote_url={remote_url}"
+                )
                 logger.exception(e)
-                raise Http404(f'Error parsing JSON for article pk={article.pk} notebook remote_url={remote_url}')
+                raise Http404(
+                    f"Error parsing JSON for article pk={article.pk} notebook remote_url={remote_url}"
+                )
         except Exception as e:
             logger.error(
-                f'Error occurred on article pk={article.pk}'
-                f' notebook remote_url={remote_url}')
+                f"Error occurred on article pk={article.pk}"
+                f" notebook remote_url={remote_url}"
+            )
             logger.exception(e)
             raise Http404("Article Notebook file not found (or not valid)")
     else:
-        logger.error(
-            f'Article(pid={pid}).notebook_url is BAD:"{notebook_url}"')
+        logger.error(f'Article(pid={pid}).notebook_url is BAD:"{notebook_url}"')
         raise Http404("Article does not exist")
     # get content from notebook_url using our proxy
     # r = requests.get('https://api.github.com/user')
-    return render(request, 'jdhseo/article_detail.html', context)
+    return render(request, "jdhseo/article_detail.html", context)
 
 
 def IssueDetail(request, pid):
     try:
-        issue = Issue.objects.get(
-            pid=pid,
-            status=Issue.Status.PUBLISHED)
+        issue = Issue.objects.get(pid=pid, status=Issue.Status.PUBLISHED)
     except Article.DoesNotExist:
         raise Http404("Issue does not exist")
 
-    articles = Article.objects.filter(
-        issue__pid=pid,
-        status=Article.Status.PUBLISHED)
+    articles = Article.objects.filter(issue__pid=pid, status=Article.Status.PUBLISHED)
     context = {
-        'site_base_url': 'https://journalofdigitalhistory.org',
-        'issue': issue,
-        'count_articles': articles.count(),
-        'plain_articles': [
-            getPlainMetadataFromArticle(article=a)
-            for a in articles
-        ]
+        "site_base_url": "https://journalofdigitalhistory.org",
+        "issue": issue,
+        "count_articles": articles.count(),
+        "plain_articles": [getPlainMetadataFromArticle(article=a) for a in articles],
     }
-    return render(request, 'jdhseo/issue_detail.html', context)
+    return render(request, "jdhseo/issue_detail.html", context)
 
 
 def IssueXmlDG(request, pid):
     context = {
-        'journal_publisher_id': 'jdh',
-        'journal_code': 'jdh',
-        'doi_code': 'jdh',
-        'issn': '2747-5271',
+        "journal_publisher_id": "jdh",
+        "journal_code": "jdh",
+        "doi_code": "jdh",
+        "issn": "2747-5271",
     }
-    return render(request, 'jdhseo/issue_dg.xml', context, content_type='text/xml; charset=utf-8')
+    return render(
+        request, "jdhseo/issue_dg.xml", context, content_type="text/xml; charset=utf-8"
+    )
 
 
 def ArticleXmlDG(request, pid):
     try:
         article = Article.objects.get(
-            abstract__pid=pid,
-            status=Article.Status.PUBLISHED)
+            abstract__pid=pid, status=Article.Status.PUBLISHED
+        )
 
         nbauthors = article.abstract.authors.count()
-        logger.debug(f'Nb Authors(count={nbauthors}) for article {pid}')
-        logger.debug(f'Belongs to issue {article.issue}')
+        logger.debug(f"Nb Authors(count={nbauthors}) for article {pid}")
+        logger.debug(f"Belongs to issue {article.issue}")
         keywords = []
-        if 'keywords' in article.data:
-            array_keys = article.data['keywords'][0].replace(';', ',').split(',')
+        if "keywords" in article.data:
+            array_keys = article.data["keywords"][0].replace(";", ",").split(",")
             for item in array_keys:
                 keyword = {
                     "keyword": item,
                 }
                 keywords.append(keyword)
-        if 'title' in article.data:
-            article_title = html.fromstring(marko.convert(article.data['title'][0])).text_content()
+        if "title" in article.data:
+            article_title = html.fromstring(
+                marko.convert(article.data["title"][0])
+            ).text_content()
         context = {
-            'articleXml': ArticleXml(article.abstract.authors.all(), article_title, article.doi, keywords, article.publication_date, article.copyright_type, article.issue, pid),
-            'journal_publisher_id': 'jdh',
-            'journal_code': 'jdh',
-            'doi_code': 'jdh',
-            'issn': '2747-5271',
+            "articleXml": ArticleXml(
+                article.abstract.authors.all(),
+                article_title,
+                article.doi,
+                keywords,
+                article.publication_date,
+                article.copyright_type,
+                article.issue,
+                pid,
+            ),
+            "journal_publisher_id": "jdh",
+            "journal_code": "jdh",
+            "doi_code": "jdh",
+            "issn": "2747-5271",
         }
     except Article.DoesNotExist:
         raise Http404("Article does not exist")
-    return render(request, 'jdhseo/article_dg.xml', context, content_type='text/xml; charset=utf-8')
+    return render(
+        request,
+        "jdhseo/article_dg.xml",
+        context,
+        content_type="text/xml; charset=utf-8",
+    )
 
 
 def GetArticleContent_from_url(url, pid):
@@ -183,14 +207,14 @@ def GetArticleContent_from_url(url, pid):
     # Get filename from doi
     try:
         article = Article.objects.get(
-            abstract__pid=pid,
-            status=Article.Status.PUBLISHED)
+            abstract__pid=pid, status=Article.Status.PUBLISHED
+        )
     except Article.DoesNotExist:
         raise Http404("Article does not exist")
     filename = get_publisher_id(article.doi).lower()
     path = urlparse(url).path
     ext = os.path.splitext(path)[1]
-    if ext == '.pdf':
+    if ext == ".pdf":
         filename = f"/{filename}/{filename}.pdf"
     else:
         filename = f"/{filename}/{filename}.xml"
@@ -202,8 +226,8 @@ def GetIssueContent_from_url(url, pid):
     # Get filename from doi
     try:
         article = Article.objects.get(
-            abstract__pid=pid,
-            status=Article.Status.PUBLISHED)
+            abstract__pid=pid, status=Article.Status.PUBLISHED
+        )
     except Article.DoesNotExist:
         raise Http404("Article does not exist")
     # filename = get_publisher_id(article.doi).lower()
@@ -216,14 +240,16 @@ def Generate_zip(request, pid):
     logger.info(f"{request.build_absolute_uri()}")
     # The article's package for DG contains : XML and pdf
     # issue xml
-    url_issue = f'http://127.0.0.1:8000/en/issue/dg/{pid}'
+    url_issue = f"http://127.0.0.1:8000/en/issue/dg/{pid}"
     # url_issue = f'https://journalofdigitalhistory.org/prerendered/en/article/dg/{pid}'
-    url_xml = f'https://journalofdigitalhistory.org/prerendered/en/article/dg/{pid}'
-    url_pdf = f'https://journalofdigitalhistory.org/en/article/{pid}.pdf'
-    response_issue, filename_issue, filename_zip = GetIssueContent_from_url(url_issue, pid)
+    url_xml = f"https://journalofdigitalhistory.org/prerendered/en/article/dg/{pid}"
+    url_pdf = f"https://journalofdigitalhistory.org/en/article/{pid}.pdf"
+    response_issue, filename_issue, filename_zip = GetIssueContent_from_url(
+        url_issue, pid
+    )
     # Create zip
     buffer = io.BytesIO()
-    zip_file = zipfile.ZipFile(buffer, 'w')
+    zip_file = zipfile.ZipFile(buffer, "w")
     for url in [url_xml, url_pdf]:
         response, filename = GetArticleContent_from_url(url, pid)
         zip_file.writestr(filename, response)
@@ -231,8 +257,6 @@ def Generate_zip(request, pid):
     zip_file.close()
     # Return zip
     response = HttpResponse(buffer.getvalue())
-    response['Content-Type'] = 'application/x-zip-compressed'
-    response['Content-Disposition'] = f'attachment; filename={filename_zip}'
+    response["Content-Type"] = "application/x-zip-compressed"
+    response["Content-Disposition"] = f"attachment; filename={filename_zip}"
     return response
-
-
