@@ -53,6 +53,7 @@ jobs:
           DATABASE_HOST: localhost
           DATABASE_PORT: 5432
           ALLOWED_HOSTS: localhost
+          CSRF_TRUSTED_ORIGINS: http://127.0.0.1
           DRF_RECAPTCHA_SECRET_KEY: default-recaptcha-secret-key
           EMAIL_HOST: smtp.example.com
           EMAIL_PORT: 587
