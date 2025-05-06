@@ -60,6 +60,7 @@ jobs:
           EMAIL_HOST_USER: user@example.com
           EMAIL_HOST_PASSWORD: password
           JDH_ORCID_API_TOKEN: default-token
+          GITHUB_ACCESS_TOKEN: default-token
         run: |
           pipenv run ./manage.py test
 
