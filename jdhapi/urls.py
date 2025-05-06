@@ -26,6 +26,11 @@ urlpatterns = [
     ),
     path("api/issues/", views.IssueList.as_view(), name="issue-list"),
     path("api/issues/<str:pid>/", views.IssueDetail.as_view(), name="issue-detail"),
+    path(
+        "api/submit-abstract/check-github-id/<str:username>",
+        views.check_github_id,
+        name="check-github-id",
+    ),
     path("api/submit-abstract/", views.submit_abstract, name="submit-abstract"),
     path("api/generate-notebook/<str:pid>", views.generate_notebook),
     path("api/tags/", views.TagList.as_view(), name="tag-list"),
