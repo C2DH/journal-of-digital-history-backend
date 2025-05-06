@@ -18,7 +18,6 @@ class TestSignal(TestCase):
         self.abstract = Abstract.objects.create(
             title="Test Abstract",
             abstract="This is a test abstract",
-            contact_orcid="0000-0000-0000-0000",
             contact_affiliation="Test Affiliation",
             contact_email="test@example.com",
             contact_lastname="Doe",

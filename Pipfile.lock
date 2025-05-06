@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "a9bd17570ed9fd5585c865b88bc3152c83f44dd39debdcc21347ad44ffdb741e"
+            "sha256": "1952d99866d50a8008d1a9ed7dd49295778c24820ceb412b3d6b942e9a504956"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -694,6 +694,15 @@
             ],
             "version": "==2.21.1"
         },
+        "flake8": {
+            "hashes": [
+                "sha256:93b92ba5bdb60754a6da14fa3b93a9361fd00a59632ada61fd7b130436c40343",
+                "sha256:fa558ae3f6f7dbf2b4f22663e5343b6b6023620461f8d4ff2019ef4b5ee70426"
+            ],
+            "index": "pypi",
+            "markers": "python_version >= '3.9'",
+            "version": "==7.2.0"
+        },
         "fonttools": {
             "extras": [
                 "woff"
@@ -1222,6 +1231,14 @@
             "markers": "python_version >= '3.8'",
             "version": "==0.1.7"
         },
+        "mccabe": {
+            "hashes": [
+                "sha256:348e0240c33b60bbdf4e523192ef919f28cb2c3d7d5c7794f74009290f236325",
+                "sha256:6c2d30ab6be0e4a46919781807b4f0d834ebdd6c6e3dca0bda5a15f863427b6e"
+            ],
+            "markers": "python_version >= '3.6'",
+            "version": "==0.7.0"
+        },
         "mistune": {
             "hashes": [
                 "sha256:02106ac2aa4f66e769debbfa028509a275069dcffce0dfa578edd7b991ee700a",
@@ -1538,6 +1555,14 @@
             ],
             "version": "==0.2.3"
         },
+        "pycodestyle": {
+            "hashes": [
+                "sha256:35863c5974a271c7a726ed228a14a4f6daf49df369d8c50cd9a6f58a5e143ba9",
+                "sha256:c8415bf09abe81d9c7f872502a6eee881fbe85d8763dd5b9924bb0a01d67efae"
+            ],
+            "markers": "python_version >= '3.9'",
+            "version": "==2.13.0"
+        },
         "pycountry": {
             "hashes": [
                 "sha256:b61b3faccea67f87d10c1f2b0fc0be714409e8fcdcc1315613174f6466c10221",
@@ -1562,6 +1587,14 @@
             ],
             "markers": "python_version >= '3.8'",
             "version": "==0.11.0"
+        },
+        "pyflakes": {
+            "hashes": [
+                "sha256:5039c8339cbb1944045f4ee5466908906180f13cc99cc9949348d10f82a5c32a",
+                "sha256:6dfd61d87b97fba5dcfaaf781171ac16be16453be6d816147989e7f6e6a9576b"
+            ],
+            "markers": "python_version >= '3.9'",
+            "version": "==3.3.2"
         },
         "pygments": {
             "hashes": [
