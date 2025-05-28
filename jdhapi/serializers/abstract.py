@@ -69,7 +69,6 @@ class AbstractSlimSerializer(serializers.ModelSerializer):
             "callpaper",
             "submitted_date",
             "validation_date",
-            "contact_orcid",
             "contact_affiliation",
             "contact_lastname",
             "contact_firstname",
