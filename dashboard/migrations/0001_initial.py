@@ -8,49 +8,71 @@ class Migration(migrations.Migration):
 
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='Contributor',
+            name="Contributor",
             fields=[
-                ('id', models.AutoField(db_column='id', primary_key=True, serialize=False)),
-                ('email', models.EmailField(max_length=254)),
-                ('lastname', models.CharField(max_length=50)),
-                ('firstname', models.CharField(max_length=50)),
-                ('orcid', models.CharField(max_length=50)),
-                ('institution', models.CharField(max_length=250)),
+                (
+                    "id",
+                    models.AutoField(db_column="id", primary_key=True, serialize=False),
+                ),
+                ("email", models.EmailField(max_length=254)),
+                ("lastname", models.CharField(max_length=50)),
+                ("firstname", models.CharField(max_length=50)),
+                ("orcid", models.CharField(max_length=50)),
+                ("institution", models.CharField(max_length=250)),
             ],
             options={
-                'ordering': ['lastname'],
+                "ordering": ["lastname"],
             },
         ),
         migrations.CreateModel(
-            name='Ressource',
+            name="Ressource",
             fields=[
-                ('id', models.AutoField(db_column='id', primary_key=True, serialize=False)),
-                ('url', models.URLField(max_length=254)),
-                ('description', models.TextField()),
+                (
+                    "id",
+                    models.AutoField(db_column="id", primary_key=True, serialize=False),
+                ),
+                ("url", models.URLField(max_length=254)),
+                ("description", models.TextField()),
             ],
         ),
         migrations.CreateModel(
-            name='AbstractSubmission',
+            name="AbstractSubmission",
             fields=[
-                ('id', models.AutoField(db_column='id', primary_key=True, serialize=False)),
-                ('title', models.CharField(max_length=250)),
-                ('abstract', models.TextField()),
-                ('submitted_date', models.DateTimeField(default=django.utils.timezone.now)),
-                ('validation_date', models.DateTimeField(blank=True, null=True)),
-                ('submitter_email', models.EmailField(max_length=254)),
-                ('submitter_lastname', models.CharField(max_length=50)),
-                ('submitter_firstname', models.CharField(max_length=50)),
-                ('status', models.CharField(choices=[('SUBMITTED', 'Submitted'), ('ACCEPTED', 'Accepted'), ('DECLINED', 'Declined')], default='SUBMITTED', max_length=15)),
-                ('contributors', models.ManyToManyField(to='dashboard.Contributor')),
-                ('ressources', models.ManyToManyField(to='dashboard.Ressource')),
+                (
+                    "id",
+                    models.AutoField(db_column="id", primary_key=True, serialize=False),
+                ),
+                ("title", models.CharField(max_length=250)),
+                ("abstract", models.TextField()),
+                (
+                    "submitted_date",
+                    models.DateTimeField(default=django.utils.timezone.now),
+                ),
+                ("validation_date", models.DateTimeField(blank=True, null=True)),
+                ("submitter_email", models.EmailField(max_length=254)),
+                ("submitter_lastname", models.CharField(max_length=50)),
+                ("submitter_firstname", models.CharField(max_length=50)),
+                (
+                    "status",
+                    models.CharField(
+                        choices=[
+                            ("SUBMITTED", "Submitted"),
+                            ("ACCEPTED", "Accepted"),
+                            ("DECLINED", "Declined"),
+                        ],
+                        default="SUBMITTED",
+                        max_length=15,
+                    ),
+                ),
+                ("contributors", models.ManyToManyField(to="dashboard.Contributor")),
+                ("ressources", models.ManyToManyField(to="dashboard.Ressource")),
             ],
             options={
-                'ordering': ['title'],
+                "ordering": ["title"],
             },
         ),
     ]

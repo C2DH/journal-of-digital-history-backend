@@ -53,13 +53,21 @@ pipenv run ./manage.py echo "It was a bright cold day in July ..."
 
 ### Running tests
 
-Be sure to have your environment activate (if not, do `source .venv/bin/activate`) and then :
+Be sure to have your environment activate (if not, do `source .venv/bin/activate`) and then to run ALL the tests :
 
 `python3 manage.py test`
 
 or with Pip:
 
 `pipenv run ./manage.py test`
+
+If you want to run a specific test file (eg. `test_check_github_id`) : 
+
+`python3 manage.py test tests.jdhapi.views.test_check_github_id`
+
+with Pip : 
+
+`pipenv run ./manage.py test tests.jdhapi.views.test_check_github_id`
 
 ### To generate requirements.txt from the pipfile
 

@@ -8,11 +8,11 @@ class DatasetSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Dataset
-        fields = ['id', 'url', 'description', 'abstracts']
+        fields = ["id", "url", "description", "abstracts"]
 
 
 class DatasetSlimSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Dataset
-        fields = ['id', 'url', 'description']
+        fields = ("id", "url", "description")
