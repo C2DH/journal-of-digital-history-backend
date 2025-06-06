@@ -38,6 +38,13 @@ DRF_RECAPTCHA_SECRET_KEY = get_env_variable(
     "DRF_RECAPTCHA_SECRET_KEY", "default-recaptacha-secret-key"
 )
 
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
+SESSION_COOKIE_SAMESITE = "None"
+SESSION_COOKIE_SECURE = True  # Only if using HTTPS
 
 # Application definition
 
@@ -59,12 +66,17 @@ INSTALLED_APPS = [
     "drf_recaptcha",
     "django_filters",
     "django_countries",
+    "rest_framework_simplejwt",
+    "corsheaders",
 ]
 
 REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.IsAuthenticatedOrReadOnly",
     ],
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+    ),
     "DEFAULT_FILTER_BACKENDS": ["django_filters.rest_framework.DjangoFilterBackend"],
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.LimitOffsetPagination",
     "PAGE_SIZE": 10,
@@ -80,6 +92,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
 ]
 
 ROOT_URLCONF = "jdh.urls"
