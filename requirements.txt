@@ -32,6 +32,7 @@ decorator==5.1.1
 defusedxml==0.7.1
 diff-match-patch==20241021
 django==5.1.6
+django-cors-headers==4.3.1
 django-countries==7.6.1
 django-crispy-forms==2.3
 django-filter==24.3
