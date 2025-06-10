@@ -41,6 +41,7 @@ djangorestframework==3.15.2
 drf-recaptcha==4.0.2
 executing==2.2.0
 fastjsonschema==2.21.1
+flake8==7.2.0
 fonttools[woff]==4.56.0
 fqdn==1.5.1
 gunicorn==23.0.0
@@ -76,6 +77,7 @@ lxml==5.3.1
 marko==2.1.2
 markupsafe==3.0.2
 matplotlib-inline==0.1.7
+mccabe==0.7.0
 mistune==3.1.1
 nbclient==0.10.2
 nbconvert==7.16.6
@@ -96,9 +98,11 @@ psutil==6.1.1
 psycopg2-binary==2.9.10
 ptyprocess==0.7.0
 pure-eval==0.2.3
+pycodestyle==2.13.0
 pycountry==24.6.1
 pycparser==2.22
 pydyf==0.11.0
+pyflakes==3.3.2
 pygments==2.19.1
 pyphen==0.17.2
 pyrsistent==0.20.0
