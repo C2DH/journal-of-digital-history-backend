@@ -38,10 +38,11 @@ DRF_RECAPTCHA_SECRET_KEY = get_env_variable(
     "DRF_RECAPTCHA_SECRET_KEY", "default-recaptacha-secret-key"
 )
 
-CORS_ALLOW_CREDENTIALS = get_env_variable("CORS_ALLOW_CREDENTIALS", "True") == "True"
+CORS_ALLOW_CREDENTIALS = get_env_variable("CORS_ALLOW_CREDENTIALS", True) == "True"
 CORS_ALLOWED_ORIGINS = get_env_variable("CORS_ALLOWED_ORIGINS", "").split(",")
 SESSION_COOKIE_SAMESITE = get_env_variable("SESSION_COOKIE_SAMESITE", "Lax")
-SESSION_COOKIE_SECURE = get_env_variable("SESSION_COOKIE_SECURE", "False") == "True"
+SESSION_COOKIE_SECURE = get_env_variable("SESSION_COOKIE_SECURE", False)
+SESSION_COOKIE_HTTPONLY = get_env_variable("SESSION_COOKIE_HTTPONLY", True)
 
 # Application definition
 
