@@ -1,6 +1,7 @@
 -i https://pypi.org/simple
 amqp==5.3.1
 anyio==4.8.0
+appnope==0.1.4
 argon2-cffi==23.1.0
 argon2-cffi-bindings==21.2.0
 arrow==1.3.0
@@ -31,6 +32,7 @@ decorator==5.1.1
 defusedxml==0.7.1
 diff-match-patch==20241021
 django==5.1.6
+django-cors-headers==4.3.1
 django-countries==7.6.1
 django-crispy-forms==2.3
 django-filter==24.3
@@ -38,9 +40,11 @@ django-import-export==4.3.5
 django-ipware==7.0.1
 django-model-utils==5.0.0
 djangorestframework==3.15.2
+djangorestframework-simplejwt==5.3.1
 drf-recaptcha==4.0.2
 executing==2.2.0
 fastjsonschema==2.21.1
+flake8==7.2.0
 fonttools[woff]==4.56.0
 fqdn==1.5.1
 gunicorn==23.0.0
@@ -76,6 +80,7 @@ lxml==5.3.1
 marko==2.1.2
 markupsafe==3.0.2
 matplotlib-inline==0.1.7
+mccabe==0.7.0
 mistune==3.1.1
 nbclient==0.10.2
 nbconvert==7.16.6
@@ -96,10 +101,13 @@ psutil==6.1.1
 psycopg2-binary==2.9.10
 ptyprocess==0.7.0
 pure-eval==0.2.3
+pycodestyle==2.13.0
 pycountry==24.6.1
 pycparser==2.22
 pydyf==0.11.0
+pyflakes==3.3.2
 pygments==2.19.1
+pyjwt==2.10.1
 pyphen==0.17.2
 pyrsistent==0.20.0
 python-dateutil==2.9.0.post0
@@ -116,7 +124,7 @@ rfc3339-validator==0.1.4
 rfc3986-validator==0.1.1
 rpds-py==0.22.3
 send2trash==1.8.3
-setuptools==75.8.0
+setuptools==80.9.0
 shortuuid==1.0.13
 six==1.17.0
 sniffio==1.3.1

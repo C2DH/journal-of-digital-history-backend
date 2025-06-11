@@ -62,6 +62,10 @@ jobs:
           EMAIL_HOST_PASSWORD: password
           JDH_ORCID_API_TOKEN: default-token
           GITHUB_ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN_GITHUB }}
+          CORS_ALLOW_CREDENTIALS: True
+          CORS_ALLOWED_ORIGINS: http://127.0.0.1
+          SESSION_COOKIE_SAMESITE: None
+          SESSION_COOKIE_SECURE: True
         run: |
           pipenv run ./manage.py test
 
