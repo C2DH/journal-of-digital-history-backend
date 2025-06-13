@@ -64,7 +64,16 @@ class AbstractList(generics.ListCreateAPIView):
     queryset = Abstract.objects.all()
     permission_classes = [permissions.IsAdminUser]
     serializer_class = AbstractSlimSerializer
-    filter_backends = [DjangoFilterBackend]
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    ordering_fields = [
+        "title",
+        "submitted_date",
+        "validation_date",
+        "status",
+        "contact_lastname",
+        "contact_firstname",
+        "contact_affiliation",
+    ]
     filterset_fields = [
         "id",
         "pid",
