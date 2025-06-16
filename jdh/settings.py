@@ -38,11 +38,6 @@ DRF_RECAPTCHA_SECRET_KEY = get_env_variable(
     "DRF_RECAPTCHA_SECRET_KEY", "default-recaptacha-secret-key"
 )
 
-CORS_ALLOW_CREDENTIALS = get_env_variable("CORS_ALLOW_CREDENTIALS", True) == "True"
-CORS_ALLOWED_ORIGINS = get_env_variable("CORS_ALLOWED_ORIGINS", "").split(",")
-SESSION_COOKIE_SAMESITE = get_env_variable("SESSION_COOKIE_SAMESITE", "Lax")
-SESSION_COOKIE_SECURE = get_env_variable("SESSION_COOKIE_SECURE", False)
-SESSION_COOKIE_HTTPONLY = get_env_variable("SESSION_COOKIE_HTTPONLY", True)
 
 # Application definition
 
@@ -64,8 +59,6 @@ INSTALLED_APPS = [
     "drf_recaptcha",
     "django_filters",
     "django_countries",
-    "rest_framework_simplejwt",
-    "corsheaders",
 ]
 
 REST_FRAMEWORK = {
@@ -74,7 +67,6 @@ REST_FRAMEWORK = {
     ],
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework.authentication.SessionAuthentication",
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
     "DEFAULT_FILTER_BACKENDS": ["django_filters.rest_framework.DjangoFilterBackend"],
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.LimitOffsetPagination",
@@ -91,7 +83,6 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    "corsheaders.middleware.CorsMiddleware",
 ]
 
 ROOT_URLCONF = "jdh.urls"
