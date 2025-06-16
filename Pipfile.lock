@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "1de057ac29fe2ecf23a7d26afebd186f13f6421795428caa3e0bdfe67d7273bc"
+            "sha256": "1952d99866d50a8008d1a9ed7dd49295778c24820ceb412b3d6b942e9a504956"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -633,15 +633,6 @@
             "markers": "python_version >= '3.10'",
             "version": "==5.1.6"
         },
-        "django-cors-headers": {
-            "hashes": [
-                "sha256:0b1fd19297e37417fc9f835d39e45c8c642938ddba1acce0c1753d3edef04f36",
-                "sha256:0bf65ef45e606aff1994d35503e6b677c0b26cafff6506f8fd7187f3be840207"
-            ],
-            "index": "pypi",
-            "markers": "python_version >= '3.8'",
-            "version": "==4.3.1"
-        },
         "django-countries": {
             "hashes": [
                 "sha256:1ed20842fe0f6194f91faca21076649513846a8787c9eb5aeec3cbe1656b8acc",
@@ -703,15 +694,6 @@
             "index": "pypi",
             "markers": "python_version >= '3.8'",
             "version": "==3.15.2"
-        },
-        "djangorestframework-simplejwt": {
-            "hashes": [
-                "sha256:381bc966aa46913905629d472cd72ad45faa265509764e20ffd440164c88d220",
-                "sha256:6c4bd37537440bc439564ebf7d6085e74c5411485197073f508ebdfa34bc9fae"
-            ],
-            "index": "pypi",
-            "markers": "python_version >= '3.8'",
-            "version": "==5.3.1"
         },
         "drf-recaptcha": {
             "hashes": [
@@ -1688,14 +1670,6 @@
             "index": "pypi",
             "markers": "python_version >= '3.8'",
             "version": "==2.19.1"
-        },
-        "pyjwt": {
-            "hashes": [
-                "sha256:3cc5772eb20009233caf06e9d8a0577824723b44e6648ee0a2aedb6cf9381953",
-                "sha256:dcdd193e30abefd5debf142f9adfcdd2b58004e644f25406ffaebd50bd98dacb"
-            ],
-            "markers": "python_version >= '3.9'",
-            "version": "==2.10.1"
         },
         "pyphen": {
             "hashes": [
