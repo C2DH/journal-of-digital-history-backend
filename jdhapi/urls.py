@@ -24,8 +24,11 @@ urlpatterns = [
         views.ArticleDetail.as_view(),
         name="article-detail",
     ),
+    path("api/csrf/", views.get_csrf, name="get_csrf"),
     path("api/issues/", views.IssueList.as_view(), name="issue-list"),
     path("api/issues/<str:pid>/", views.IssueDetail.as_view(), name="issue-detail"),
+    path("api/login/", views.CustomLoginView.as_view(), name="custom-login"),
+    path("api/logout/", views.custom_logout, name="custom_logout"),
     path(
         "api/submit-abstract/check-github-id/<str:username>",
         views.check_github_id,
