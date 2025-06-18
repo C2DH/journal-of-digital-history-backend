@@ -33,8 +33,14 @@ class V2Serializer(Serializer):
 class AuthorList(generics.ListCreateAPIView):
     queryset = Author.objects.all()
     serializer_class = AuthorSlimSerializer
-    filter_backends = [DjangoFilterBackend]
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
     filterset_fields = ["id", "lastname", "firstname", "affiliation", "orcid"]
+    ordering_fields = [
+        "id",
+        "lastname",
+        "firstname",
+        "affiliation",
+    ]
     # filter_backends = [filters.SearchFilter]
     # search_fields = ['lastname']
 
@@ -65,15 +71,6 @@ class AbstractList(generics.ListCreateAPIView):
     permission_classes = [permissions.IsAdminUser]
     serializer_class = AbstractSlimSerializer
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
-    ordering_fields = [
-        "title",
-        "submitted_date",
-        "validation_date",
-        "status",
-        "contact_lastname",
-        "contact_firstname",
-        "contact_affiliation",
-    ]
     filterset_fields = [
         "id",
         "pid",
@@ -89,6 +86,17 @@ class AbstractList(generics.ListCreateAPIView):
         "status",
         "consented",
         "authors",
+    ]
+    ordering_fields = [
+        "id",
+        "title",
+        "callpaper",
+        "submitted_date",
+        "validation_date",
+        "status",
+        "contact_lastname",
+        "contact_firstname",
+        "contact_affiliation",
     ]
 
     @csrf_exempt
@@ -132,8 +140,13 @@ class ArticleList(generics.ListCreateAPIView):
         "authors",
         "copyright_type",
     ]
-    ordering_fields = ["issue__publication_date", "publication_date"]
-    ordering = ["-issue__publication_date", "-publication_date"]
+    ordering_fields = [
+        "issue__publication_date",
+        "publication_date",
+        "abstract__title",
+        "abstract__pid",
+    ]
+    # ordering = ["-issue__publication_date", "-publication_date"]
 
     def get_queryset(self):
         """
