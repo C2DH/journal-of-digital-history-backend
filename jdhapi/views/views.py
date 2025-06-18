@@ -75,7 +75,6 @@ class AbstractList(generics.ListCreateAPIView):
         "id",
         "pid",
         "title",
-        "abstract",
         "callpaper",
         "submitted_date",
         "validation_date",
