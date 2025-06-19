@@ -22,7 +22,6 @@ from jdhapi.serializers.tag import TagSerializer
 from jdhapi.serializers.callofpaper import CallOfPaperSerializer
 from rest_framework import permissions
 from rest_framework.response import Response
-from rest_framework import filters
 from drf_recaptcha.fields import ReCaptchaV2Field
 from rest_framework.serializers import Serializer
 
@@ -35,7 +34,7 @@ class AuthorList(generics.ListCreateAPIView):
     queryset = Author.objects.all()
     serializer_class = AuthorSlimSerializer
     filter_backends = [DjangoFilterBackend]
-    filterset_fields = ['id', 'lastname', 'firstname', 'affiliation', 'orcid']
+    filterset_fields = ["id", "lastname", "firstname", "affiliation", "orcid"]
     # filter_backends = [filters.SearchFilter]
     # search_fields = ['lastname']
 
@@ -51,7 +50,7 @@ class DatasetList(generics.ListCreateAPIView):
     queryset = Dataset.objects.all()
     serializer_class = DatasetSlimSerializer
     filter_backends = [DjangoFilterBackend]
-    filterset_fields = ['id', 'url', 'description']
+    filterset_fields = ["id", "url", "description"]
 
 
 class DatasetDetail(generics.RetrieveUpdateDestroyAPIView):
@@ -66,7 +65,22 @@ class AbstractList(generics.ListCreateAPIView):
     permission_classes = [permissions.IsAdminUser]
     serializer_class = AbstractSlimSerializer
     filter_backends = [DjangoFilterBackend]
-    filterset_fields = ["id", "pid", "title", "abstract", "callpaper", "submitted_date", "validation_date", "language_preference", "contact_affiliation", "contact_lastname", "contact_firstname", "status", "consented", "authors"]
+    filterset_fields = [
+        "id",
+        "pid",
+        "title",
+        "abstract",
+        "callpaper",
+        "submitted_date",
+        "validation_date",
+        "language_preference",
+        "contact_affiliation",
+        "contact_lastname",
+        "contact_firstname",
+        "status",
+        "consented",
+        "authors",
+    ]
 
     @csrf_exempt
     def create(self, request, *args, **kwargs):
@@ -74,7 +88,7 @@ class AbstractList(generics.ListCreateAPIView):
         serializer.is_valid(raise_exception=True)
         self.serializer_class = CreateAbstractSerializer
         super().create(request, *args, **kwargs)
-        return Response({'received data': request.data})
+        return Response({"received data": request.data})
 
 
 class AbstractDetail(generics.RetrieveUpdateDestroyAPIView):
@@ -89,6 +103,7 @@ class IsOwnerFilterBackend(filters.BaseFilterBackend):
     """
     Filter that only allows users to see their own objects.
     """
+
     def filter_queryset(self, request, queryset, view):
         if request.user.is_staff:
             return queryset  # Staff members can see all articles
@@ -100,7 +115,14 @@ class ArticleList(generics.ListCreateAPIView):
     queryset = Article.objects.all()
     serializer_class = ArticleSerializer
     filter_backends = [IsOwnerFilterBackend, filters.OrderingFilter]
-    filterset_fields = ["issue", "abstract", "status", "tags", "authors", "copyright_type"]
+    filterset_fields = [
+        "issue",
+        "abstract",
+        "status",
+        "tags",
+        "authors",
+        "copyright_type",
+    ]
     ordering_fields = ["issue__publication_date", "publication_date"]
     ordering = ["-issue__publication_date", "-publication_date"]
 
@@ -110,10 +132,11 @@ class ArticleList(generics.ListCreateAPIView):
         by filtering against a `pid` query parameter in the URL.
         """
         queryset = super().get_queryset()
-        pid = self.request.query_params.get('pid')
+        pid = self.request.query_params.get("pid")
         if pid is not None:
             queryset = queryset.filter(issue__pid=pid)
         return queryset
+
 
 class ArticleDetail(generics.RetrieveUpdateDestroyAPIView):
     # TO UPDATE OR DELETE need to be authenticated
@@ -127,7 +150,19 @@ class IssueList(generics.ListCreateAPIView):
     queryset = Issue.objects.all()
     serializer_class = IssueSerializer
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
-    filterset_fields = ["id", "pid", "name", "description", "creation_date", "publication_date", "cover_date", "status", "volume", "issue","is_open_ended"]
+    filterset_fields = [
+        "id",
+        "pid",
+        "name",
+        "description",
+        "creation_date",
+        "publication_date",
+        "cover_date",
+        "status",
+        "volume",
+        "issue",
+        "is_open_ended",
+    ]
     ordering_fields = ["creation_date", "publication_date", "pid"]
 
 
@@ -165,7 +200,13 @@ class CallOfPaperList(generics.ListCreateAPIView):
     queryset = CallOfPaper.objects.filter(deadline_abstract__gte=date.today())
     serializer_class = CallOfPaperSerializer
     filter_backends = [DjangoFilterBackend]
-    filterset_fields = ["id", "deadline_abstract", "deadline_article", "title", "folder_name"]
+    filterset_fields = [
+        "id",
+        "deadline_abstract",
+        "deadline_article",
+        "title",
+        "folder_name",
+    ]
 
 
 class CallOfPaperDetail(generics.RetrieveUpdateDestroyAPIView):
@@ -173,4 +214,3 @@ class CallOfPaperDetail(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = CallOfPaperSerializer
     ordering_fields = ["deadline_abstract", "deadline_article"]
     lookup_field = "folder_name"
-
