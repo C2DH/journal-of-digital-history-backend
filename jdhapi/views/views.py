@@ -76,6 +76,7 @@ class AbstractList(generics.ListCreateAPIView):
         "pid",
         "title",
         "callpaper",
+        "callpaper__title",
         "submitted_date",
         "validation_date",
         "language_preference",
@@ -90,6 +91,7 @@ class AbstractList(generics.ListCreateAPIView):
         "id",
         "title",
         "callpaper",
+        "callpaper__title",
         "submitted_date",
         "validation_date",
         "status",
@@ -145,7 +147,7 @@ class ArticleList(generics.ListCreateAPIView):
         "abstract__title",
         "abstract__pid",
     ]
-    # ordering = ["-issue__publication_date", "-publication_date"]
+    ordering = ["-issue__publication_date", "-publication_date"]
 
     def get_queryset(self):
         """
@@ -184,7 +186,11 @@ class IssueList(generics.ListCreateAPIView):
         "issue",
         "is_open_ended",
     ]
-    ordering_fields = ["creation_date", "publication_date", "pid"]
+    ordering_fields = [
+        "creation_date",
+        "publication_date",
+        "pid",
+    ]
 
 
 class IssueDetail(generics.RetrieveUpdateDestroyAPIView):
