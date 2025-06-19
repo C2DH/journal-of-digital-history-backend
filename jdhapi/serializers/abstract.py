@@ -82,7 +82,7 @@ class AbstractSlimSerializer(serializers.ModelSerializer):
             "consented",
             "authors",
             "datasets",
-            "repository_url",  # Add this to the fields
+            "repository_url",
         )
         extra_kwargs = {
             "authors": {"required": False},
@@ -96,11 +96,12 @@ class AbstractSlimSerializer(serializers.ModelSerializer):
 
     def get_repository_url(self, obj):
         # Access the related Article object via the reverse relation
-        article = getattr(obj, 'article', None)
+
+        article = getattr(obj, "article", None)
         if article and article.repository_url:
             return article.repository_url
         return None
-    
+      
     def get_contact_email(self, obj):
         # Try to find an author matching the contact's first and last name
         contact_lastname = getattr(obj, "contact_lastname", None)
