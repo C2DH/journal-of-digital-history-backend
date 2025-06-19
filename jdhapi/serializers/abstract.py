@@ -58,6 +58,9 @@ class AbstractSerializer(serializers.ModelSerializer):
 
 
 class AbstractSlimSerializer(serializers.ModelSerializer):
+    callpaper_title = serializers.SerializerMethodField()
+    repository_url = serializers.SerializerMethodField()  
+    contact_email = serializers.SerializerMethodField()
 
     class Meta:
         model = Abstract
@@ -66,19 +69,47 @@ class AbstractSlimSerializer(serializers.ModelSerializer):
             "pid",
             "title",
             "abstract",
-            "callpaper",
+            "callpaper", 
+            "callpaper_title",
             "submitted_date",
             "validation_date",
             "contact_affiliation",
             "contact_lastname",
+            "contact_email",
             "contact_firstname",
             "language_preference",
             "status",
             "consented",
             "authors",
             "datasets",
+            "repository_url",  # Add this to the fields
         )
         extra_kwargs = {
             "authors": {"required": False},
             "datasets": {"required": False},
         }
+
+    def get_callpaper_title(self, obj):
+        if obj.callpaper:
+            return obj.callpaper.title
+        return None
+
+    def get_repository_url(self, obj):
+        # Access the related Article object via the reverse relation
+        article = getattr(obj, 'article', None)
+        if article and article.repository_url:
+            return article.repository_url
+        return None
+    
+    def get_contact_email(self, obj):
+        # Try to find an author matching the contact's first and last name
+        contact_lastname = getattr(obj, "contact_lastname", None)
+        contact_firstname = getattr(obj, "contact_firstname", None)
+        if contact_lastname and contact_firstname:
+            author = obj.authors.filter(
+                lastname=contact_lastname,
+                firstname=contact_firstname
+            ).first()
+            if author and author.email:
+                return author.email
+        return None 
