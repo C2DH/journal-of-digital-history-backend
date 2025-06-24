@@ -266,7 +266,7 @@ def generate_zip(request, pid):
     buffer = io.BytesIO()
     zip_file = zipfile.ZipFile(buffer, "w")
     for url in [url_xml, url_pdf]:
-        response, filename = GetArticleContent_from_url(url, pid)
+        response, filename = get_article_content_from_url(url, pid)
         zip_file.writestr(filename, response)
     zip_file.writestr(filename_issue, response_issue)
     zip_file.close()
