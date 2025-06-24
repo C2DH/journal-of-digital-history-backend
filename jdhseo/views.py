@@ -211,13 +211,14 @@ def get_article_content_from_url(url, pid):
         )
     except Article.DoesNotExist:
         raise Http404("Article does not exist")
-    filename = get_publisher_id(article.doi).lower()+ ".open-issue"
+    article_filename = get_publisher_id(article.doi).lower()
+    open_issue_folder_name = article_filename + ".open-issue"
     path = urlparse(url).path
     ext = os.path.splitext(path)[1]
     if ext == ".pdf":
-        filename = f"/{filename}/{filename}.pdf"
+        filename = f"/{open_issue_folder_name}/{article_filename}/{article_filename}.pdf"
     else:
-        filename = f"/{filename}/{filename}.xml"
+        filename = f"/{open_issue_folder_name}/{article_filename}/{article_filename}.xml"
     return response.content, filename
 
 
@@ -255,7 +256,7 @@ def generate_zip(request, pid):
     logger.info(f"{request.build_absolute_uri()}")
     # The article's package for DG contains : XML and pdf
     # issue xml
-    url_issue = f"http://127.0.0.1:8000/en/issue/dg/{pid}"
+    url_issue = f"http://127.0.0.1:8000/issue/dg/{pid}"
     # url_issue = f'https://journalofdigitalhistory.org/prerendered/en/article/dg/{pid}'
     url_xml = f"https://journalofdigitalhistory.org/prerendered/en/article/dg/{pid}"
     url_pdf = f"https://journalofdigitalhistory.org/en/article/{pid}.pdf"
