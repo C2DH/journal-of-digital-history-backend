@@ -13,7 +13,7 @@ from django.conf import settings
 from .utils import parseJupyterNotebook, generate_qrcode, merge_authors_affiliations
 from .utils import getPlainMetadataFromArticle
 from django.http import HttpResponse
-from jdhapi.utils.article_xml import ArticleXml
+from jdhapi.utils.article_xml import ArticleXml,JOURNAL_PUBLISHER_ID, JOURNAL_CODE, DOI_CODE, ISSN
 from jdhapi.utils.doi import get_publisher_id, get_doi_url_formatted_jdh
 from jdhapi.utils.copyright import CopyrightJDH
 from jdhapi.utils.affiliation import get_affiliation_json
@@ -21,12 +21,12 @@ from lxml import html
 from django.http import FileResponse
 from django.template.response import TemplateResponse
 from django.http import HttpResponse
-
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
 
-def ArticleDetail(request, pid):
+def article_detail(request, pid):
     published_date = ""
     array_keys = ""
     # get ONLY published article matching the pid
@@ -127,7 +127,7 @@ def ArticleDetail(request, pid):
     return render(request, "jdhseo/article_detail.html", context)
 
 
-def IssueDetail(request, pid):
+def issue_detail(request, pid):
     try:
         issue = Issue.objects.get(pid=pid, status=Issue.Status.PUBLISHED)
     except Article.DoesNotExist:
@@ -143,19 +143,19 @@ def IssueDetail(request, pid):
     return render(request, "jdhseo/issue_detail.html", context)
 
 
-def IssueXmlDG(request, pid):
+def issue_xml_dg_view(request, pid):
     context = {
-        "journal_publisher_id": "jdh",
-        "journal_code": "jdh",
-        "doi_code": "jdh",
-        "issn": "2747-5271",
+        "journal_publisher_id": JOURNAL_PUBLISHER_ID,
+        "journal_code": JOURNAL_CODE,
+        "doi_code": DOI_CODE,
+        "issn": ISSN,
     }
     return render(
         request, "jdhseo/issue_dg.xml", context, content_type="text/xml; charset=utf-8"
     )
 
 
-def ArticleXmlDG(request, pid):
+def article_xml_dg_view(request, pid):
     try:
         article = Article.objects.get(
             abstract__pid=pid, status=Article.Status.PUBLISHED
@@ -187,10 +187,10 @@ def ArticleXmlDG(request, pid):
                 article.issue,
                 pid,
             ),
-            "journal_publisher_id": "jdh",
-            "journal_code": "jdh",
-            "doi_code": "jdh",
-            "issn": "2747-5271",
+            'journal_publisher_id': JOURNAL_PUBLISHER_ID,
+            'journal_code': JOURNAL_CODE,
+            'doi_code': DOI_CODE,
+            'issn': ISSN,
         }
     except Article.DoesNotExist:
         raise Http404("Article does not exist")
@@ -202,7 +202,7 @@ def ArticleXmlDG(request, pid):
     )
 
 
-def GetArticleContent_from_url(url, pid):
+def get_article_content_from_url(url, pid):
     response = requests.get(url)
     # Get filename from doi
     try:
@@ -211,7 +211,7 @@ def GetArticleContent_from_url(url, pid):
         )
     except Article.DoesNotExist:
         raise Http404("Article does not exist")
-    filename = get_publisher_id(article.doi).lower()
+    filename = get_publisher_id(article.doi).lower()+ ".open-issue"
     path = urlparse(url).path
     ext = os.path.splitext(path)[1]
     if ext == ".pdf":
@@ -221,7 +221,17 @@ def GetArticleContent_from_url(url, pid):
     return response.content, filename
 
 
-def GetIssueContent_from_url(url, pid):
+def get_issue_content_from_url(url, pid):
+    """
+    Fetches the content of an issue from a given URL and retrieves associated filenames.
+    Args:
+        url (str): The URL to fetch the issue content from.
+        pid (str): The persistent identifier (PID) of the article.
+    Returns:
+        tuple: A tuple containing the response content, the issue filename, and the issue zip filename.
+    Raises:
+        Http404: If the article with the given PID does not exist.
+    """
     response = requests.get(url)
     # Get filename from doi
     try:
@@ -230,13 +240,18 @@ def GetIssueContent_from_url(url, pid):
         )
     except Article.DoesNotExist:
         raise Http404("Article does not exist")
-    # filename = get_publisher_id(article.doi).lower()
-    filename_issue = "/issue-files/jdh.2022.2.issue-1.xml"
-    filename_zip = "jdh.2022.2.issue-1.zip"
+    filename = get_publisher_id(article.doi).lower()
+    # convention for the filename_issue: {journal-code}.{issue.publication_date |date:”Y”}.{issue.volume}.issue-{issue.issue}.xml
+    issue = article.issue
+    publication_year = issue.publication_date.year if issue.publication_date else 'unknown'
+    filename_issue = f"/issue-files/{JOURNAL_CODE}.{publication_year}.{issue.volume}.issue-{issue.issue}.xml"
+    # {journal_code}_{filename}_oi_YYYY-MM-DD--HH-MM-SS.zip
+    timestamp = datetime.now().strftime("%Y-%m-%d--%H-%M-%S")
+    filename_zip = f"{JOURNAL_CODE}_{filename}_oi_{timestamp}.zip"
     return response.content, filename_issue, filename_zip
 
 
-def Generate_zip(request, pid):
+def generate_zip(request, pid):
     logger.info(f"{request.build_absolute_uri()}")
     # The article's package for DG contains : XML and pdf
     # issue xml
@@ -244,7 +259,7 @@ def Generate_zip(request, pid):
     # url_issue = f'https://journalofdigitalhistory.org/prerendered/en/article/dg/{pid}'
     url_xml = f"https://journalofdigitalhistory.org/prerendered/en/article/dg/{pid}"
     url_pdf = f"https://journalofdigitalhistory.org/en/article/{pid}.pdf"
-    response_issue, filename_issue, filename_zip = GetIssueContent_from_url(
+    response_issue, filename_issue, filename_zip = get_issue_content_from_url(
         url_issue, pid
     )
     # Create zip

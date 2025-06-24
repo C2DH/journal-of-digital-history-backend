@@ -14,6 +14,10 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+JOURNAL_PUBLISHER_ID = 'jdh'
+JOURNAL_CODE = 'jdh'
+DOI_CODE = 'jdh'
+ISSN = '2747-5271'
 
 class ArticleXml:
 
