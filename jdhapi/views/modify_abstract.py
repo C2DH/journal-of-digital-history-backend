@@ -27,7 +27,7 @@ def sendmail(subject, body, sent_to):
             subject,
             body,
             "marion.salaun@uni.lu",
-            "marion.salaun@uni.lu",
+            ["marion.salaun@uni.lu"],
             # "jdh.admin@uni.lu",
             # [sent_to, "jdh.admin@uni.lu"],
             fail_silently=False,
@@ -37,7 +37,6 @@ def sendmail(subject, body, sent_to):
 
 
 @api_view(["PUT"])
-@authentication_classes([])
 @permission_classes([IsAdminUser])
 def modify_abstract(request, pid):
 
@@ -89,28 +88,22 @@ def change_abstract_status(request, pid):
             logger.info("Retrieve abstract according to PID.")
             if not pid:
                 logger.error("No PID provided in request data.")
-                return Response(
-                    {"error": "PID is required."}, status=status.HTTP_400_BAD_REQUEST
-                )
-            abstract = get_object_or_404(Abstract, pk=pid)
+                raise ValidationError({"error": "PID is required."})
+            abstract = get_object_or_404(Abstract, pid=pid)
         except Abstract.DoesNotExist:
             logger.error(f"Abstract with PID {pid} does not exist.")
-            return Response(
-                {"error": "Abstract not found."}, status=status.HTTP_404_NOT_FOUND
-            )
+            raise ValidationError({"error": "Abstract not found."})
 
         to = request.data.get("to", abstract.contact_email)
+        print("🚀 ~ file: modify_abstract.py:99 ~ to:", to)
         subject = request.data.get("subject", abstract.title)
-        body = request.data.get("body", "")
-        new_status = request.data.get("status", "")
+        body = request.data.get("message", "")
+        new_status = request.data.get("status", "").upper()
 
         email = EmailConfigurationForm(request.data)
         if not email.is_valid():
             logger.error(f"Email form invalid: {email.errors}")
-            return Response(
-                {"error": "Invalid email data", "details": email.errors},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            raise Exception({"error": "Invalid email data", "details": email.errors})
 
         email_clean = email.cleaned_data
         subject = email_clean.get("subject", subject)
@@ -145,13 +138,10 @@ def change_abstract_status(request, pid):
 
         except Exception as e:
             logger.error(f"Error processing status of the abstract {pid}: {e}")
-            return Response(
-                {"error": "ProcessingError", "message": str(e)},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
+            raise Exception({"error": "ProcessingError", "message": str(e)})
 
         return {
-            "pid": abstract.pk,
+            "pid": abstract.pid,
             "title": abstract.title,
             "new_status": abstract.status,
         }

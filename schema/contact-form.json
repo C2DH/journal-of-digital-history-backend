@@ -6,8 +6,12 @@
     "from": { "type": "string", "format": "email" },
     "to": { "type": "string", "format": "email" },
     "subject": { "type": "string", "minLength": 1 },
-    "message": { "type": "string", "minLength": 1 }
+    "body": { "type": "string", "minLength": 1 },
+    "status": {
+      "type": "string",
+      "enum": ["accepted", "declined", "abandoned", "suspended"]
+    }
   },
-  "required": ["from", "to", "subject", "message"],
+  "required": ["from", "to", "subject", "body", "status"],
   "additionalProperties": false
 }
