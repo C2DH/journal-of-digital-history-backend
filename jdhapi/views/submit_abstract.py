@@ -1,9 +1,9 @@
-from django.db import transaction
 from django.core.mail import send_mail
+from django.db import transaction
+from jdh.validation import JSONSchema
+from jdhapi.models import Abstract, Author, Dataset, CallOfPaper
 from jdhapi.serializers import AbstractSerializer
 from jsonschema.exceptions import ValidationError, SchemaError
-from jdhapi.models import Abstract, Author, Dataset, CallOfPaper
-from jdh.validation import JSONSchema
 from rest_framework.decorators import (
     api_view,
     permission_classes,

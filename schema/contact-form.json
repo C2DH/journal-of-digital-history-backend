@@ -1,0 +1,13 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://journaldigitalhistory.eu/schemas/contact-form.json",
+  "type": "object",
+  "properties": {
+    "from": { "type": "string", "format": "email" },
+    "to": { "type": "string", "format": "email" },
+    "subject": { "type": "string", "minLength": 1 },
+    "message": { "type": "string", "minLength": 1 }
+  },
+  "required": ["from", "to", "subject", "message"],
+  "additionalProperties": false
+}

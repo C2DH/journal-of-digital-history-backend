@@ -1,6 +1,7 @@
 from django.core.mail import send_mail
 from jdhapi.models import Abstract, Article
-from dashboard.forms import EmailConfigurationForm
+
+from jdhapi.forms import EmailConfigurationForm
 from django.shortcuts import render, get_object_or_404
 from django.contrib.admin.views.decorators import staff_member_required
 import logging
