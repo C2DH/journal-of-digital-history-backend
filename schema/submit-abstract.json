@@ -38,7 +38,7 @@
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 39,
-                "pattern": "^(?!-)(?!.*--)[a-z0-9-]{1,39}(?<!-)$"
+                "pattern": "^[a-zA-Z0-9](?:[a-zA-Z0-9]|-(?=[a-zA-Z0-9]))*$"
               },
               { "type": "null" },
               { "type": "string", "maxLength": 0 }
