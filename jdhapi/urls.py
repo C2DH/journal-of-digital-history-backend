@@ -35,6 +35,11 @@ urlpatterns = [
         name="check-github-id",
     ),
     path("api/submit-abstract/", views.submit_abstract, name="submit-abstract"),
+    path(
+        "api/dashboard/contact-form/<str:pid>",
+        views.modify_abstract,
+        name="modify-abstract",
+    ),
     path("api/generate-notebook/<str:pid>", views.generate_notebook),
     path("api/tags/", views.TagList.as_view(), name="tag-list"),
     path("api/tags/<int:pk>/", views.TagDetail.as_view(), name="tag-detail"),

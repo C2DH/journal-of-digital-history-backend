@@ -1,3 +1,4 @@
+from .modify_abstract import modify_abstract
 from .submit_abstract import submit_abstract
 from .generate_notebook import generate_notebook
 from .check_github_id import check_github_id
