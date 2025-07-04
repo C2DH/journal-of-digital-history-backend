@@ -18,7 +18,7 @@ from .logger import logger as get_logger
 # Initialize the logger object
 logger = get_logger()
 
-document_json_schema = JSONSchema(filepath="submit-abstract.json")
+document_json_schema = JSONSchema(filepath="submit_abstract.json")
 
 
 def get_default_body(subject, firstname, lastname):

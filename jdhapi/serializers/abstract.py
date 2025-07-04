@@ -1,6 +1,8 @@
 from rest_framework import serializers
 from jdhapi.models import Abstract
 
+from django.db.models.functions import Lower
+
 
 class CreateAbstractSerializer(serializers.ModelSerializer):
     class Meta:
@@ -59,7 +61,7 @@ class AbstractSerializer(serializers.ModelSerializer):
 
 class AbstractSlimSerializer(serializers.ModelSerializer):
     callpaper_title = serializers.SerializerMethodField()
-    repository_url = serializers.SerializerMethodField()  
+    repository_url = serializers.SerializerMethodField()
     contact_email = serializers.SerializerMethodField()
 
     class Meta:
@@ -69,7 +71,7 @@ class AbstractSlimSerializer(serializers.ModelSerializer):
             "pid",
             "title",
             "abstract",
-            "callpaper", 
+            "callpaper",
             "callpaper_title",
             "submitted_date",
             "validation_date",
@@ -96,21 +98,22 @@ class AbstractSlimSerializer(serializers.ModelSerializer):
 
     def get_repository_url(self, obj):
         # Access the related Article object via the reverse relation
-
         article = getattr(obj, "article", None)
         if article and article.repository_url:
             return article.repository_url
         return None
-      
+
     def get_contact_email(self, obj):
         # Try to find an author matching the contact's first and last name
         contact_lastname = getattr(obj, "contact_lastname", None)
         contact_firstname = getattr(obj, "contact_firstname", None)
+
         if contact_lastname and contact_firstname:
             author = obj.authors.filter(
-                lastname=contact_lastname,
-                firstname=contact_firstname
+                lastname=contact_lastname, firstname=contact_firstname
             ).first()
             if author and author.email:
                 return author.email
-        return None 
+            else:
+                return obj.contact_email
+        return None

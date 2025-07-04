@@ -16,7 +16,6 @@ from .tasks import (
     save_references,
 )
 from import_export.admin import ExportActionMixin
-from .forms import articleForm
 from django.utils.html import format_html
 
 
@@ -84,7 +83,7 @@ class AbstractAdmin(ExportActionMixin, admin.ModelAdmin):
                     "abstract",
                     "submitted_date",
                     "validation_date",
-                    "language_preference"
+                    "language_preference",
                 ),
             },
         ),

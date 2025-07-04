@@ -8,7 +8,6 @@ from jsonschema.exceptions import ValidationError, SchemaError
 from rest_framework.decorators import (
     api_view,
     permission_classes,
-    authentication_classes,
 )
 from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
@@ -18,22 +17,20 @@ from .logger import logger as get_logger
 # Initialize the logger object
 logger = get_logger()
 
-document_json_schema = JSONSchema(filepath="contact-form.json")
+document_json_schema = JSONSchema(filepath="contact_form.json")
 
 
-def sendmail(subject, body, sent_to):
+def sendmail(subject, body, sender, receiver):
     try:
         send_mail(
             subject,
             body,
-            "marion.salaun@uni.lu",
-            ["marion.salaun@uni.lu"],
-            # "jdh.admin@uni.lu",
-            # [sent_to, "jdh.admin@uni.lu"],
+            sender,
+            [receiver, "jdh.admin@uni.lu"],
             fail_silently=False,
         )
     except Exception as e:
-        print(e)
+        raise Exception({"error": "send_mail error", "message": str(e)})
 
 
 @api_view(["PUT"])
@@ -94,8 +91,8 @@ def change_abstract_status(request, pid):
             logger.error(f"Abstract with PID {pid} does not exist.")
             raise ValidationError({"error": "Abstract not found."})
 
-        to = request.data.get("to", abstract.contact_email)
-        print("🚀 ~ file: modify_abstract.py:99 ~ to:", to)
+        sender = request.data.get("from", "jdh.admin@uni.lu")
+        receiver = request.data.get("to", abstract.contact_email)
         subject = request.data.get("subject", abstract.title)
         body = request.data.get("message", "")
         new_status = request.data.get("status", "").upper()
@@ -108,11 +105,12 @@ def change_abstract_status(request, pid):
         email_clean = email.cleaned_data
         subject = email_clean.get("subject", subject)
         body = email_clean.get("body", body)
+        logger.info("Mail prepared to be sent.")
 
         try:
             if abstract.status == Abstract.Status.SUBMITTED:
-                sendmail(subject, body, to)
-                logger.info(f"Mail sent to {to} for abstract {pid} (SUBMITTED).")
+                sendmail(subject, body, sender, receiver)
+                logger.info(f"Mail sent to {receiver} for abstract {pid} (SUBMITTED).")
                 if new_status == Abstract.Status.DECLINED:
                     abstract.declined()
                     logger.info(f"Abstract {pid} declined.")
@@ -124,8 +122,8 @@ def change_abstract_status(request, pid):
                     logger.info(f"Abstract {pid} accepted.")
 
             elif abstract.status == Abstract.Status.ACCEPTED:
-                sendmail(subject, body, to)
-                logger.info(f"Mail sent to {to} for abstract {pid} (ACCEPTED).")
+                sendmail(subject, body, sender, receiver)
+                logger.info(f"Mail sent to {receiver} for abstract {pid} (ACCEPTED).")
                 if new_status == Abstract.Status.ABANDONED:
                     abstract.abandoned()
                     logger.info(f"Abstract {pid} abandoned.")
