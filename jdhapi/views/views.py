@@ -24,6 +24,7 @@ from rest_framework import permissions
 from rest_framework.response import Response
 from drf_recaptcha.fields import ReCaptchaV2Field
 from rest_framework.serializers import Serializer
+from django.db.models import Q
 
 
 class V2Serializer(Serializer):
@@ -65,7 +66,6 @@ class DatasetDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Dataset.objects.all()
     serializer_class = DatasetSlimSerializer
 
-
 class AbstractList(generics.ListCreateAPIView):
     queryset = Abstract.objects.all()
     permission_classes = [permissions.IsAdminUser]
@@ -99,6 +99,16 @@ class AbstractList(generics.ListCreateAPIView):
         "contact_firstname",
         "contact_affiliation",
     ]
+
+    def get_queryset(self):
+        qs = Abstract.objects.all()
+        search = self.request.query_params.get("search")
+        if search:
+            qs = qs.filter(
+                Q(title__icontains=search) |
+                Q(abstract__icontains=search)
+            )
+        return qs
 
     @csrf_exempt
     def create(self, request, *args, **kwargs):
