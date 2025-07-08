@@ -1,4 +1,4 @@
-from django.urls import path, include
+from django.urls import path, include, re_path
 from jdhapi import views
 from rest_framework.urlpatterns import format_suffix_patterns
 
@@ -12,12 +12,7 @@ urlpatterns = [
     path(
         "api/datasets/<int:pk>/", views.DatasetDetail.as_view(), name="dataset-detail"
     ),
-    path("api/abstracts/", views.AbstractList.as_view(), name="abstract-list"),
-    path(
-        "api/abstracts/<str:pid>/",
-        views.AbstractDetail.as_view(),
-        name="abstract-detail",
-    ),
+    re_path(r"^api/abstracts/?$", views.AbstractList.as_view(), name="abstract-list"),
     path("api/articles/", views.ArticleList.as_view(), name="article-list"),
     path(
         "api/articles/<str:abstract__pid>/",

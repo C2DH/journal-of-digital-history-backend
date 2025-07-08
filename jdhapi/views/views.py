@@ -70,7 +70,7 @@ class AbstractList(generics.ListCreateAPIView):
     queryset = Abstract.objects.all()
     permission_classes = [permissions.IsAdminUser]
     serializer_class = AbstractSlimSerializer
-    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter, filters.SearchFilter]
     filterset_fields = [
         "id",
         "pid",
@@ -100,14 +100,15 @@ class AbstractList(generics.ListCreateAPIView):
         "contact_affiliation",
     ]
 
-    def get_queryset(self):
-        qs = Abstract.objects.all()
-        search = self.request.query_params.get("search")
-        if search:
-            qs = qs.filter(
-                Q(title__icontains=search) |
-                Q(abstract__icontains=search)
-            )
+    search_fields = ["title"]
+
+    # allow exact-match on pid
+    def filter_queryset(self, queryset):
+        qs = super().filter_queryset(queryset)
+        term = self.request.query_params.get("search")
+        if term:
+            pid_qs = queryset.filter(pid__iexact=term)
+            qs = (qs | pid_qs).distinct()
         return qs
 
     @csrf_exempt
