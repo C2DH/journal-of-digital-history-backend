@@ -1,6 +1,6 @@
 from django.db import models
 from django.utils import timezone
-from .callofpaper import CallOfPaper
+from .callforpaper import CallForPaper
 import shortuuid
 
 
@@ -44,7 +44,7 @@ class Abstract(models.Model):
     )
     title = models.CharField(max_length=250)
     callpaper = models.ForeignKey(
-        CallOfPaper, blank=True, null=True, on_delete=models.CASCADE
+        CallForPaper, blank=True, null=True, on_delete=models.CASCADE
     )
     status = models.CharField(
         max_length=15,

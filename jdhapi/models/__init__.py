@@ -5,4 +5,4 @@ from .article import Article
 from .issue import Issue
 from .tag import Tag
 from .role import Role
-from .callofpaper import CallOfPaper
+from .callforpaper import CallForPaper
