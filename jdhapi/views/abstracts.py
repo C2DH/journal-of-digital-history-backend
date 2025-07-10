@@ -34,7 +34,6 @@ class AbstractList(generics.ListCreateAPIView):
         "contact_affiliation",
         "contact_lastname",
         "contact_firstname",
-        "status",
         "consented",
         "authors",
     ]
@@ -60,10 +59,20 @@ class AbstractList(generics.ListCreateAPIView):
 
         # allow exact-match on pid
         qs = super().filter_queryset(queryset)
-        term = self.request.query_params.get("search")
-        if term:
-            pid_qs = queryset.filter(pid__iexact=term)
+        search = self.request.query_params.get("search")
+        status_param = self.request.query_params.get("status")
+
+        if search:
+            pid_qs = queryset.filter(pid__iexact=search)
             qs = (qs | pid_qs).distinct()
+
+        if status_param:
+            if status_param.startswith("!"):
+                status_value = status_param[1:]
+                qs = qs.exclude(status=status_value)
+            else:
+                qs = qs.filter(status=status_param)
+
         return qs
 
     @csrf_exempt
