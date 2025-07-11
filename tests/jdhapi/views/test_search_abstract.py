@@ -4,13 +4,11 @@ from rest_framework.test import APITestCase
 from jdhapi.models import Abstract, Article, Issue  # adjust your app label
 from django.utils import timezone
 
+
 class ArticleSearchTestCase(APITestCase):
     def setUp(self):
         # Create an Issue since Article.issue is required
-        self.issue = Issue.objects.create(
-            pid="ISSUE1",
-            publication_date=timezone.now()
-        )
+        self.issue = Issue.objects.create(pid="ISSUE1", publication_date=timezone.now())
 
         # Abstract that will match by title
         self.abs_title = Abstract.objects.create(
