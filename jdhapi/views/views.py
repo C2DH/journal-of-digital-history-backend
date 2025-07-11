@@ -24,6 +24,7 @@ from rest_framework import permissions
 from rest_framework.response import Response
 from drf_recaptcha.fields import ReCaptchaV2Field
 from rest_framework.serializers import Serializer
+from django.db.models import Q
 
 
 class V2Serializer(Serializer):
@@ -33,8 +34,14 @@ class V2Serializer(Serializer):
 class AuthorList(generics.ListCreateAPIView):
     queryset = Author.objects.all()
     serializer_class = AuthorSlimSerializer
-    filter_backends = [DjangoFilterBackend]
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
     filterset_fields = ["id", "lastname", "firstname", "affiliation", "orcid"]
+    ordering_fields = [
+        "id",
+        "lastname",
+        "firstname",
+        "affiliation",
+    ]
     # filter_backends = [filters.SearchFilter]
     # search_fields = ['lastname']
 
@@ -59,18 +66,17 @@ class DatasetDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Dataset.objects.all()
     serializer_class = DatasetSlimSerializer
 
-
 class AbstractList(generics.ListCreateAPIView):
     queryset = Abstract.objects.all()
     permission_classes = [permissions.IsAdminUser]
     serializer_class = AbstractSlimSerializer
-    filter_backends = [DjangoFilterBackend]
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter, filters.SearchFilter]
     filterset_fields = [
         "id",
         "pid",
         "title",
-        "abstract",
         "callpaper",
+        "callpaper__title",
         "submitted_date",
         "validation_date",
         "language_preference",
@@ -81,6 +87,29 @@ class AbstractList(generics.ListCreateAPIView):
         "consented",
         "authors",
     ]
+    ordering_fields = [
+        "id",
+        "title",
+        "callpaper",
+        "callpaper__title",
+        "submitted_date",
+        "validation_date",
+        "status",
+        "contact_lastname",
+        "contact_firstname",
+        "contact_affiliation",
+    ]
+
+    search_fields = ["title"]
+
+    # allow exact-match on pid
+    def filter_queryset(self, queryset):
+        qs = super().filter_queryset(queryset)
+        term = self.request.query_params.get("search")
+        if term:
+            pid_qs = queryset.filter(pid__iexact=term)
+            qs = (qs | pid_qs).distinct()
+        return qs
 
     @csrf_exempt
     def create(self, request, *args, **kwargs):
@@ -114,7 +143,7 @@ class IsOwnerFilterBackend(filters.BaseFilterBackend):
 class ArticleList(generics.ListCreateAPIView):
     queryset = Article.objects.all()
     serializer_class = ArticleSerializer
-    filter_backends = [IsOwnerFilterBackend, filters.OrderingFilter]
+    filter_backends = [IsOwnerFilterBackend, filters.OrderingFilter, filters.SearchFilter]
     filterset_fields = [
         "issue",
         "abstract",
@@ -123,8 +152,15 @@ class ArticleList(generics.ListCreateAPIView):
         "authors",
         "copyright_type",
     ]
-    ordering_fields = ["issue__publication_date", "publication_date"]
+    ordering_fields = [
+        "issue__publication_date",
+        "publication_date",
+        "abstract__title",
+        "abstract__pid",
+    ]
     ordering = ["-issue__publication_date", "-publication_date"]
+
+    search_fields = ["abstract__title"]
 
     def get_queryset(self):
         """
@@ -136,6 +172,19 @@ class ArticleList(generics.ListCreateAPIView):
         if pid is not None:
             queryset = queryset.filter(issue__pid=pid)
         return queryset
+
+    def filter_queryset(self, queryset):
+        # applying SearchFilter on title
+        qs = super().filter_queryset(queryset)
+
+        # if ?search= was provided, also including exact‐pid matches
+        term = self.request.query_params.get("search")
+        if term:
+            qs = super().filter_queryset(queryset)
+            pid_qs = queryset.filter(abstract__pid__iexact=term)
+            qs = (qs | pid_qs).distinct()
+
+        return qs
 
 
 class ArticleDetail(generics.RetrieveUpdateDestroyAPIView):
@@ -163,7 +212,11 @@ class IssueList(generics.ListCreateAPIView):
         "issue",
         "is_open_ended",
     ]
-    ordering_fields = ["creation_date", "publication_date", "pid"]
+    ordering_fields = [
+        "creation_date",
+        "publication_date",
+        "pid",
+    ]
 
 
 class IssueDetail(generics.RetrieveUpdateDestroyAPIView):

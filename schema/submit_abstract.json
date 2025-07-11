@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://journaldigitalhistory.eu/schemas/abstract.json",
+  "$id": "https://journaldigitalhistory.eu/schemas/submit-abstract.json",
   "type": "object",
   "properties": {
     "title": { "type": "string", "minLength": 10, "maxLength": 250 },
@@ -38,7 +38,7 @@
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 39,
-                "pattern": "^(?!-)(?!.*--)[a-z0-9-]{1,39}(?<!-)$"
+                "pattern": "^[a-zA-Z0-9](?:[a-zA-Z0-9]|-(?=[a-zA-Z0-9]))*$"
               },
               { "type": "null" },
               { "type": "string", "maxLength": 0 }
@@ -81,7 +81,7 @@
       "minItems": 1,
       "maxItems": 10,
       "atLeastOneGithubId": true,
-      "atLeastOnePrimaryContact": true
+      "onlyOnePrimaryContact": true
     },
     "languagePreference": {
       "type": "string",
