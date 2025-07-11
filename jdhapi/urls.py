@@ -13,17 +13,23 @@ urlpatterns = [
         "api/datasets/<int:pk>/", views.DatasetDetail.as_view(), name="dataset-detail"
     ),
     path("api/abstracts/", views.AbstractList.as_view(), name="abstract-list"),
-    path(
-        "api/abstracts/<str:pid>/",
-        views.AbstractDetail.as_view(),
-        name="abstract-detail",
-    ),
     path("api/articles/", views.ArticleList.as_view(), name="article-list"),
     path(
         "api/articles/<str:abstract__pid>/",
         views.ArticleDetail.as_view(),
         name="article-detail",
     ),
+    # re_path(
+    #     r"^api/articles/?$",
+    #     views.ArticleList.as_view(),
+    #     name="article-list",
+    # ),
+    # # detail view: matches '/api/articles/<pid>' and '/api/articles/<pid>/'
+    # re_path(
+    #     r"^api/articles/(?P<abstract__pid>[^/]+)/?$",
+    #     views.ArticleDetail.as_view(),
+    #     name="article-detail",
+    # ),
     path("api/csrf/", views.get_csrf, name="get_csrf"),
     path("api/issues/", views.IssueList.as_view(), name="issue-list"),
     path("api/issues/<str:pid>/", views.IssueDetail.as_view(), name="issue-detail"),
