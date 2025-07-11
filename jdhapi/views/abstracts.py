@@ -61,7 +61,6 @@ class AbstractList(generics.ListCreateAPIView):
         qs = super().filter_queryset(queryset)
         search = self.request.query_params.get("search")
         status_param = self.request.query_params.get("status")
-
         if search:
             pid_qs = queryset.filter(pid__iexact=search)
             qs = (qs | pid_qs).distinct()
