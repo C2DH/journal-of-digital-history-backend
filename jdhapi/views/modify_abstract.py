@@ -9,6 +9,7 @@ from rest_framework.decorators import (
     api_view,
     permission_classes,
 )
+from rest_framework.exceptions import NotFound
 from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
 from rest_framework import status
@@ -53,7 +54,7 @@ def modify_abstract(request, pid):
         logger.exception("Schema error occurred.")
         return Response(
             {"error": "SchemaError", "message": str(e)},
-            status=status.HTTP_400_BAD_REQUEST,
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             content_type="application/json",
         )
     except (KeyError, IndexError) as e:
@@ -63,12 +64,13 @@ def modify_abstract(request, pid):
             status=status.HTTP_400_BAD_REQUEST,
             content_type="application/json",
         )
-    except Exception:
+    except Exception as e:
         logger.exception("An unexpected error occurred.")
         return Response(
             {
                 "error": "InternalError",
                 "message": "An unexpected error occurred. Please try again later.",
+                "details": str(e),
             },
             status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             content_type="application/json",
@@ -89,7 +91,7 @@ def change_abstract_status(request, pid):
             abstract = get_object_or_404(Abstract, pid=pid)
         except Abstract.DoesNotExist:
             logger.error(f"Abstract with PID {pid} does not exist.")
-            raise ValidationError({"error": "Abstract not found."})
+            raise Exception({"error": "Abstract not found."})
 
         sender = request.data.get("from", "jdh.admin@uni.lu")
         receiver = request.data.get("to", abstract.contact_email)

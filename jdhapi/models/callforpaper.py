@@ -4,7 +4,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-class CallOfPaper(models.Model):
+class CallForPaper(models.Model):
     id = models.AutoField(primary_key=True, db_column="id")
     title = models.CharField(max_length=250)
     folder_name = models.CharField(max_length=250)
@@ -12,7 +12,7 @@ class CallOfPaper(models.Model):
     deadline_article = models.DateTimeField(blank=True, null=True)
 
     class Meta:
-        ordering = ['title']
+        ordering = ["title"]
 
     def __str__(self):
         return self.title

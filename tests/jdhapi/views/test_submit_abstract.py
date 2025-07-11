@@ -1,14 +1,14 @@
 from rest_framework.test import APITestCase
 from rest_framework import status
 from django.test import Client
-from jdhapi.models import Abstract, Author, Dataset, CallOfPaper
+from jdhapi.models import Abstract, Author, Dataset, CallForPaper
 from django.urls import reverse
 from datetime import date
 
 
 class SubmitAbstractTestCase(APITestCase):
     def setUp(self):
-        self.call_of_paper = CallOfPaper.objects.create(
+        self.call_of_paper = CallForPaper.objects.create(
             title="Test Call for Paper",
             folder_name="test-call",
             deadline_abstract=date.today(),

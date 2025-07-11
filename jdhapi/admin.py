@@ -5,7 +5,7 @@ from django.utils.safestring import mark_safe
 from jdhapi.filter.issuenamepidfilter import IssueNamePIDFilter
 
 from .forms import articleForm
-from .models import Author, Abstract, Dataset, Article, Issue, Tag, Role, CallOfPaper
+from .models import Author, Abstract, Dataset, Article, Issue, Tag, Role, CallForPaper
 from .filter.languagetagfilter import LanguageTagFilter
 from .filter.dataverseurlfilter import EmptyDataverseURLFilter
 from .tasks import (
@@ -104,8 +104,8 @@ class AbstractAdmin(ExportActionMixin, admin.ModelAdmin):
     )
 
 
-@admin.register(CallOfPaper)
-class CallOfPaperAdmin(ExportActionMixin, admin.ModelAdmin):
+@admin.register(CallForPaper)
+class CallForPaperAdmin(ExportActionMixin, admin.ModelAdmin):
     list_display = ["title", "deadline_abstract", "deadline_article"]
 
 
