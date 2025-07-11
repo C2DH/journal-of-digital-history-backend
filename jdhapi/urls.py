@@ -7,6 +7,11 @@ urlpatterns = [
     path("api/me", views.api_me, name="me"),
     path("api-auth/", include("rest_framework.urls")),
     path("api/abstracts/", views.AbstractList.as_view(), name="abstract-list"),
+    path(
+        "api/abstracts/<str:pid>/",
+        views.AbstractDetail.as_view(),
+        name="abstract-detail",
+    ),
     path("api/articles/", views.ArticleList.as_view(), name="article-list"),
     path(
         "api/articles/<str:abstract__pid>/",

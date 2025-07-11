@@ -49,20 +49,18 @@ class AbstractList(generics.ListCreateAPIView):
         "contact_firstname",
         "contact_affiliation",
     ]
-    search_fields = ["title"]
+    search_fields = ["title", "pid"]
 
-    def get_queryset(self, queryset):
-        # qs = Abstract.objects.all()
-        # search = self.request.query_params.get("search")
-        # if search:
-        #     qs = qs.filter(Q(title__icontains=search) | Q(abstract__icontains=search))
+    def get_queryset(self):
+        queryset = Abstract.objects.all()
+        search = self.request.query_params.get("search")
+        status_param = self.request.query_params.get("status")
 
         # allow exact-match on pid
         qs = super().filter_queryset(queryset)
-        search = self.request.query_params.get("search")
-        status_param = self.request.query_params.get("status")
+
         if search:
-            pid_qs = queryset.filter(pid__iexact=search)
+            pid_qs = qs.filter(pid__iexact=search)
             qs = (qs | pid_qs).distinct()
 
         if status_param:
