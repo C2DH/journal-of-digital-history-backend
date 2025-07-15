@@ -239,7 +239,9 @@ def get_raw_from_github(
 
 
 def get_pypi_info(package_name):
-    # we go to use the JSON information about packages https://wiki.python.org/moin/PyPIJSON https://pypi.python.org/pypi/<package_name>/json
+    # we go to use the JSON information about packages
+    # https://wiki.python.org/moin/PyPIJSON
+    # https://pypi.python.org/pypi/<package_name>/json
     URL = "https://pypi.org/pypi/"
     JSON = "/json"
     data = {
@@ -311,7 +313,7 @@ def read_libraries(article):
                         i = i + 1
                     return str(i) + " libraries R tags created"
             else:
-                return f"no requiremnts.txt - no install.R"
+                return "no requiremnts.txt - no install.R"
         except HTTPError as http_err:
             logger.error(f"HTTP error occurred: {http_err}")
         except Exception as err:
@@ -366,7 +368,6 @@ def get_notebook_references_fulltext(article_id, raw_url):
                 return f"{m[1]}"
             return parsed_ref
 
-        num = 0
         for cell in cells:
             # check cell metadata
             source = "".join(cell.get("source", ""))

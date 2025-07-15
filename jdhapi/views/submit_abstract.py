@@ -1,7 +1,7 @@
 from django.core.mail import send_mail
 from django.db import transaction
 from jdh.validation import JSONSchema
-from jdhapi.models import Abstract, Author, Dataset, CallOfPaper
+from jdhapi.models import Abstract, Author, Dataset, CallForPaper
 from jdhapi.serializers import AbstractSerializer
 from jsonschema.exceptions import ValidationError, SchemaError
 from rest_framework.decorators import (
@@ -113,8 +113,8 @@ def validate_and_submit_abstract(request):
         if call_for_papers:
             logger.info(f"Processing call for paper: {call_for_papers}")
             try:
-                call_paper = CallOfPaper.objects.get(folder_name=call_for_papers)
-            except CallOfPaper.DoesNotExist:
+                call_paper = CallForPaper.objects.get(folder_name=call_for_papers)
+            except CallForPaper.DoesNotExist:
                 logger.error(f"Call for paper '{call_for_papers}' does not exist.")
                 raise Exception(f"Call for paper '{call_for_papers}' does not exist.")
 
