@@ -127,6 +127,8 @@ def article_detail(request, pid):
     return render(request, "jdhseo/article_detail.html", context)
 
 
+
+# look at this http://127.0.0.1:8000/issue/jdh003/
 def issue_detail(request, pid):
     try:
         issue = Issue.objects.get(pid=pid, status=Issue.Status.PUBLISHED)
@@ -144,12 +146,20 @@ def issue_detail(request, pid):
 
 
 def issue_xml_dg_view(request, pid):
-    context = {
+    try:
+        article = Article.objects.get(
+            abstract__pid=pid, status=Article.Status.PUBLISHED
+          )    
+        logger.debug("ISSUE" + article.issue)
+        context = {
         "journal_publisher_id": JOURNAL_PUBLISHER_ID,
         "journal_code": JOURNAL_CODE,
         "doi_code": DOI_CODE,
         "issn": ISSN,
-    }
+    } 
+    except Article.DoesNotExist:
+        raise Http404("Article does not exist")    
+   
     return render(
         request, "jdhseo/issue_dg.xml", context, content_type="text/xml; charset=utf-8"
     )
@@ -204,6 +214,8 @@ def article_xml_dg_view(request, pid):
 
 def get_article_content_from_url(url, pid):
     response = requests.get(url)
+    if response.status_code != 200:
+        raise Http404(f"URL does not exist or could not be retrieved: {url}")
     # Get filename from doi
     try:
         article = Article.objects.get(
@@ -233,12 +245,16 @@ def get_issue_content_from_url(url, pid):
     Raises:
         Http404: If the article with the given PID does not exist.
     """
+    
     response = requests.get(url)
+    if response.status_code != 200:
+        raise Http404(f"URL does not exist or could not be retrieved: {url}")
     # Get filename from doi
     try:
         article = Article.objects.get(
             abstract__pid=pid, status=Article.Status.PUBLISHED
         )
+
     except Article.DoesNotExist:
         raise Http404("Article does not exist")
     filename = get_publisher_id(article.doi).lower()
@@ -256,10 +272,11 @@ def generate_zip(request, pid):
     logger.info(f"{request.build_absolute_uri()}")
     # The article's package for DG contains : XML and pdf
     # issue xml
-    url_issue = f"http://127.0.0.1:8000/issue/dg/{pid}"
-    # url_issue = f'https://journalofdigitalhistory.org/prerendered/en/article/dg/{pid}'
+    #url_issue = f"http://127.0.0.1:8000/issue/dg/{pid}"
+    url_issue = f'https://journalofdigitalhistory.org/prerendered/en/issue/dg/{pid}'
     url_xml = f"https://journalofdigitalhistory.org/prerendered/en/article/dg/{pid}"
-    url_pdf = f"https://journalofdigitalhistory.org/en/article/{pid}.pdf"
+    url_pdf = f"https://journalofdigitalhistory.org/coucou/en/article/{pid}.pdf"
+        
     response_issue, filename_issue, filename_zip = get_issue_content_from_url(
         url_issue, pid
     )
