@@ -49,19 +49,18 @@ class AbstractList(generics.ListCreateAPIView):
         "contact_firstname",
         "contact_affiliation",
     ]
-    search_fields = ["title", "pid"]
+    search_fields = [
+        "title",
+        "pid",
+        "contact_lastname",
+        "contact_firstname",
+    ]
 
     def get_queryset(self):
         queryset = Abstract.objects.all()
-        search = self.request.query_params.get("search")
         status_param = self.request.query_params.get("status")
 
-        # allow exact-match on pid
         qs = super().filter_queryset(queryset)
-
-        if search:
-            pid_qs = qs.filter(pid__iexact=search)
-            qs = (qs | pid_qs).distinct()
 
         if status_param:
             if status_param.startswith("!"):
