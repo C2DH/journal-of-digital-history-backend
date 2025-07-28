@@ -1,6 +1,7 @@
 from jdhapi.models import Article
 from jdhapi.serializers.article import ArticleSerializer
 from rest_framework import generics, filters
+from rest_framework.permissions import BasePermission
 
 
 class IsOwnerFilterBackend(filters.BaseFilterBackend):
@@ -13,6 +14,17 @@ class IsOwnerFilterBackend(filters.BaseFilterBackend):
             return queryset  # Staff members can see all articles
         else:
             return queryset.filter(status=Article.Status.PUBLISHED)
+
+
+class IsAuthenticatedForNonPublished(BasePermission):
+    """
+    Custom permission to allow only authenticated users to access non-published articles.
+    """
+
+    def has_object_permission(self, request, view, obj):
+        if obj.status == Article.Status.PUBLISHED:
+            return True
+        return request.user.is_authenticated
 
 
 class ArticleList(generics.ListCreateAPIView):
@@ -66,6 +78,7 @@ class ArticleList(generics.ListCreateAPIView):
 
 
 class ArticleDetail(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = [IsAuthenticatedForNonPublished]
     queryset = Article.objects.all()
     serializer_class = ArticleSerializer
     lookup_field = "abstract__pid"
