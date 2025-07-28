@@ -1,4 +1,3 @@
-from django.db.models import Q
 from django_filters.rest_framework import DjangoFilterBackend
 from django.views.decorators.csrf import csrf_exempt
 from drf_recaptcha.fields import ReCaptchaV2Field
