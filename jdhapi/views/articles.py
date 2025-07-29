@@ -38,7 +38,12 @@ class ArticleList(generics.ListCreateAPIView):
         "abstract__pid",
     ]
     ordering = ["-issue__publication_date", "-publication_date"]
-    search_fields = ["abstract__title"]
+    search_fields = [
+        "abstract__title",
+        "abstract__pid",
+        "abstract__contact_lastname",
+        "abstract__contact_firstname",
+    ]
 
     def get_queryset(self):
         """
@@ -52,16 +57,8 @@ class ArticleList(generics.ListCreateAPIView):
         return queryset
 
     def filter_queryset(self, queryset):
-        # applying SearchFilter on title
+        # Apply DRF filters
         qs = super().filter_queryset(queryset)
-
-        # if ?search= was provided, also including exact‐pid matches
-        term = self.request.query_params.get("search")
-        if term:
-            qs = super().filter_queryset(queryset)
-            pid_qs = queryset.filter(abstract__pid__iexact=term)
-            qs = (qs | pid_qs).distinct()
-
         return qs
 
 
