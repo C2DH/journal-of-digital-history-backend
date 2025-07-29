@@ -2,6 +2,8 @@ from django.http import Http404
 from jdhapi.utils.doi import get_doi, get_publisher_id, get_elocation_id
 from jdhapi.utils.publication_date import get_order_publication
 from jdhapi.models import Issue
+from jdhapi.utils.publication_date import check_if_editorial
+from jdhapi.utils.doi import get_doi
 
 import logging
 from jdhapi.models import Article
@@ -30,9 +32,17 @@ class IssueXml:
             raise Http404("Issue does not exist")
         
     def fetch_articles_dois(self, issue_pid):
-        articles = Article.objects.filter(issue__pid=issue_pid, status=Article.Status.PUBLISHED)
+        articles = Article.objects.filter(
+            issue__pid=issue_pid,
+            status=Article.Status.PUBLISHED
+        ).order_by('-publication_date')
         try:
-            return [article.doi for article in articles]
+            # Separate editorials and non-editorials
+            editorials = [article for article in articles if check_if_editorial(article.abstract.pid)]
+            non_editorials = [article for article in articles if not check_if_editorial(article.abstract.pid)]
+            # Put editorials first
+            ordered_articles = editorials + non_editorials
+            return [get_doi(article.doi) for article in ordered_articles]
         except Exception as e:
             logger.error(f"Error fetching articles DOIs: {e}")
             return []
