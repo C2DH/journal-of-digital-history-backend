@@ -216,7 +216,7 @@ def parse_times(arg, count):
     return times
 
 
-def launch_social_media(
+def launch_social_media_bluesky(
     repo_url: str = "",
     image_file: str = "",
     branch: str = "",
