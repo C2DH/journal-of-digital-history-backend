@@ -3,6 +3,7 @@ import os
 import sys
 import requests
 
+
 def trigger_workflow(token, owner, repo, workflow_filename, ref="main"):
     """
     :param owner: GitHub username or organization
@@ -13,12 +14,9 @@ def trigger_workflow(token, owner, repo, workflow_filename, ref="main"):
     url = f"https://api.github.com/repos/{owner}/{repo}/actions/workflows/{workflow_filename}/dispatches"
     headers = {
         "Authorization": f"Bearer {token}",
-        "Accept": "application/vnd.github+json"
+        "Accept": "application/vnd.github+json",
     }
-    payload = {
-        "ref": ref
-        # "inputs": { "foo": "bar" }
-    }
+    payload = {"ref": ref}
     resp = requests.post(url, json=payload, headers=headers)
     if resp.status_code == 204:
         print(f"Workflow '{workflow_filename}' dispatched on ref '{ref}'.")
@@ -26,6 +24,7 @@ def trigger_workflow(token, owner, repo, workflow_filename, ref="main"):
         print(f"Failed to dispatch workflow: {resp.status_code}")
         print(resp.json())
         resp.raise_for_status()
+
 
 if __name__ == "__main__":
     # token = os.getenv("GITHUB_TOKEN")
@@ -36,7 +35,7 @@ if __name__ == "__main__":
 
     # Usage: python trigger.py <owner> <repo> <workflow-file> [ref]
     if len(sys.argv) < 4:
-        print("Usage: python trigger.py <owner> <repo> <workflow-file.yml> [ref]")
+        print("Usage: python3 trigger.py <owner> <repo> <workflow-file.yml> [ref]")
         sys.exit(1)
 
     owner, repo, workflow_file = sys.argv[1:4]
