@@ -17,8 +17,11 @@ def get_doi(doi):
                 doi_all = element
             else:
                 if match:
+                    # Remove revision part if present (e.g., .R1)
+                    # Replace dots with hyphens, then remove trailing -R\d+
                     hyphen = element.replace(".", "-")
-                    doi_all = doi_all + "/" + hyphen.rsplit('-', 1)[0]
+                    hyphen = re.sub(r'-R\d+$', '', hyphen)
+                    doi_all = doi_all + "/" + hyphen
                     return doi_all
                 else:
                     return doi_all

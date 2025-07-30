@@ -14,6 +14,7 @@ from .utils import parseJupyterNotebook, generate_qrcode, merge_authors_affiliat
 from .utils import getPlainMetadataFromArticle
 from django.http import HttpResponse
 from jdhapi.utils.article_xml import ArticleXml,JOURNAL_PUBLISHER_ID, JOURNAL_CODE, DOI_CODE, ISSN
+from jdhapi.utils.issue_xml import IssueXml
 from jdhapi.utils.doi import get_publisher_id, get_doi_url_formatted_jdh
 from jdhapi.utils.copyright import CopyrightJDH
 from jdhapi.utils.affiliation import get_affiliation_json
@@ -150,13 +151,16 @@ def issue_xml_dg_view(request, pid):
         article = Article.objects.get(
             abstract__pid=pid, status=Article.Status.PUBLISHED
           )    
-        logger.debug("ISSUE" + article.issue)
+        logger.debug(f"Article issue: {article.issue}")
         context = {
+        "issueXml": IssueXml(
+                article.issue,
+        ),
         "journal_publisher_id": JOURNAL_PUBLISHER_ID,
         "journal_code": JOURNAL_CODE,
         "doi_code": DOI_CODE,
         "issn": ISSN,
-    } 
+        } 
     except Article.DoesNotExist:
         raise Http404("Article does not exist")    
    

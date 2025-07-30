@@ -15,37 +15,24 @@
 	</journal-meta>
 	<issue-meta>
 		<pub-date pub-type="ppub">
-			<day>01</day>
-			<month>09</month>
-			<year>2021</year>
+			<day>{{ issueXml.issue_date|date:"d"}}</day>
+			<month>{{ issueXml.issue_date|date:"m"}}</month>
+			<year>{{ issueXml.issue_date|date:"Y" }}</year>
 		</pub-date>
 		<pub-date pub-type="actual_ppub">
-			<day>01</day>
-			<month>09</month>
-			<year>2021</year>
+			<day>{{ issueXml.issue_date|date:"d"}}</day>
+			<month>{{ issueXml.issue_date|date:"m"}}</month>
+			<year>{{ issueXml.issue_date|date:"Y" }}</year>
 		</pub-date>
-		<volume content-type="open-issue">1</volume>
-		<issue>1</issue>
-		<issue-id pub-id-type="publisher-id">jdh.2021.1.issue-1</issue-id>
+		<volume content-type="open-issue">{{ issueXml.volume }}</volume>
+		<issue>{{ issueXml.issue }}</issue>
+		<issue-id pub-id-type="publisher-id">{{ issueXml.publisher_id}}</issue-id>
 	</issue-meta>
 	<toc toc-type="page-order">
+		{% for doi in issueXml.articles_dois %}
 		<issue-article-meta>
-			<article-id pub-id-type="doi">10.1515/jdh-2021-1008</article-id>
+			<article-id pub-id-type="doi">{{ doi}}</article-id>
 		</issue-article-meta>
-		<issue-article-meta>
-			<article-id pub-id-type="doi">10.1515/jdh-2021-1002</article-id>
-		</issue-article-meta>
-		<issue-article-meta>
-			<article-id pub-id-type="doi">10.1515/jdh-2021-1000</article-id>
-		</issue-article-meta>
-		<issue-article-meta>
-			<article-id pub-id-type="doi">10.1515/jdh-2021-1003</article-id>
-		</issue-article-meta>
-		<issue-article-meta>
-			<article-id pub-id-type="doi">10.1515/jdh-2021-1004</article-id>
-		</issue-article-meta>
-		<issue-article-meta>
-			<article-id pub-id-type="doi">10.1515/jdh-2021-1006</article-id>
-		</issue-article-meta>
+	   {% endfor %}
 	</toc>
 </issue-xml>
