@@ -41,13 +41,13 @@ def get_order_publication(pid, issue_pid):
         if check_if_editorial(pid):
             return "1"
         else:
-            seq = "UNDEFINED"
             articles = Article.objects.filter(status=Article.Status.PUBLISHED, issue__pid=issue_pid).exclude(tags__name="editorial").order_by('publication_date').values("abstract__pid", 'abstract__title')
             # Start index from 2 because editorials are given the position 1
             for index, article in enumerate(articles, 2):
                 logger.info(f"Articles issue {issue_pid} sorted {article['abstract__title']} - INDEX {index}")
-                seq = str(index)
-            return seq
+                if article["abstract__pid"] == pid:
+                    return str(index)
+            return "UNDEFINED"
     except Exception as e:
         logger.error(f"An error occurred while determining the order of publication: {e}")
         return "UNDEFINED"

@@ -1,6 +1,7 @@
 from jdhapi.models import Article
 from jdhapi.serializers.article import ArticleSerializer
 from rest_framework import generics, filters
+from rest_framework.permissions import BasePermission
 
 
 class IsOwnerFilterBackend(filters.BaseFilterBackend):
@@ -13,6 +14,17 @@ class IsOwnerFilterBackend(filters.BaseFilterBackend):
             return queryset  # Staff members can see all articles
         else:
             return queryset.filter(status=Article.Status.PUBLISHED)
+
+
+class IsAuthenticatedForNonPublished(BasePermission):
+    """
+    Custom permission to allow only authenticated users to access non-published articles.
+    """
+
+    def has_object_permission(self, request, view, obj):
+        if obj.status == Article.Status.PUBLISHED:
+            return True
+        return request.user.is_authenticated
 
 
 class ArticleList(generics.ListCreateAPIView):
@@ -38,7 +50,12 @@ class ArticleList(generics.ListCreateAPIView):
         "abstract__pid",
     ]
     ordering = ["-issue__publication_date", "-publication_date"]
-    search_fields = ["abstract__title"]
+    search_fields = [
+        "abstract__title",
+        "abstract__pid",
+        "abstract__contact_lastname",
+        "abstract__contact_firstname",
+    ]
 
     def get_queryset(self):
         """
@@ -52,20 +69,13 @@ class ArticleList(generics.ListCreateAPIView):
         return queryset
 
     def filter_queryset(self, queryset):
-        # applying SearchFilter on title
+        # Apply DRF filters
         qs = super().filter_queryset(queryset)
-
-        # if ?search= was provided, also including exact‐pid matches
-        term = self.request.query_params.get("search")
-        if term:
-            qs = super().filter_queryset(queryset)
-            pid_qs = queryset.filter(abstract__pid__iexact=term)
-            qs = (qs | pid_qs).distinct()
-
         return qs
 
 
 class ArticleDetail(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = [IsAuthenticatedForNonPublished]
     queryset = Article.objects.all()
     serializer_class = ArticleSerializer
     lookup_field = "abstract__pid"
