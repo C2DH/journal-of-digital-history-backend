@@ -2,15 +2,33 @@
 import os
 import sys
 import requests
+from pathlib import Path
+from urllib.parse import urlparse
 
 
-def trigger_workflow(token, owner, repo, workflow_filename, ref="main"):
+def trigger_workflow(repo_url, workflow_filename, token=None, ref="main"):
     """
     :param owner: GitHub username or organization
     :param repo: Repository name
     :param workflow_filename: Filename of the workflow in .github/workflows (e.g. "hello-world.yml")
     :param ref: Git ref (branch or tag) to run the workflow on
     """
+    if not token:
+        from jdh.settings import GITHUB_ACCESS_TOKEN
+
+        token = GITHUB_ACCESS_TOKEN
+
+    parsed = urlparse(repo_url)
+    path = parsed.path.lstrip("/")
+
+    if path.endswith(".git"):
+        path = path[:-4]
+
+    parts = path.split("/")
+    if len(parts) >= 2:
+        owner = parts[0]
+        repo = parts[1]
+
     url = f"https://api.github.com/repos/{owner}/{repo}/actions/workflows/{workflow_filename}/dispatches"
     headers = {
         "Authorization": f"Bearer {token}",
@@ -24,20 +42,3 @@ def trigger_workflow(token, owner, repo, workflow_filename, ref="main"):
         print(f"Failed to dispatch workflow: {resp.status_code}")
         print(resp.json())
         resp.raise_for_status()
-
-
-if __name__ == "__main__":
-    # token = os.getenv("GITHUB_TOKEN")
-    token = "github_pat_*TOKEN-HERE*"
-    if not token:
-        print("Error: Please set the GITHUB_TOKEN environment variable and try again.")
-        sys.exit(1)
-
-    # Usage: python trigger.py <owner> <repo> <workflow-file> [ref]
-    if len(sys.argv) < 4:
-        print("Usage: python3 trigger.py <owner> <repo> <workflow-file.yml> [ref]")
-        sys.exit(1)
-
-    owner, repo, workflow_file = sys.argv[1:4]
-    ref = sys.argv[4] if len(sys.argv) > 4 else "main"
-    trigger_workflow(token, owner, repo, workflow_file, ref)
