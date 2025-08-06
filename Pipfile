@@ -148,7 +148,6 @@ webencodings = "==0.5.1"
 websocket-client = "==1.8.0"
 zopfli = "==0.2.3.post1"
 flake8 = "*"
-django-cors-headers = "*"
 
 [requires]
 python_version = "3.12"
