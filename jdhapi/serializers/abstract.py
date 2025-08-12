@@ -1,7 +1,5 @@
+from jdhapi.models import Abstract, Article
 from rest_framework import serializers
-from jdhapi.models import Abstract
-
-from django.db.models.functions import Lower
 
 
 class CreateAbstractSerializer(serializers.ModelSerializer):
@@ -63,6 +61,7 @@ class AbstractSlimSerializer(serializers.ModelSerializer):
     callpaper_title = serializers.SerializerMethodField()
     repository_url = serializers.SerializerMethodField()
     contact_email = serializers.SerializerMethodField()
+    issue = serializers.SerializerMethodField()
 
     class Meta:
         model = Abstract
@@ -84,6 +83,7 @@ class AbstractSlimSerializer(serializers.ModelSerializer):
             "consented",
             "authors",
             "datasets",
+            "issue",
             "repository_url",
         )
         extra_kwargs = {
@@ -116,4 +116,10 @@ class AbstractSlimSerializer(serializers.ModelSerializer):
                 return author.email
             else:
                 return obj.contact_email
+        return None
+
+    def get_issue(self, obj):
+        article = Article.objects.filter(abstract__pid=obj.pid).first()
+        if article and article.issue:
+            return article.issue.id
         return None
