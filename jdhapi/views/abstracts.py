@@ -35,6 +35,7 @@ class AbstractList(generics.ListCreateAPIView):
         "contact_firstname",
         "consented",
         "authors",
+        "article__issue",
     ]
     ordering_fields = [
         "id",
@@ -56,10 +57,13 @@ class AbstractList(generics.ListCreateAPIView):
     ]
 
     def get_queryset(self):
+        """
+        Override to filter by 'status' if provided in query params.
+        """
         queryset = Abstract.objects.all()
-        status_param = self.request.query_params.get("status")
-
         qs = super().filter_queryset(queryset)
+
+        status_param = self.request.query_params.get("status")
 
         if status_param:
             if status_param.startswith("!"):
