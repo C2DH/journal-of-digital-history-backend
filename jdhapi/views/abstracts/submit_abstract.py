@@ -14,10 +14,9 @@ from rest_framework import status
 from rest_framework.permissions import AllowAny
 from textwrap import dedent
 
-from .logger import logger as get_logger
+from ..logger import logger as get_logger
 
 
-# Initialize the logger object
 logger = get_logger()
 
 document_json_schema = JSONSchema(filepath="submit_abstract.json")

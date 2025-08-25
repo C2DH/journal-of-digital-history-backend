@@ -12,6 +12,14 @@ urlpatterns = [
         views.AbstractDetail.as_view(),
         name="abstract-detail",
     ),
+    path(
+        "api/abstracts/status", views.modify_abstracts, name="abstracts-change-status"
+    ),
+    path(
+        "api/abstracts/<str:pid>/status",
+        views.modify_abstract,
+        name="abstract-change-status",
+    ),
     path("api/articles/", views.ArticleList.as_view(), name="article-list"),
     path(
         "api/articles/<str:abstract__pid>/",
@@ -34,11 +42,6 @@ urlpatterns = [
         name="callforpaper-detail",
     ),
     path("api/csrf/", views.get_csrf, name="get_csrf"),
-    path(
-        "api/dashboard/contact-form/<str:pid>",
-        views.modify_abstract,
-        name="modify-abstract",
-    ),
     path("api/datasets/", views.DatasetList.as_view(), name="dataset-list"),
     path(
         "api/datasets/<int:pk>/", views.DatasetDetail.as_view(), name="dataset-detail"
