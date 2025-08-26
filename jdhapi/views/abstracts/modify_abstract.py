@@ -17,6 +17,7 @@ from ..logger import logger as get_logger
 logger = get_logger()
 
 contact_form_schema = JSONSchema(filepath="contact_form.json")
+change_status_schema = JSONSchema(filepath="change_status.json")
 
 
 @api_view(["PATCH"])
@@ -71,7 +72,7 @@ def modify_abstract(request, pid):
 
 @api_view(["PATCH"])
 @permission_classes([IsAdminUser])
-def modify_abstracts(request, pids):
+def modify_abstracts(request):
     """
     PATCH /api/abstracts/status
 
@@ -81,7 +82,7 @@ def modify_abstracts(request, pids):
     """
 
     try:
-        data = change_abstract_status(request, pids)
+        data = change_abstract_status(request)
         return Response(
             {"message": "Abstracts updated successfully.", "data": data},
             status=status.HTTP_200_OK,
@@ -216,7 +217,7 @@ def change_abstract_status_with_email(request, pid):
         }
 
 
-def change_abstract_status(request, pids):
+def change_abstract_status(request):
     """
     Change abstract(s) status(es) with no notification.
     Args:
@@ -227,15 +228,16 @@ def change_abstract_status(request, pids):
     logger.info("Start JSON validation")
     with transaction.atomic():
 
-        # need to be updated to use the correct schema
-        # contact_form_schema.validate(instance=request.data)
+        change_status_schema.validate(instance=request.data)
+
+        pids = request.data.get("pids", [])
+        status = request.data.get("status", "").upper()
 
         try:
             logger.info("Retrieve abstract(s) according to PID(s).")
             if not pids:
                 logger.error("No PID provided in request data.")
                 raise ValidationError({"error": "At least one PID is required."})
-
             abstracts = Abstract.objects.filter(pid__in=pids)
             if not abstracts.exists():
                 logger.error(f"No Abstracts found for PIDs {pids}.")
@@ -245,11 +247,10 @@ def change_abstract_status(request, pids):
             logger.error(f"Abstracts with PID(s) {pids} do not exist.")
             raise Exception({"error": "Abstract(s) not found."})
 
-        new_status = request.data.get("status", "").upper()
         updated_abstracts = []
 
         for abstract in abstracts:
-            abstract.status = new_status
+            abstract.status = status
             abstract.save()
             updated_abstracts.append(
                 {
@@ -258,6 +259,6 @@ def change_abstract_status(request, pids):
                     "new_status": abstract.status,
                 }
             )
-            logger.info(f"Abstract {abstract.pid} status updated to {new_status}.")
+            logger.info(f"Abstract {abstract.pid} status updated to {status}.")
 
     return updated_abstracts
