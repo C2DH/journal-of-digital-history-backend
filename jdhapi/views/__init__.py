@@ -1,10 +1,13 @@
 from .authors.authors import AuthorList, AuthorDetail
 from .datasets.datasets import DatasetList, DatasetDetail
 from .abstracts.abstracts import AbstractList, AbstractDetail
-from .abstracts.modify_abstract import modify_abstract
-from .abstracts.modify_abstract import modify_abstracts
 from .abstracts.submit_abstract import submit_abstract
+from .abstracts.update_abstract import (
+    update_abstract_status_with_email,
+    update_abstract_status,
+)
 from .articles.articles import ArticleList, ArticleDetail
+from .articles.update_article import update_article_status
 from .issues.issues import IssueList, IssueDetail
 from .roles import RoleList, RoleDetail
 from .tags.tags import TagList, TagDetail

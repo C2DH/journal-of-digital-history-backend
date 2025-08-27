@@ -13,14 +13,21 @@ urlpatterns = [
         name="abstract-detail",
     ),
     path(
-        "api/abstracts/status", views.modify_abstracts, name="abstracts-change-status"
+        "api/abstracts/status",
+        views.update_abstract_status,
+        name="abstracts-change-status",
     ),
     path(
         "api/abstracts/<str:pid>/status",
-        views.modify_abstract,
+        views.update_abstract_status_with_email,
         name="abstract-change-status",
     ),
     path("api/articles/", views.ArticleList.as_view(), name="article-list"),
+    path(
+        "api/articles/status",
+        views.update_article_status,
+        name="article-change-status",
+    ),
     path(
         "api/articles/<str:abstract__pid>/",
         views.ArticleDetail.as_view(),

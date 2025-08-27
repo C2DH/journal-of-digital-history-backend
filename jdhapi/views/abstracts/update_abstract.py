@@ -17,14 +17,14 @@ from ..logger import logger as get_logger
 logger = get_logger()
 
 contact_form_schema = JSONSchema(filepath="contact_form.json")
-change_status_schema = JSONSchema(filepath="change_status.json")
+abstract_status_schema = JSONSchema(filepath="abstract_status.json")
 
 
 @api_view(["PATCH"])
 @permission_classes([IsAdminUser])
-def modify_abstract(request, pid):
+def update_abstract_status_with_email(request, pid):
     """
-    PATCH /api/abstracts/status
+    PATCH /api/abstracts/<pid>/status
 
     Endpoint to modify the status of an abstract identified by its PID.
     It sends an email notification to the contact email of the abstract.
@@ -32,7 +32,7 @@ def modify_abstract(request, pid):
     """
 
     try:
-        data = change_abstract_status_with_email(request, pid)
+        data = change_status_with_email(request, pid)
         return Response(
             {"message": "Abstract updated successfully.", "data": data},
             status=status.HTTP_200_OK,
@@ -72,7 +72,7 @@ def modify_abstract(request, pid):
 
 @api_view(["PATCH"])
 @permission_classes([IsAdminUser])
-def modify_abstracts(request):
+def update_abstract_status(request):
     """
     PATCH /api/abstracts/status
 
@@ -82,7 +82,7 @@ def modify_abstracts(request):
     """
 
     try:
-        data = change_abstract_status(request)
+        data = change_status(request)
         return Response(
             {"message": "Abstracts updated successfully.", "data": data},
             status=status.HTTP_200_OK,
@@ -156,7 +156,7 @@ def send_mail_to_contact(request, abstract, status):
         raise Exception({"error": "send_mail error", "message": str(e)})
 
 
-def change_abstract_status_with_email(request, pid):
+def change_status_with_email(request, pid):
     """
     Change the abstract status and send email notification.
     Args:
@@ -217,7 +217,7 @@ def change_abstract_status_with_email(request, pid):
         }
 
 
-def change_abstract_status(request):
+def change_status(request):
     """
     Change abstract(s) status(es) with no notification.
     Args:
@@ -228,7 +228,7 @@ def change_abstract_status(request):
     logger.info("Start JSON validation")
     with transaction.atomic():
 
-        change_status_schema.validate(instance=request.data)
+        abstract_status_schema.validate(instance=request.data)
 
         pids = request.data.get("pids", [])
         status = request.data.get("status", "").upper()

@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://journaldigitalhistory.eu/schemas/change-status.json",
+  "$id": "https://journaldigitalhistory.eu/schemas/article-status.json",
   "type": "object",
   "properties": {
     "pids": {
@@ -10,7 +10,16 @@
     },
     "status": {
       "type": "string",
-      "enum": ["accepted", "declined", "abandoned", "suspended", "submitted"]
+      "enum": [
+        "draft",
+        "technical_review",
+        "peer_review",
+        "design_review",
+        "copyediting",
+        "social",
+        "published",
+        "archived"
+      ]
     }
   },
   "required": ["pids", "status"],
