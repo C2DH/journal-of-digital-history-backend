@@ -20,8 +20,9 @@ urlpatterns = [
     path(
         "api/abstracts/<str:pid>/status",
         views.update_abstract_status_with_email,
-        name="abstract-change-status",
+        name="abstract-change-status-with-email",
     ),
+    path("api/submit-abstract/", views.submit_abstract, name="submit-abstract"),
     path("api/articles/", views.ArticleList.as_view(), name="article-list"),
     path(
         "api/articles/status",
@@ -63,7 +64,6 @@ urlpatterns = [
         views.check_github_id,
         name="check-github-id",
     ),
-    path("api/submit-abstract/", views.submit_abstract, name="submit-abstract"),
     path("api/tags/", views.TagList.as_view(), name="tag-list"),
     path("api/tags/<int:pk>/", views.TagDetail.as_view(), name="tag-detail"),
 ]
