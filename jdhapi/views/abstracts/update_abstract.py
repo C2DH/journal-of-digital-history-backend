@@ -221,8 +221,7 @@ def change_status(request):
     """
     Change abstract(s) status(es) with no notification.
     Args:
-        request: containing email data (from, to, subject, message).
-        pids: PID(s) of the abstract(s) to be modified.
+        request: containing pids and status (which is the new status).
     """
     logger.info("Change abstract status")
     logger.info("Start JSON validation")

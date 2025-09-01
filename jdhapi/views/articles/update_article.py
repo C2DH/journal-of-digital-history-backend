@@ -22,15 +22,14 @@ def update_article_status(request):
     """
     PATCH /api/articles/status
 
-    Endpoint to modify the status of an abstract identified by its PID.
-    It sends an email notification to the contact email of the abstract.
+    Endpoint to modify the status of an article identified by its abstract PID.
     Requires admin permissions.
     """
 
     try:
         data = change_status(request)
         return Response(
-            {"message": "Abstract updated successfully.", "data": data},
+            {"message": "Article(s) updated successfully.", "data": data},
             status=status.HTTP_200_OK,
         )
     except ValidationError as e:
@@ -38,13 +37,6 @@ def update_article_status(request):
         return Response(
             {"error": "Invalid data format", "details": str(e)},
             status=status.HTTP_400_BAD_REQUEST,
-        )
-    except SchemaError as e:
-        logger.exception("Schema error occurred.")
-        return Response(
-            {"error": "SchemaError", "message": str(e)},
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content_type="application/json",
         )
     except (KeyError, IndexError) as e:
         logger.exception("Data invalid after validation")
@@ -70,8 +62,8 @@ def change_status(request):
     """
     Change article(s) status(es) with no notification.
     Args:
-        request: containing email data (from, to, subject, message).
         pids: PID(s) of the abstract(s) to be modified.
+        status: New status to set.
     """
     logger.info("Change article status")
     logger.info("Start JSON validation")
