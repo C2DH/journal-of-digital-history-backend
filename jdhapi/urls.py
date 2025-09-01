@@ -12,7 +12,23 @@ urlpatterns = [
         views.AbstractDetail.as_view(),
         name="abstract-detail",
     ),
+    path(
+        "api/abstracts/status",
+        views.update_abstract_status,
+        name="abstract-change-status",
+    ),
+    path(
+        "api/abstracts/<str:pid>/status",
+        views.update_abstract_status_with_email,
+        name="abstract-change-status-with-email",
+    ),
+    path("api/abstracts/submit", views.submit_abstract, name="submit-abstract"),
     path("api/articles/", views.ArticleList.as_view(), name="article-list"),
+    path(
+        "api/articles/status",
+        views.update_article_status,
+        name="article-change-status",
+    ),
     path(
         "api/articles/<str:abstract__pid>/",
         views.ArticleDetail.as_view(),
@@ -33,12 +49,12 @@ urlpatterns = [
         views.CallForPaperDetail.as_view(),
         name="callforpaper-detail",
     ),
-    path("api/csrf/", views.get_csrf, name="get_csrf"),
     path(
-        "api/dashboard/contact-form/<str:pid>",
-        views.modify_abstract,
-        name="modify-abstract",
+        "api/check-github-id/<str:username>",
+        views.check_github_id,
+        name="check-github-id",
     ),
+    path("api/csrf/", views.get_csrf, name="get_csrf"),
     path("api/datasets/", views.DatasetList.as_view(), name="dataset-list"),
     path(
         "api/datasets/<int:pk>/", views.DatasetDetail.as_view(), name="dataset-detail"
@@ -48,12 +64,6 @@ urlpatterns = [
     path("api/issues/<str:pid>/", views.IssueDetail.as_view(), name="issue-detail"),
     path("api/login/", views.CustomLoginView.as_view(), name="custom-login"),
     path("api/logout/", views.custom_logout, name="custom_logout"),
-    path(
-        "api/submit-abstract/check-github-id/<str:username>",
-        views.check_github_id,
-        name="check-github-id",
-    ),
-    path("api/submit-abstract/", views.submit_abstract, name="submit-abstract"),
     path("api/tags/", views.TagList.as_view(), name="tag-list"),
     path("api/tags/<int:pk>/", views.TagDetail.as_view(), name="tag-detail"),
 ]
