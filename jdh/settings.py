@@ -279,3 +279,7 @@ DEFAULT_TO_EMAIL = get_env_variable("DEFAULT_TO_EMAIL", "jdh.admin@uni.lu")
 # Github API
 
 GITHUB_ACCESS_TOKEN = get_env_variable("GITHUB_ACCESS_TOKEN")
+
+# Social network
+BLUESKY_JDH_ACCOUNT = get_env_variable("BLUESKY_JDH_ACCOUNT")
+BLUESKY_JDH_PASSWORD = get_env_variable("BLUESKY_JDH_PASSWORD")

@@ -81,7 +81,6 @@ def parse_tweets_md(content: str):
 def fetch_link_metadata(url: str):
     headers = {"User-Agent": BROWSER_UA}
     r = requests.get(url, headers=headers, timeout=10)
-    print("🚀 ~ file: bluesky_script.py:84 ~ r:", r)
     r.raise_for_status()
     soup = BeautifulSoup(r.text, "html.parser")
     title_tag = soup.find("meta", property="og:title") or soup.find("title")
