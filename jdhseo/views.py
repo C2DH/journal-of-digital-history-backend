@@ -279,7 +279,7 @@ def generate_zip(request, pid):
     #url_issue = f"http://127.0.0.1:8000/issue/dg/{pid}"
     url_issue = f'https://journalofdigitalhistory.org/prerendered/en/issue/dg/{pid}'
     url_xml = f"https://journalofdigitalhistory.org/prerendered/en/article/dg/{pid}"
-    url_pdf = f"https://journalofdigitalhistory.org/coucou/en/article/{pid}.pdf"
+    url_pdf = f"https://journalofdigitalhistory.org/en/article/{pid}.pdf"
         
     response_issue, filename_issue, filename_zip = get_issue_content_from_url(
         url_issue, pid
