@@ -1,6 +1,7 @@
 import argparse
-import sys
 import json
+import logging
+import sys
 import time
 from urllib.parse import urlparse
 import requests
@@ -10,6 +11,8 @@ from apscheduler.schedulers.blocking import BlockingScheduler
 from apscheduler.executors.pool import ThreadPoolExecutor
 from apscheduler.events import EVENT_JOB_EXECUTED, EVENT_JOB_ERROR
 from datetime import datetime, timezone
+
+logger = logging.getLogger(__name__)
 
 # Shared state for parent URI and CID
 state = {}
@@ -34,12 +37,11 @@ def parse_repo_url(repo_url: str):
 
 
 # GitHub API helpers
-
-
 def get_default_branch(owner: str, repo: str) -> str:
     api = f"https://api.github.com/repos/{owner}/{repo}"
     r = requests.get(api)
-    r.raise_for_status()
+    if r.status_code != 200:
+        raise ValueError(f"GitHub API error: {r.status_code} {r.text}")
     return r.json()["default_branch"]
 
 
@@ -52,7 +54,8 @@ def file_exists(owner: str, repo: str, branch: str, path: str) -> bool:
 def fetch_file_bytes(owner: str, repo: str, branch: str, path: str) -> bytes:
     raw = f"https://raw.githubusercontent.com/{owner}/{repo}/{branch}/{path}"
     r = requests.get(raw)
-    r.raise_for_status()
+    if r.status_code != 200:
+        raise ValueError(f"Failed to fetch file from {raw}: {r.status_code}")
     return r.content
 
 
@@ -81,7 +84,9 @@ def parse_tweets_md(content: str):
 def fetch_link_metadata(url: str):
     headers = {"User-Agent": BROWSER_UA}
     r = requests.get(url, headers=headers, timeout=10)
-    r.raise_for_status()
+    if r.status_code != 200:
+        raise ValueError(f"Failed to fetch URL {url}: {r.status_code}")
+
     soup = BeautifulSoup(r.text, "html.parser")
     title_tag = soup.find("meta", property="og:title") or soup.find("title")
     desc_tag = soup.find("meta", property="og:description") or soup.find(
@@ -104,7 +109,8 @@ def fetch_link_metadata(url: str):
 def fetch_image(url: str) -> bytes:
     headers = {"User-Agent": BROWSER_UA}
     r = requests.get(url, headers=headers, timeout=10)
-    r.raise_for_status()
+    if r.status_code != 200 or "image" not in r.headers.get("Content-Type", ""):
+        raise ValueError(f"Failed to fetch image from {url}")
     return r.content
 
 
@@ -114,13 +120,16 @@ def get_record_cid(client, uri: str) -> str:
     resp = client.com.atproto.repo.get_record(
         {"repo": did, "collection": collection, "rkey": rkey}
     )
+    if not resp or not resp.cid:
+        raise ValueError(f"Failed to get record CID for {uri}")
     return resp.cid
 
 
 # Post an item (main or reply)
 def post_item(client, text, link=None, image_bytes=None, alt=None, index=0):
     now = datetime.now(timezone.utc)
-    print(f"[{now.isoformat()}] Posting item index {index}")
+    logger.info("Posting item index {index}")
+
     record = {"$type": "app.bsky.feed.post", "text": text, "createdAt": now.isoformat()}
     # Main post: index 0
     if index == 0:
@@ -147,9 +156,12 @@ def post_item(client, text, link=None, image_bytes=None, alt=None, index=0):
         )
         state["parent_uri"] = resp.uri
         state["parent_cid"] = resp.cid
-        print(f"[{datetime.now(timezone.utc).isoformat()}] Main post URI: {resp.uri}")
+
+        logger.info("Main post URI: {resp.uri}")
+
         time.sleep(BETWEEN_POST_DELAY)
         return resp
+
     # Replies: index > 0
     parent_uri = state.get("parent_uri")
     parent_cid = state.get("parent_cid")
@@ -165,21 +177,20 @@ def post_item(client, text, link=None, image_bytes=None, alt=None, index=0):
                 "record": record,
             }
         )
-        print(
-            f"[{datetime.now(timezone.utc).isoformat()}] Reply {index} URI: {resp.uri}"
-        )
+        logger.info("Reply {index} URI: {resp.uri}")
+
         time.sleep(BETWEEN_POST_DELAY)
         return resp
+
     # Fallback simple post
     resp = client.post(text)
-    print(f"[{datetime.now(timezone.utc).isoformat()}] Simple post URI: {resp.uri}")
+    logger.info("Simple post URI: {resp.uri}")
     time.sleep(BETWEEN_POST_DELAY)
+
     return resp
 
 
 # Listener to shutdown scheduler when all jobs completed
-
-
 def make_listener(total_jobs, scheduler):
     count = {"remaining": total_jobs}
 
@@ -196,20 +207,21 @@ def make_listener(total_jobs, scheduler):
 def parse_times(arg, count):
     arr = json.loads(arg)
     if not isinstance(arr, list) or len(arr) != count:
-        sys.exit(
-            f"Schedule list must contain exactly {count} timestamps for the {count} posts."
+        raise Exception(
+            "Schedule list must contain exactly {count} timestamps for the {count} posts."
         )
+
     times = []
     for s in arr:
         try:
             dt = datetime.fromisoformat(s)
         except Exception:
-            sys.exit(f"Invalid timestamp format: {s}")
+            raise TypeError(f"Invalid timestamp format: {s}")
         if dt.tzinfo is None:
-            sys.exit(f"Timestamp '{s}' must include a timezone offset")
+            raise Exception(f"Timestamp '{s}' must include a timezone offset")
         times.append(dt)
     if any(times[i] > times[i + 1] for i in range(len(times) - 1)):
-        sys.exit(
+        raise Exception(
             "Schedule times must be in non-decreasing order (simultaneous posts allowed)."
         )
     return times
@@ -298,17 +310,19 @@ def main(ext_args: object = None):
     branch = args.branch or get_default_branch(owner, repo)
     tweets_md = "tweets.md"
     if not file_exists(owner, repo, branch, tweets_md):
-        sys.exit("Error: 'tweets.md' not found in repo root.")
+        raise Exception("'tweets.md' not found in repo root.")
+
     content = fetch_file_bytes(owner, repo, branch, tweets_md).decode("utf-8")
     thread_texts, independent_texts = parse_tweets_md(content)
+
     if not thread_texts:
-        sys.exit("Error: No thread items under 'Post thread:'")
+        raise Exception("No thread items under 'Post thread:'")
 
     image_bytes = None
     alt = None
     if not args.no_image and args.image_file:
         if not file_exists(owner, repo, branch, args.image_file):
-            sys.exit(f"Error: Image '{args.image_file}' not found.")
+            raise Exception("Image '{args.image_file}' not found.")
         image_bytes = fetch_file_bytes(owner, repo, branch, args.image_file)
         alt = args.image_file
 
@@ -332,7 +346,7 @@ def main(ext_args: object = None):
             )
         for idx, dt in enumerate(times):
             if dt <= now:
-                print(
+                logger.info(
                     f"Scheduled time {dt.isoformat()} for thread item {idx + 1} has passed; posting immediately"
                 )
                 post_item(client, thread_texts[idx], args.link, image_bytes, alt, idx)
@@ -344,10 +358,10 @@ def main(ext_args: object = None):
                     args=[client, thread_texts[idx], args.link, image_bytes, alt, idx],
                 )
                 jobs.append(job)
-                print(f"Scheduled thread item {idx + 1} at {dt.isoformat()}")
+                logger.info(f"Scheduled thread item {idx + 1} at {dt.isoformat()}")
     else:
         for idx, txt in enumerate(thread_texts):
-            print(f"Posting thread item {idx + 1} now")
+            logger.info(f"Posting thread item {idx + 1} now")
             post_item(client, txt, args.link, image_bytes, alt, idx)
 
     # Schedule or post independent
@@ -363,7 +377,7 @@ def main(ext_args: object = None):
                 )
             for idx, dt in enumerate(times2):
                 if dt <= now2:
-                    print(
+                    logger.info(
                         (
                             f"Scheduled time {dt.isoformat()} for independent item "
                             f"{idx + 1} has passed; posting immediately"
@@ -387,10 +401,12 @@ def main(ext_args: object = None):
                         ],
                     )
                     jobs.append(job)
-                    print(f"Scheduled independent item {idx + 1} at {dt.isoformat()}")
+                    logger.info(
+                        f"Scheduled independent item {idx + 1} at {dt.isoformat()}"
+                    )
         else:
             for idx, txt in enumerate(independent_texts):
-                print(f"Posting independent item {idx + 1} now")
+                logger.info(f"Posting independent item {idx + 1} now")
                 post_item(client, txt, args.link)
 
     # Run scheduler if jobs pending
