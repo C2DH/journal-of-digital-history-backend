@@ -12,39 +12,37 @@ from rest_framework.decorators import (
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import AllowAny
+from textwrap import dedent
 
-from .logger import logger as get_logger
+from ..logger import logger as get_logger
 
-# Initialize the logger object
+
 logger = get_logger()
 
 document_json_schema = JSONSchema(filepath="submit_abstract.json")
 
 
-def get_default_body(subject, firstname, lastname):
-    default_body = (
-        "Dear "
-        + firstname
-        + " "
-        + lastname
-        + ",\n\n"
-        + "Your submission "
-        + subject
-        + "has been sent to the managing editor of the "
-        + "Journal of Digital History. "
-        + "We will contact you back in a few days to discuss the feasibility "
-        + "of your article, "
-        + "as the JDH's layered articles "
-        + "imply publishing a hermeneutics layer "
-        + "and a data layer.\n\n"
-        + "Best regard,\n\n"
-        + "The JDH team."
+def get_default_body(id, title, firstname, lastname):
+    default_body = dedent(
+        f"""
+        Dear {firstname} {lastname}, 
+        Thank you for submitting your abstract {title} (ID: {id}) to the Journal of Digital History (JDH).
+
+        The JDH publishes data-driven research articles, and we require authors to adhere to specific writing guidelines. These include collaboration via GitHub, the use of Jupyter Notebooks, and the writing of code using R or Python. Please refer to the following link for detailed instructions on our submission guidelines and for setting up the required writing environment on your machine: https://journalofdigitalhistory.org/en/guidelines.
+        If you require assistance with installing the necessary software or encounter any questions about the writing process, please do not hesitate to contact us at jdh.admin@uni.lu. We will be happy to support you.
+
+        Regarding the next steps, we will contact you to propose a few dates to discuss the principle of multilayered articles.
+
+        Kind regards,
+        The JDH Team
+        """
     )
+
     return default_body
 
 
-def send_mail_abstract_received(subject, sent_to, firstname, lastname):
-    body = get_default_body(subject, firstname, lastname)
+def send_mail_abstract_received(pid, subject, sent_to, firstname, lastname):
+    body = get_default_body(pid, subject, firstname, lastname)
     try:
         send_mail(
             subject,
@@ -202,6 +200,7 @@ def validate_and_submit_abstract(request):
 
         logger.info("Start sending email confirmation")
         send_mail_abstract_received(
+            abstract.pid,
             abstract.title,
             abstract.contact_email,
             abstract.contact_firstname,

@@ -42,7 +42,7 @@ class IssueXml:
             non_editorials = [article for article in articles if not check_if_editorial(article.abstract.pid)]
             # Put editorials first
             ordered_articles = editorials + non_editorials
-            return [get_doi(article.doi) for article in ordered_articles]
+            return [get_doi(article.doi).lower() for article in ordered_articles]
         except Exception as e:
             logger.error(f"Error fetching articles DOIs: {e}")
             return []

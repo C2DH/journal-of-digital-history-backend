@@ -1,5 +1,6 @@
 from jdhapi.models import Article
 from jdhapi.serializers.article import ArticleSerializer
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import generics, filters
 from rest_framework.permissions import BasePermission
 
@@ -32,6 +33,7 @@ class ArticleList(generics.ListCreateAPIView):
     serializer_class = ArticleSerializer
     filter_backends = [
         IsOwnerFilterBackend,
+        DjangoFilterBackend,
         filters.OrderingFilter,
         filters.SearchFilter,
     ]
@@ -42,6 +44,7 @@ class ArticleList(generics.ListCreateAPIView):
         "tags",
         "authors",
         "copyright_type",
+        "abstract__callpaper",
     ]
     ordering_fields = [
         "issue__publication_date",
