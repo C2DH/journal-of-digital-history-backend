@@ -13,6 +13,8 @@ pipenv install -r requirements.txt
 make run-dev
 ```
 
+` pipenv install -r requirements.txt` will update the pipfile according to the `requirements.txt` file.
+
 ### SEO configuration in development
 
 THe django app `jdhseo` needs a JDHSEO_PROXY_HOST env variable in the full form
@@ -61,11 +63,11 @@ or with Pip:
 
 `pipenv run ./manage.py test`
 
-If you want to run a specific test file (eg. `test_check_github_id`) : 
+If you want to run a specific test file (eg. `test_check_github_id`) :
 
 `python3 manage.py test tests.jdhapi.views.test_check_github_id`
 
-with Pip : 
+with Pip :
 
 `pipenv run ./manage.py test tests.jdhapi.views.test_check_github_id`
 
