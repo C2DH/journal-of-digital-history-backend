@@ -1,7 +1,5 @@
-import argparse
 import json
 import logging
-import sys
 import time
 from urllib.parse import urlparse
 import requests
@@ -237,78 +235,16 @@ def launch_social_media_bluesky(
     schedule_main="",
     schedule_independent="",
 ):
-    if repo_url == "" or article_link == "" or login == "" or password == "":
-        return "One of the mandatory fields is missing"
-    parser = argparse.ArgumentParser(
-        description="Schedule thread and independent posts from GitHub tweets.md"
-    )
 
-    args = parser.parse_args()
-    setattr(args, "repo_url", repo_url)
-    setattr(args, "link", article_link)
-    setattr(args, "handle", login)
-    setattr(args, "app_pass", password)
+    if not repo_url or not article_link or not login or not password:
+        raise ValueError("repo_url, article_link, login and password are required")
 
-    if branch != "":
-        setattr(args, "branch", branch)
-    else:
-        setattr(args, "branch", None)
+    no_image = not bool(image_file)
 
-    if image_file == "":
-        setattr(args, "no_image", True)
-    else:
-        setattr(args, "no_image", None)
-        setattr(args, "image_file", image_file)
-
-    if schedule_main != "":
-        if not isinstance(schedule_main, str):
-            setattr(args, "schedule_main", json.dumps(schedule_main))
-        else:
-            setattr(args, "schedule_main", schedule_main)
-    else:
-        setattr(args, "schedule_main", None)
-
-    if schedule_independent != "":
-        if not isinstance(schedule_independent, str):
-            setattr(args, "schedule_independent", json.dumps(schedule_independent))
-        else:
-            setattr(args, "schedule_independent", schedule_independent)
-    else:
-        setattr(args, "schedule_independent", None)
-
-    main(ext_args=args)
-
-
-# Main entry
-def main(ext_args: object = None):
-    if ext_args is None:
-        parser = argparse.ArgumentParser(
-            description="Schedule thread and independent posts from GitHub tweets.md"
-        )
-        parser.add_argument("repo_url", help="GitHub repo URL")
-        parser.add_argument("image_file", nargs="?", help="Optional image path in repo")
-        parser.add_argument("--branch", help="Git branch; defaults to default branch")
-        parser.add_argument("--link", required=True, help="Article URL for embeds")
-        parser.add_argument("--no-image", action="store_true", help="Skip image upload")
-        parser.add_argument("--handle", required=True, help="Your Bluesky handle")
-        parser.add_argument(
-            "--app-pass", required=True, help="Your Bluesky app password"
-        )
-        parser.add_argument(
-            "--schedule-main",
-            help="JSON list of ISO times with offsets for thread items",
-        )
-        parser.add_argument(
-            "--schedule-independent",
-            help="JSON list of ISO times with offsets for independent items",
-        )
-        args = parser.parse_args()
-    else:
-        args = ext_args
-
-    owner, repo = parse_repo_url(args.repo_url)
-    branch = args.branch or get_default_branch(owner, repo)
+    owner, repo = parse_repo_url(repo_url)
+    branch = branch or get_default_branch(owner, repo)
     tweets_md = "tweets.md"
+
     if not file_exists(owner, repo, branch, tweets_md):
         raise Exception("'tweets.md' not found in repo root.")
 
@@ -320,14 +256,14 @@ def main(ext_args: object = None):
 
     image_bytes = None
     alt = None
-    if not args.no_image and args.image_file:
-        if not file_exists(owner, repo, branch, args.image_file):
+    if not no_image and image_file:
+        if not file_exists(owner, repo, branch, image_file):
             raise Exception("Image '{args.image_file}' not found.")
-        image_bytes = fetch_file_bytes(owner, repo, branch, args.image_file)
-        alt = args.image_file
+        image_bytes = fetch_file_bytes(owner, repo, branch, image_file)
+        alt = image_file
 
     client = Client()
-    client.login(args.handle, args.app_pass)
+    client.login(login, password)
 
     scheduler = BlockingScheduler(
         executors={"default": ThreadPoolExecutor(max_workers=1)}
@@ -335,8 +271,8 @@ def main(ext_args: object = None):
     jobs = []
 
     # Schedule or post thread
-    if args.schedule_main:
-        times = parse_times(args.schedule_main, len(thread_texts))
+    if schedule_main:
+        times = parse_times(schedule_main, len(thread_texts))
         now = datetime.now(timezone.utc)
         future = [(idx, dt) for idx, dt in enumerate(times) if dt > now]
         if future:
@@ -346,28 +282,37 @@ def main(ext_args: object = None):
             )
         for idx, dt in enumerate(times):
             if dt <= now:
-                logger.info(
-                    f"Scheduled time {dt.isoformat()} for thread item {idx + 1} has passed; posting immediately"
+                # logger.info(
+                #     f"Scheduled time {dt.isoformat()} for thread item {idx + 1} has passed; posting immediately"
+                # )
+                post_item(
+                    client, thread_texts[idx], article_link, image_bytes, alt, idx
                 )
-                post_item(client, thread_texts[idx], args.link, image_bytes, alt, idx)
             else:
                 job = scheduler.add_job(
                     post_item,
                     "date",
                     run_date=dt,
-                    args=[client, thread_texts[idx], args.link, image_bytes, alt, idx],
+                    args=[
+                        client,
+                        thread_texts[idx],
+                        article_link,
+                        image_bytes,
+                        alt,
+                        idx,
+                    ],
                 )
                 jobs.append(job)
-                logger.info(f"Scheduled thread item {idx + 1} at {dt.isoformat()}")
+                # logger.info(f"Scheduled thread item {idx + 1} at {dt.isoformat()}")
     else:
         for idx, txt in enumerate(thread_texts):
-            logger.info(f"Posting thread item {idx + 1} now")
-            post_item(client, txt, args.link, image_bytes, alt, idx)
+            # logger.info(f"Posting thread item {idx + 1} now")
+            post_item(client, txt, article_link, image_bytes, alt, idx)
 
     # Schedule or post independent
     if independent_texts:
-        if args.schedule_independent:
-            times2 = parse_times(args.schedule_independent, len(independent_texts))
+        if schedule_independent:
+            times2 = parse_times(schedule_independent, len(independent_texts))
             now2 = datetime.now(timezone.utc)
             future2 = [(idx, dt) for idx, dt in enumerate(times2) if dt > now2]
             if future2:
@@ -377,14 +322,14 @@ def main(ext_args: object = None):
                 )
             for idx, dt in enumerate(times2):
                 if dt <= now2:
-                    logger.info(
-                        (
-                            f"Scheduled time {dt.isoformat()} for independent item "
-                            f"{idx + 1} has passed; posting immediately"
-                        )
-                    )
+                    # logger.info(
+                    #     (
+                    #         f"Scheduled time {dt.isoformat()} for independent item "
+                    #         f"{idx + 1} has passed; posting immediately"
+                    #     )
+                    # )
                     post_item(
-                        client, independent_texts[idx], args.link, None, None, idx
+                        client, independent_texts[idx], article_link, None, None, idx
                     )
                 else:
                     job = scheduler.add_job(
@@ -394,55 +339,27 @@ def main(ext_args: object = None):
                         args=[
                             client,
                             independent_texts[idx],
-                            args.link,
+                            article_link,
                             None,
                             None,
                             idx,
                         ],
                     )
                     jobs.append(job)
-                    logger.info(
-                        f"Scheduled independent item {idx + 1} at {dt.isoformat()}"
-                    )
+                    # logger.info(
+                    #     f"Scheduled independent item {idx + 1} at {dt.isoformat()}"
+                    # )
         else:
             for idx, txt in enumerate(independent_texts):
-                logger.info(f"Posting independent item {idx + 1} now")
-                post_item(client, txt, args.link)
+                # logger.info(f"Posting independent item {idx + 1} now")
+                post_item(client, txt, article_link)
 
     # Run scheduler if jobs pending
     if jobs:
         scheduler.start()
 
-
-if __name__ == "__main__":
-    main()
-
-
-# Usage example when imported into a different file:
-
-# from bluesky_script import launch_social_media
-
-# launch_social_media(article_link = "https://journalofdigitalhistory.org/en/article/Gqh2Bf5W4TdK",
-# repo_url = "https://github.com/memerchik/Gqh2Bf5W4TdK",
-# login = "***.bsky.social",
-# password = "****",
-# schedule_independent = ["2025-07-21T15:06+02:00", "2025-07-21T15:06+02:00"],
-# schedule_main = ["2025-07-21T15:06+02:00", "2025-07-21T15:06+02:00"])
-
-# The number of entries within "schedule_main" and "schedule_independent"
-# must be the same as the number of tweets/posts within tweets.md file
-
-
-# Usage example standalone:
-
-# python3 bluesky_script.py https://github.com/memerchik/Gqh2Bf5W4TdK
-# --link https://journalofdigitalhistory.org/en/article/Gqh2Bf5W4TdK/
-# --handle ****.bsky.social
-# --app-pass ****
-# --no-image --schedule-main '[
-#   "2025-07-21T16:47+02:00",
-#   "2025-07-21T16:48+02:00",
-#   "2025-07-21T16:48+02:00",
-#   "2025-07-21T16:48+02:00",
-#   "2025-07-21T16:48+02:00"
-# ]'
+    return {
+        "message": "Bluesky campaign completed",
+        "total_posts": len(thread_texts) + len(independent_texts),
+        "scheduled_jobs": len(jobs),
+    }

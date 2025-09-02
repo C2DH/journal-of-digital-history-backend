@@ -6,8 +6,14 @@ from django.conf import settings
 from django.shortcuts import render, get_object_or_404
 from jdhapi.models import Abstract
 from jsonschema.exceptions import ValidationError
-from rest_framework import status, Response, IsAdminUser, api_view, permission_classes
-from socialmedia.bluesky import launch_social_media_bluesky
+from rest_framework.decorators import (
+    api_view,
+    permission_classes,
+)
+from rest_framework.permissions import IsAdminUser
+from rest_framework.response import Response
+from rest_framework import status
+from dashboard import socialmedia
 
 
 logger = logging.getLogger(__name__)
@@ -68,15 +74,15 @@ def launching_bluesky_campaign(request):
 
     repository_url = request.data.get("repository_url")
     article_url = request.data.get("article_url")
-    scheduled_time = request.data.get("scheduled_time")
+    schedule_main = request.data.get("schedule_main")
 
-    data = launch_social_media_bluesky(
+    data = socialmedia.launch_social_media_bluesky(
         repo_url=repository_url,
         branch="main",
         article_link=article_url,
         login=settings.BLUESKY_JDH_ACCOUNT,
         password=settings.BLUESKY_JDH_PASSWORD,
-        scheduled_main=scheduled_time,
+        schedule_main=schedule_main,
     )
 
     return data

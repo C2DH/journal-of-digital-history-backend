@@ -26,7 +26,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = get_env_variable("SECRET_KEY", "default-secret-key-for-testing")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = get_env_variable("DEBUG", "True")
+DEBUG = get_env_variable("DEBUG", "False")
 
 DJANGO_LOG_LEVEL = get_env_variable("DJANGO_LOG_LEVEL", "DEBUG")
 
