@@ -1,14 +1,14 @@
 import json
 import logging
-import time
-from urllib.parse import urlparse
 import requests
+import time
 from bs4 import BeautifulSoup
 from atproto import Client, models
 from apscheduler.schedulers.blocking import BlockingScheduler
 from apscheduler.executors.pool import ThreadPoolExecutor
 from apscheduler.events import EVENT_JOB_EXECUTED, EVENT_JOB_ERROR
 from datetime import datetime, timezone
+from urllib.parse import urlparse
 
 logger = logging.getLogger(__name__)
 
@@ -46,6 +46,11 @@ def get_default_branch(owner: str, repo: str) -> str:
 def file_exists(owner: str, repo: str, branch: str, path: str) -> bool:
     url = f"https://api.github.com/repos/{owner}/{repo}/contents/{path}"
     r = requests.head(url, params={"ref": branch})
+    return r.status_code == 200
+
+
+def url_exists(url: str) -> bool:
+    r = requests.head(url)
     return r.status_code == 200
 
 
@@ -112,6 +117,44 @@ def fetch_image(url: str) -> bytes:
     return r.content
 
 
+def _is_absolute_url(value: str) -> bool:
+    p = urlparse(value or "")
+    return bool(p.scheme and p.netloc)
+
+
+def fetch_image_from_link(
+    link: str, owner: str = None, repo: str = None, branch: str = None
+) -> bytes:
+    """
+    Fetch image bytes from either:
+      - an absolute URL (https://...)
+      - a path inside the GitHub repo (owner/repo/branch/path) — when owner/repo/branch provided
+    Raises ValueError on failure or when content-type is not an image.
+    """
+    if _is_absolute_url(link):
+        headers = {"User-Agent": BROWSER_UA}
+        r = requests.get(link, headers=headers, timeout=10, allow_redirects=True)
+        if r.status_code != 200:
+            raise ValueError(f"Failed to fetch image URL {link}: {r.status_code}")
+        content_type = r.headers.get("Content-Type", "")
+        if "image" not in content_type:
+            raise ValueError(
+                f"URL does not point to an image: {link} (Content-Type: {content_type})"
+            )
+        return r.content
+
+    # treat as repo-relative path when repo info provided
+    if owner and repo and branch:
+        try:
+            return fetch_file_bytes(owner, repo, branch, link)
+        except Exception as e:
+            raise ValueError(f"Failed to fetch image from repo path '{link}': {e}")
+
+    raise ValueError(
+        "Image link must be an absolute URL or a repo path with owner/repo/branch supplied"
+    )
+
+
 # Get CID for replies
 def get_record_cid(client, uri: str) -> str:
     did, collection, rkey = uri[len("at://") :].split("/")[:3]
@@ -126,7 +169,7 @@ def get_record_cid(client, uri: str) -> str:
 # Post an item (main or reply)
 def post_item(client, text, link=None, image_bytes=None, alt=None, index=0):
     now = datetime.now(timezone.utc)
-    logger.info("Posting item index {index}")
+    logger.info(f"Posting item index {index}")
 
     record = {"$type": "app.bsky.feed.post", "text": text, "createdAt": now.isoformat()}
     # Main post: index 0
@@ -203,11 +246,20 @@ def make_listener(total_jobs, scheduler):
 
 # Parse schedule times
 def parse_times(arg, count):
-    arr = json.loads(arg)
+    if arg is None:
+        raise TypeError("Schedule times argument is required")
+
+    if isinstance(arg, (list, tuple)):
+        arr = list(arg)
+    elif isinstance(arg, (bytes, bytearray)):
+        arr = json.loads(arg.decode("utf-8"))
+    elif isinstance(arg, str):
+        arr = json.loads(arg)
+    else:
+        raise TypeError("Schedule must be a JSON string or a list of timestamps")
+
     if not isinstance(arr, list) or len(arr) != count:
-        raise Exception(
-            "Schedule list must contain exactly {count} timestamps for the {count} posts."
-        )
+        raise ValueError(f"Schedule list must contain exactly {count} timestamps.")
 
     times = []
     for s in arr:
@@ -237,9 +289,7 @@ def launch_social_media_bluesky(
 ):
 
     if not repo_url or not article_link or not login or not password:
-        raise ValueError("repo_url, article_link, login and password are required")
-
-    no_image = not bool(image_file)
+        raise Exception("repo_url, article_link, login and password are required")
 
     owner, repo = parse_repo_url(repo_url)
     branch = branch or get_default_branch(owner, repo)
@@ -256,11 +306,20 @@ def launch_social_media_bluesky(
 
     image_bytes = None
     alt = None
-    if not no_image and image_file:
-        if not file_exists(owner, repo, branch, image_file):
-            raise Exception("Image '{args.image_file}' not found.")
-        image_bytes = fetch_file_bytes(owner, repo, branch, image_file)
-        alt = image_file
+    if image_file:
+        try:
+            # if image_file is an absolute URL, fetch it directly; otherwise fetch from repo
+            image_bytes = fetch_image_from_link(
+                image_file, owner=owner, repo=repo, branch=branch
+            )
+            alt = (
+                image_file
+                if _is_absolute_url(image_file)
+                else image_file.split("/")[-1]
+            )
+        except Exception as e:
+            logger.error("Failed to fetch image %s: %s", image_file, e)
+            raise
 
     client = Client()
     client.login(login, password)
@@ -273,6 +332,7 @@ def launch_social_media_bluesky(
     # Schedule or post thread
     if schedule_main:
         times = parse_times(schedule_main, len(thread_texts))
+
         now = datetime.now(timezone.utc)
         future = [(idx, dt) for idx, dt in enumerate(times) if dt > now]
         if future:
@@ -282,9 +342,9 @@ def launch_social_media_bluesky(
             )
         for idx, dt in enumerate(times):
             if dt <= now:
-                # logger.info(
-                #     f"Scheduled time {dt.isoformat()} for thread item {idx + 1} has passed; posting immediately"
-                # )
+                logger.info(
+                    f"Scheduled time {dt.isoformat()} for thread item {idx + 1} has passed; posting immediately"
+                )
                 post_item(
                     client, thread_texts[idx], article_link, image_bytes, alt, idx
                 )
@@ -303,10 +363,10 @@ def launch_social_media_bluesky(
                     ],
                 )
                 jobs.append(job)
-                # logger.info(f"Scheduled thread item {idx + 1} at {dt.isoformat()}")
+                logger.info(f"Scheduled thread item {idx + 1} at {dt.isoformat()}")
     else:
         for idx, txt in enumerate(thread_texts):
-            # logger.info(f"Posting thread item {idx + 1} now")
+            logger.info(f"Posting thread item {idx + 1} now")
             post_item(client, txt, article_link, image_bytes, alt, idx)
 
     # Schedule or post independent
@@ -322,12 +382,12 @@ def launch_social_media_bluesky(
                 )
             for idx, dt in enumerate(times2):
                 if dt <= now2:
-                    # logger.info(
-                    #     (
-                    #         f"Scheduled time {dt.isoformat()} for independent item "
-                    #         f"{idx + 1} has passed; posting immediately"
-                    #     )
-                    # )
+                    logger.info(
+                        (
+                            f"Scheduled time {dt.isoformat()} for independent item "
+                            f"{idx + 1} has passed; posting immediately"
+                        )
+                    )
                     post_item(
                         client, independent_texts[idx], article_link, None, None, idx
                     )
@@ -346,12 +406,12 @@ def launch_social_media_bluesky(
                         ],
                     )
                     jobs.append(job)
-                    # logger.info(
-                    #     f"Scheduled independent item {idx + 1} at {dt.isoformat()}"
-                    # )
+                    logger.info(
+                        f"Scheduled independent item {idx + 1} at {dt.isoformat()}"
+                    )
         else:
             for idx, txt in enumerate(independent_texts):
-                # logger.info(f"Posting independent item {idx + 1} now")
+                logger.info(f"Posting independent item {idx + 1} now")
                 post_item(client, txt, article_link)
 
     # Run scheduler if jobs pending

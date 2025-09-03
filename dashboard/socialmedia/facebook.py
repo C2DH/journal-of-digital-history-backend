@@ -1,21 +1,24 @@
 import argparse
 import json
+import logging
+import requests
 import sys
 import time
 from datetime import datetime, timedelta, timezone
 from urllib.parse import urlparse
-
-import requests
 from apscheduler.events import EVENT_JOB_EXECUTED, EVENT_JOB_ERROR, EVENT_JOB_MISSED
 from apscheduler.executors.pool import ThreadPoolExecutor
 from apscheduler.schedulers.blocking import BlockingScheduler
 
+logger = logging.getLogger(__name__)
+
 
 DELAY_BETWEEN_POSTS = 10  # 10 seconds
 
+GRAPH = "https://graph.facebook.com/v12.0"
+
+
 # GitHub-related functions
-
-
 def parse_repo_url(repo_url: str):
     p = urlparse(repo_url)
     parts = p.path.lstrip("/").rstrip(".git").split("/")
@@ -24,26 +27,24 @@ def parse_repo_url(repo_url: str):
     return parts[0], parts[1]
 
 
-def github_api(path: str):
-    return f"https://api.github.com{path}"
-
-
 def get_default_branch(owner: str, repo: str) -> str:
-    r = requests.get(github_api(f"/repos/{owner}/{repo}"))
-    r.raise_for_status()
+    r = requests.get("https://api.github.com/repos/{owner}/{repo}")
+    if r.status_code != 200:
+        raise ValueError(
+            f"GitHub repo not found: https://api.github.com/repos/{owner}/{repo}"
+        )
     return r.json()["default_branch"]
 
 
 def fetch_file_bytes(owner: str, repo: str, branch: str, path: str) -> bytes:
     url = f"https://raw.githubusercontent.com/{owner}/{repo}/{branch}/{path}"
     r = requests.get(url)
-    r.raise_for_status()
+    if r.status_code != 200:
+        raise ValueError(f"File not found: {url}")
     return r.content
 
 
 # MD parsing
-
-
 def parse_tweets_md(md: str):
     thread, independent = [], []
     mode = None
@@ -64,15 +65,12 @@ def parse_tweets_md(md: str):
 
 
 # Facebook API
-
-GRAPH = "https://graph.facebook.com/v12.0"
-
-
 def fb_upload_photo(page_id: str, token: str, img_bytes: bytes) -> str:
     files = {"source": ("img.jpg", img_bytes)}
     data = {"published": "false", "access_token": token}
     r = requests.post(f"{GRAPH}/{page_id}/photos", files=files, data=data)
-    r.raise_for_status()
+    if r.status_code != 200:
+        raise ValueError(f"Photo upload failed: {r.text}")
     return r.json()["id"]
 
 
@@ -88,7 +86,8 @@ def fb_post_feed(
     r = requests.post(
         f"{GRAPH}/{page_id}/feed", params={"access_token": token}, data=payload
     )
-    r.raise_for_status()
+    if r.status_code != 200:
+        raise Exception(f"Post creation failed: {r.text}")
     return r.json()["id"]
 
 
@@ -98,26 +97,24 @@ def fb_post_comment(post_id: str, token: str, msg: str) -> str:
         params={"access_token": token},
         data={"message": msg},
     )
-    r.raise_for_status()
+    if r.status_code != 200:
+        raise Exception(f"Comment creation failed: {r.text}")
     return r.json()["id"]
 
 
 # wrapper function
-
-
 def retry(func, *args, **kwargs):
     attempt = 1
     while True:
         try:
             return func(*args, **kwargs)
         except Exception as e:
-            print(f"Retry {attempt} failed: {e}, retrying in 5s...")
+            logger.info(f"Retry {attempt} failed: {e}, retrying in 5s...")
             attempt += 1
             time.sleep(DELAY_BETWEEN_POSTS)
 
 
 # throttling
-
 global_last = {"time": None}
 
 
@@ -132,54 +129,48 @@ def throttle():
 
 
 # posting
-
 state = {}
 
 
 def post_thread_item(ci, text, link, img, idx):
     throttle()
     page, tok = ci
-    print(f"[{datetime.now(timezone.utc).isoformat()}] Thread item {idx + 1}")
+    logger.info(f"Thread item {idx + 1}")
     if idx == 0:
         pid = retry(fb_post_feed, page, tok, text, link, img)
         state["parent"] = pid
-        print(f"  Main post ID: {pid}")
+        logger.info(f"Main post ID: {pid}")
     else:
         parent = state.get("parent")
         if parent:
             cid = retry(fb_post_comment, parent, tok, text)
-            print(f"  Comment {idx} ID: {cid}")
+            logger.info(f"Comment {idx} ID: {cid}")
         else:
-            print("  No parent for comment")
+            logger.info("No parent for comment")
 
 
 def post_independent(ci, text, link, img, idx):
     throttle()
     page, tok = ci
-    print(f"[{datetime.now(timezone.utc).isoformat()}] Independent {idx + 1}")
+    logger.info(f"Independent {idx + 1}")
     pid = retry(fb_post_feed, page, tok, text, link, img)
-    print(f"  Independent post ID: {pid}")
+    logger.info(f"Independent post ID: {pid}")
 
 
 # scheduling
-
-
 def parse_times(arg, count):
     arr = json.loads(arg)
     if not isinstance(arr, list) or len(arr) != count:
-        sys.exit(f"Expected {count} timestamps, got {len(arr)}")
+        logger.info(f"Expected {count} timestamps, got {len(arr)}")
     ts = []
     for s in arr:
         dt = datetime.fromisoformat(s)
         if dt.tzinfo is None:
-            sys.exit(f"Timestamp {s} missing offset")
+            logger.info(f"Timestamp {s} missing offset")
         ts.append(dt)
     if any(ts[i] > ts[i + 1] for i in range(len(ts) - 1)):
-        sys.exit("Timestamps must be non-decreasing")
+        logger.info("Timestamps must be non-decreasing")
     return ts
-
-
-# function to import
 
 
 def launch_social_media_facebook(
@@ -193,78 +184,24 @@ def launch_social_media_facebook(
     schedule_independent="",
 ):
     if repo_url == "" or article_link == "" or page_id == "" or access_token == "":
-        return "One of the mandatory fields is missing"
-    parser = argparse.ArgumentParser(
-        description="Schedule thread and independent posts from GitHub tweets.md"
-    )
+        raise Exception(
+            "repo_url, article_link, page_id and access_token are mandatory"
+        )
 
-    args = parser.parse_args()
-    setattr(args, "repo_url", repo_url)
-    setattr(args, "link", article_link)
-    setattr(args, "page_id", page_id)
-    setattr(args, "access_token", access_token)
+    no_image = not bool(image_file)
 
-    if branch != "":
-        setattr(args, "branch", branch)
-    else:
-        setattr(args, "branch", None)
-
-    if image_file == "":
-        setattr(args, "no_image", True)
-    else:
-        setattr(args, "no_image", None)
-        setattr(args, "image_file", image_file)
-
-    if schedule_main != "":
-        if not isinstance(schedule_main, str):
-            setattr(args, "schedule_main", json.dumps(schedule_main))
-        else:
-            setattr(args, "schedule_main", schedule_main)
-    else:
-        setattr(args, "schedule_main", None)
-
-    if schedule_independent != "":
-        if not isinstance(schedule_independent, str):
-            setattr(args, "schedule_independent", json.dumps(schedule_independent))
-        else:
-            setattr(args, "schedule_independent", schedule_independent)
-    else:
-        setattr(args, "schedule_independent", None)
-
-    main(ext_args=args)
-
-
-# main
-
-
-def main(ext_args: object = None):
-    if ext_args is None:
-        p = argparse.ArgumentParser()
-        p.add_argument("repo_url")
-        p.add_argument("image_file", nargs="?")
-        p.add_argument("--branch")
-        p.add_argument("--link", required=True)
-        p.add_argument("--page-id", required=True)
-        p.add_argument("--access-token", required=True)
-        p.add_argument("--no-image", action="store_true")
-        p.add_argument("--schedule-main")
-        p.add_argument("--schedule-independent")
-        args = p.parse_args()
-    else:
-        args = ext_args
-
-    owner, repo = parse_repo_url(args.repo_url)
-    branch = args.branch or get_default_branch(owner, repo)
+    owner, repo = parse_repo_url(repo_url)
+    branch = branch or get_default_branch(owner, repo)
     md = fetch_file_bytes(owner, repo, branch, "tweets.md").decode()
     thread_texts, independent_texts = parse_tweets_md(md)
     if not thread_texts:
         sys.exit("No thread items")
 
     img_bytes = None
-    if not args.no_image and args.image_file:
-        img_bytes = fetch_file_bytes(owner, repo, branch, args.image_file)
+    if not no_image and image_file:
+        img_bytes = fetch_file_bytes(owner, repo, branch, image_file)
 
-    client_info = (args.page_id, args.access_token)
+    client_info = (page_id, access_token)
 
     scheduler = BlockingScheduler(
         executors={"default": ThreadPoolExecutor(max_workers=1)},
@@ -284,8 +221,8 @@ def main(ext_args: object = None):
     now = datetime.now(timezone.utc)
     timeline = []
     # first thread entries
-    if args.schedule_main:
-        times = parse_times(args.schedule_main, len(thread_texts))
+    if schedule_main:
+        times = parse_times(schedule_main, len(thread_texts))
     else:
         times = [now] * len(thread_texts)
     for i, t in enumerate(times):
@@ -293,14 +230,14 @@ def main(ext_args: object = None):
             (
                 t,
                 post_thread_item,
-                [client_info, thread_texts[i], args.link, img_bytes, i],
+                [client_info, thread_texts[i], article_link, img_bytes, i],
                 f"Thread {i + 1}",
             )
         )
     # then independent posts
     if independent_texts:
-        if args.schedule_independent:
-            times2 = parse_times(args.schedule_independent, len(independent_texts))
+        if schedule_independent:
+            times2 = parse_times(schedule_independent, len(independent_texts))
         else:
             times2 = [now] * len(independent_texts)
         for j, t in enumerate(times2):
@@ -308,7 +245,7 @@ def main(ext_args: object = None):
                 (
                     t,
                     post_independent,
-                    [client_info, independent_texts[j], args.link, img_bytes, j],
+                    [client_info, independent_texts[j], article_link, img_bytes, j],
                     f"Independent {j + 1}",
                 )
             )
@@ -342,10 +279,6 @@ def main(ext_args: object = None):
 
     if jobs:
         scheduler.start()
-
-
-if __name__ == "__main__":
-    main()
 
 
 # Running standalone example:
