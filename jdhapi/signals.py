@@ -6,6 +6,7 @@ from django.dispatch import receiver
 
 from jdhapi.models import Article
 from jdhapi.utils.articleUtils import convert_string_to_base64
+from jdhapi.utils.run_github_action import trigger_workflow
 
 
 @receiver(post_save, sender=Article)
@@ -16,6 +17,22 @@ def send_email_for_peer_review_article(sender, instance, created, **kwargs):
         and instance.status == Article.Status.PEER_REVIEW
     ):
         instance.send_email_if_peer_review()
+
+    elif (
+        not created
+        and instance.tracker.has_changed("status")
+        and instance.status == Article.Status.TECHNICAL_REVIEW
+    ):
+        try:
+            trigger_workflow(
+                repo_url=instance.repository_url,
+                workflow_filename="preflight.yml",
+            )
+        except requests.exceptions.HTTPError:
+            trigger_workflow(
+                repo_url=instance.repository_url,
+                workflow_filename="github-actions-preflight.yml",
+            )
 
 
 @receiver(pre_save, sender=Article)
