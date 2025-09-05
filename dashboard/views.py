@@ -163,19 +163,15 @@ def launching_facebook_campaign(request):
 
     repository_url = request.data.get("repository_url")
     article_url = request.data.get("article_url")
-    image_file = request.data.get("image_file")
     schedule_main = request.data.get("schedule_main")
-    schedule_independent = request.data.get("schedule_independent")
 
     data = socialmedia.launch_social_media_facebook(
         repo_url=repository_url,
-        image_file=image_file,
         branch="main",
         article_link=article_url,
         page_id=settings.FACEBOOK_JDH_PAGE_ID,
         access_token=settings.FACEBOOK_JDH_ACCESS_TOKEN,
         schedule_main=schedule_main,
-        schedule_independent=schedule_independent,
     )
 
     return data

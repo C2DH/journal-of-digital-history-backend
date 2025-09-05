@@ -1,4 +1,3 @@
-import argparse
 import json
 import logging
 import requests
@@ -6,9 +5,6 @@ import sys
 import time
 from datetime import datetime, timedelta, timezone
 from urllib.parse import urlparse
-from apscheduler.events import EVENT_JOB_EXECUTED, EVENT_JOB_ERROR, EVENT_JOB_MISSED
-from apscheduler.executors.pool import ThreadPoolExecutor
-from apscheduler.schedulers.blocking import BlockingScheduler
 
 logger = logging.getLogger(__name__)
 
@@ -75,7 +71,12 @@ def fb_upload_photo(page_id: str, token: str, img_bytes: bytes) -> str:
 
 
 def fb_post_feed(
-    page_id: str, token: str, msg: str, link: str = None, img: bytes = None
+    page_id: str,
+    token: str,
+    msg: str,
+    link: str = None,
+    img: bytes = None,
+    scheduled_time: int = None,
 ) -> str:
     payload = {"message": msg}
     if link:
@@ -83,6 +84,9 @@ def fb_post_feed(
     if img:
         mid = fb_upload_photo(page_id, token, img)
         payload["attached_media"] = json.dumps([{"media_fbid": mid}])
+    if scheduled_time:
+        payload["published"] = "false"
+        payload["scheduled_publish_time"] = scheduled_time
     r = requests.post(
         f"{GRAPH}/{page_id}/feed", params={"access_token": token}, data=payload
     )
@@ -175,129 +179,59 @@ def parse_times(arg, count):
 
 def launch_social_media_facebook(
     repo_url: str = "",
-    image_file: str = "",
     branch: str = "",
     article_link: str = "",
     page_id: str = "",
     access_token: str = "",
-    schedule_main="",
-    schedule_independent="",
+    schedule_main: str = "",
 ):
     if repo_url == "" or article_link == "" or page_id == "" or access_token == "":
         raise Exception(
             "repo_url, article_link, page_id and access_token are mandatory"
         )
 
-    no_image = not bool(image_file)
-
     owner, repo = parse_repo_url(repo_url)
     branch = branch or get_default_branch(owner, repo)
     md = fetch_file_bytes(owner, repo, branch, "tweets.md").decode()
-    thread_texts, independent_texts = parse_tweets_md(md)
-    if not thread_texts:
+    text, _ = parse_tweets_md(md)
+    if not text:
         sys.exit("No thread items")
 
+    # Keep only the first numbered thread item (1.) — single post behavior
+    text = [text[0]]
+
+    # Normalize schedules to a single timestamp if a schedule was provided
+    run_val = None
     img_bytes = None
-    if not no_image and image_file:
-        img_bytes = fetch_file_bytes(owner, repo, branch, image_file)
 
-    client_info = (page_id, access_token)
+    scheduled_time = None
+    if schedule_main:
+        run_val = None
+        if isinstance(schedule_main, (list, tuple)):
+            run_val = schedule_main[0] if schedule_main else None
+        elif isinstance(schedule_main, (bytes, bytearray)):
+            arr = json.loads(schedule_main.decode("utf-8"))
+            run_val = arr[0] if isinstance(arr, list) and arr else None
+        elif isinstance(schedule_main, str):
+            try:
+                parsed = json.loads(schedule_main)
+                run_val = parsed[0] if isinstance(parsed, list) and parsed else None
+            except Exception:
+                run_val = schedule_main
+        if run_val:
+            dt = datetime.fromisoformat(run_val)
+            if dt.tzinfo is None:
+                raise ValueError("schedule_main timestamp must include timezone offset")
+            now = datetime.now(timezone.utc)
+            min_time = now + timedelta(minutes=10)
+            if dt < min_time:
+                raise ValueError(
+                    "scheduled_publish_time must be at least 10 minutes in the future"
+                )
+            scheduled_time = int(dt.timestamp())
 
-    scheduler = BlockingScheduler(
-        executors={"default": ThreadPoolExecutor(max_workers=1)},
-        job_defaults={"misfire_grace_time": None},
+    post_id = fb_post_feed(
+        page_id, access_token, text, article_link, img_bytes, scheduled_time
     )
 
-    # listener for the missed jobs, restarts in 10s
-    def on_miss(event):
-        print(f"Job {event.job_id} missed; retrying in 10s...")
-        job = scheduler.get_job(event.job_id)
-        if job:
-            job.modify(next_run_time=datetime.now(timezone.utc) + timedelta(seconds=10))
-
-    scheduler.add_listener(on_miss, EVENT_JOB_MISSED)
-
-    # building unified timeline
-    now = datetime.now(timezone.utc)
-    timeline = []
-    # first thread entries
-    if schedule_main:
-        times = parse_times(schedule_main, len(thread_texts))
-    else:
-        times = [now] * len(thread_texts)
-    for i, t in enumerate(times):
-        timeline.append(
-            (
-                t,
-                post_thread_item,
-                [client_info, thread_texts[i], article_link, img_bytes, i],
-                f"Thread {i + 1}",
-            )
-        )
-    # then independent posts
-    if independent_texts:
-        if schedule_independent:
-            times2 = parse_times(schedule_independent, len(independent_texts))
-        else:
-            times2 = [now] * len(independent_texts)
-        for j, t in enumerate(times2):
-            timeline.append(
-                (
-                    t,
-                    post_independent,
-                    [client_info, independent_texts[j], article_link, img_bytes, j],
-                    f"Independent {j + 1}",
-                )
-            )
-    # sorting by time
-    timeline.sort(key=lambda x: x[0])
-
-    jobs = []
-    total = 0
-    for seq, (rt, func, fargs, label) in enumerate(timeline):
-        run_at = rt + timedelta(milliseconds=seq)
-        if run_at <= now:
-            print(
-                f"Time {run_at.isoformat()} for {label} passed; executing immediately"
-            )
-            func(*fargs)
-        else:
-            jobs.append(scheduler.add_job(func, "date", run_date=run_at, args=fargs))
-            print(f"Scheduled {label} at {run_at.isoformat()}")
-            total += 1
-
-    # shutdown switch
-    if total > 0:
-
-        def on_done(event):
-            nonlocal total
-            total -= 1
-            if total <= 0:
-                scheduler.shutdown(wait=False)
-
-        scheduler.add_listener(on_done, EVENT_JOB_EXECUTED | EVENT_JOB_ERROR)
-
-    if jobs:
-        scheduler.start()
-
-
-# Running standalone example:
-
-# python3 facebook_script.py https://github.com/memerchik/Gqh2Bf5W4TdK
-# --link https://journalofdigitalhistory.org/en/article/Gqh2Bf5W4TdK
-# --page-id PAGE_ID_HERE
-# --access-token TOKEN_HERE
-# --no-image
-# --schedule-main '["2025-07-29T12:46+02:00", "2025-07-29T12:46+02:00", "2025-07-29T12:46+02:00", "2025-07-29T12:48+02:00", "2025-07-29T12:48+02:00"]'
-# --schedule-independent '["2025-07-29T12:47+02:00", "2025-07-29T12:48+02:00", "2025-07-29T12:48+02:00", "2025-07-29T12:48+02:00"]'
-
-# Usage example when imported into another file:
-
-# from facebook_script import launch_social_media_facebook
-
-# launch_social_media_facebook(access_token="TOKEN_HERE",
-#                              page_id=PAGE_ID_HERE,
-#                              article_link="https://journalofdigitalhistory.org/en/article/Gqh2Bf5W4TdK",
-#                              repo_url="https://github.com/memerchik/Gqh2Bf5W4TdK",
-#                              schedule_main=["2025-07-29T12:46+02:00", "2025-07-29T12:46+02:00", "2025-07-29T12:46+02:00", "2025-07-29T12:48+02:00", "2025-07-29T12:48+02:00"],
-#                              schedule_independent=["2025-07-29T12:47+02:00", "2025-07-29T12:48+02:00", "2025-07-29T12:48+02:00", "2025-07-29T12:48+02:00"])
+    return {"post_id": post_id, "scheduled_time": scheduled_time}
