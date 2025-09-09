@@ -1,7 +1,6 @@
 import json
 import logging
 import requests
-import sys
 import time
 from datetime import datetime, timedelta, timezone
 from urllib.parse import urlparse
@@ -195,7 +194,7 @@ def launch_social_media_facebook(
     md = fetch_file_bytes(owner, repo, branch, "tweets.md").decode()
     text, _ = parse_tweets_md(md)
     if not text:
-        sys.exit("No thread items")
+        raise Exception("No thread items")
 
     # Keep only the first numbered thread item (1.) — single post behavior
     text = [text[0]]

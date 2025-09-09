@@ -4,6 +4,7 @@ import requests
 import time
 from bs4 import BeautifulSoup
 from atproto import Client, models
+from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.schedulers.blocking import BlockingScheduler
 from apscheduler.executors.pool import ThreadPoolExecutor
 from apscheduler.events import EVENT_JOB_EXECUTED, EVENT_JOB_ERROR
@@ -21,6 +22,18 @@ BROWSER_UA = (
     "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; Bluesky Cardyb/1.1; "
     "+mailto:support@bsky.app) Chrome/W.X.Y.Z Safari/537.36"
 )
+
+_background_scheduler = None
+
+
+def _get_background_scheduler():
+    global _background_scheduler
+    if _background_scheduler is None:
+        _background_scheduler = BackgroundScheduler(
+            executors={"default": ThreadPoolExecutor(max_workers=1)}
+        )
+        _background_scheduler.start()
+    return _background_scheduler
 
 
 # Parse GitHub URL
@@ -198,7 +211,7 @@ def post_item(client, text, link=None, image_bytes=None, alt=None, index=0):
         state["parent_uri"] = resp.uri
         state["parent_cid"] = resp.cid
 
-        logger.info("Main post URI: {resp.uri}")
+        logger.info(f"Main post URI: {resp.uri}")
 
         time.sleep(BETWEEN_POST_DELAY)
         return resp
@@ -218,14 +231,14 @@ def post_item(client, text, link=None, image_bytes=None, alt=None, index=0):
                 "record": record,
             }
         )
-        logger.info("Reply {index} URI: {resp.uri}")
+        logger.info(f"Reply {index} URI: {resp.uri}")
 
         time.sleep(BETWEEN_POST_DELAY)
         return resp
 
     # Fallback simple post
     resp = client.post(text)
-    logger.info("Simple post URI: {resp.uri}")
+    logger.info(f"Simple post URI: {resp.uri}")
     time.sleep(BETWEEN_POST_DELAY)
 
     return resp
@@ -279,63 +292,45 @@ def parse_times(arg, count):
 
 def launch_social_media_bluesky(
     repo_url: str = "",
-    image_file: str = "",
     branch: str = "",
     article_link: str = "",
     login: str = "",
     password: str = "",
-    schedule_main="",
-    schedule_independent="",
+    schedule_main: str = "",
 ):
 
     if not repo_url or not article_link or not login or not password:
         raise Exception("repo_url, article_link, login and password are required")
 
     owner, repo = parse_repo_url(repo_url)
-    branch = branch or get_default_branch(owner, repo)
+    branch = get_default_branch(owner, repo) or branch
     tweets_md = "tweets.md"
 
     if not file_exists(owner, repo, branch, tweets_md):
         raise Exception("'tweets.md' not found in repo root.")
 
     content = fetch_file_bytes(owner, repo, branch, tweets_md).decode("utf-8")
-    thread_texts, independent_texts = parse_tweets_md(content)
+    thread_texts, _ = parse_tweets_md(content)
 
     if not thread_texts:
         raise Exception("No thread items under 'Post thread:'")
 
     image_bytes = None
     alt = None
-    if image_file:
-        try:
-            # if image_file is an absolute URL, fetch it directly; otherwise fetch from repo
-            image_bytes = fetch_image_from_link(
-                image_file, owner=owner, repo=repo, branch=branch
-            )
-            alt = (
-                image_file
-                if _is_absolute_url(image_file)
-                else image_file.split("/")[-1]
-            )
-        except Exception as e:
-            logger.error("Failed to fetch image %s: %s", image_file, e)
-            raise
 
     client = Client()
     client.login(login, password)
 
-    scheduler = BlockingScheduler(
-        executors={"default": ThreadPoolExecutor(max_workers=1)}
-    )
+    scheduler = _get_background_scheduler()
     jobs = []
 
     # Schedule or post thread
     if schedule_main:
         times = parse_times(schedule_main, len(thread_texts))
-
         now = datetime.now(timezone.utc)
         future = [(idx, dt) for idx, dt in enumerate(times) if dt > now]
         if future:
+
             scheduler.add_listener(
                 make_listener(len(future), scheduler),
                 EVENT_JOB_EXECUTED | EVENT_JOB_ERROR,
@@ -369,57 +364,8 @@ def launch_social_media_bluesky(
             logger.info(f"Posting thread item {idx + 1} now")
             post_item(client, txt, article_link, image_bytes, alt, idx)
 
-    # Schedule or post independent
-    if independent_texts:
-        if schedule_independent:
-            times2 = parse_times(schedule_independent, len(independent_texts))
-            now2 = datetime.now(timezone.utc)
-            future2 = [(idx, dt) for idx, dt in enumerate(times2) if dt > now2]
-            if future2:
-                scheduler.add_listener(
-                    make_listener(len(future2), scheduler),
-                    EVENT_JOB_EXECUTED | EVENT_JOB_ERROR,
-                )
-            for idx, dt in enumerate(times2):
-                if dt <= now2:
-                    logger.info(
-                        (
-                            f"Scheduled time {dt.isoformat()} for independent item "
-                            f"{idx + 1} has passed; posting immediately"
-                        )
-                    )
-                    post_item(
-                        client, independent_texts[idx], article_link, None, None, idx
-                    )
-                else:
-                    job = scheduler.add_job(
-                        post_item,
-                        "date",
-                        run_date=dt,
-                        args=[
-                            client,
-                            independent_texts[idx],
-                            article_link,
-                            None,
-                            None,
-                            idx,
-                        ],
-                    )
-                    jobs.append(job)
-                    logger.info(
-                        f"Scheduled independent item {idx + 1} at {dt.isoformat()}"
-                    )
-        else:
-            for idx, txt in enumerate(independent_texts):
-                logger.info(f"Posting independent item {idx + 1} now")
-                post_item(client, txt, article_link)
-
-    # Run scheduler if jobs pending
-    if jobs:
-        scheduler.start()
-
     return {
         "message": "Bluesky campaign completed",
-        "total_posts": len(thread_texts) + len(independent_texts),
+        "total_posts": len(thread_texts),
         "scheduled_jobs": len(jobs),
     }
