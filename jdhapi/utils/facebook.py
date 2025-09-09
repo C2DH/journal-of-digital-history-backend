@@ -94,70 +94,8 @@ def fb_post_feed(
     return r.json()["id"]
 
 
-def fb_post_comment(post_id: str, token: str, msg: str) -> str:
-    r = requests.post(
-        f"{GRAPH}/{post_id}/comments",
-        params={"access_token": token},
-        data={"message": msg},
-    )
-    if r.status_code != 200:
-        raise Exception(f"Comment creation failed: {r.text}")
-    return r.json()["id"]
-
-
-# wrapper function
-def retry(func, *args, **kwargs):
-    attempt = 1
-    while True:
-        try:
-            return func(*args, **kwargs)
-        except Exception as e:
-            logger.info(f"Retry {attempt} failed: {e}, retrying in 5s...")
-            attempt += 1
-            time.sleep(DELAY_BETWEEN_POSTS)
-
-
-# throttling
-global_last = {"time": None}
-
-
-def throttle():
-    now = time.time()
-    last = global_last["time"]
-    if last:
-        delta = now - last
-        if delta < DELAY_BETWEEN_POSTS:
-            time.sleep(DELAY_BETWEEN_POSTS - delta)
-    global_last["time"] = time.time()
-
-
 # posting
 state = {}
-
-
-def post_thread_item(ci, text, link, img, idx):
-    throttle()
-    page, tok = ci
-    logger.info(f"Thread item {idx + 1}")
-    if idx == 0:
-        pid = retry(fb_post_feed, page, tok, text, link, img)
-        state["parent"] = pid
-        logger.info(f"Main post ID: {pid}")
-    else:
-        parent = state.get("parent")
-        if parent:
-            cid = retry(fb_post_comment, parent, tok, text)
-            logger.info(f"Comment {idx} ID: {cid}")
-        else:
-            logger.info("No parent for comment")
-
-
-def post_independent(ci, text, link, img, idx):
-    throttle()
-    page, tok = ci
-    logger.info(f"Independent {idx + 1}")
-    pid = retry(fb_post_feed, page, tok, text, link, img)
-    logger.info(f"Independent post ID: {pid}")
 
 
 # scheduling
@@ -227,7 +165,7 @@ def launch_social_media_facebook(
                 raise ValueError(
                     "scheduled_publish_time must be at least 10 minutes in the future"
                 )
-            scheduled_time = int(dt.timestamp())
+            scheduled_time = dt
 
     post_id = fb_post_feed(
         page_id, access_token, text, article_link, img_bytes, scheduled_time
