@@ -2,7 +2,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from django.views.decorators.csrf import csrf_exempt
 from drf_recaptcha.fields import ReCaptchaV2Field
 from jdhapi.models import Abstract
-from jdhapi.serializers.abstract import CreateAbstractSerializer, AbstractSlimSerializer
+from jdhapi.serializers.abstract import CreateAbstractSerializer, AbstractSerializer
 from rest_framework import permissions, generics, filters
 from rest_framework.response import Response
 from rest_framework.serializers import Serializer
@@ -15,7 +15,7 @@ class V2Serializer(Serializer):
 class AbstractList(generics.ListCreateAPIView):
     queryset = Abstract.objects.all()
     permission_classes = [permissions.IsAdminUser]
-    serializer_class = AbstractSlimSerializer
+    serializer_class = AbstractSerializer
     filter_backends = [
         DjangoFilterBackend,
         filters.OrderingFilter,
@@ -85,5 +85,5 @@ class AbstractList(generics.ListCreateAPIView):
 
 class AbstractDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Abstract.objects.all()
-    serializer_class = AbstractSlimSerializer
+    serializer_class = AbstractSerializer
     lookup_field = "pid"

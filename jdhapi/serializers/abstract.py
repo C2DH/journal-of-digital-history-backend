@@ -13,7 +13,7 @@ class CreateAbstractSerializer(serializers.ModelSerializer):
         return data
 
 
-class AbstractSerializer(serializers.ModelSerializer):
+class AbstractSlimSerializer(serializers.ModelSerializer):
     authors = serializers.SerializerMethodField()
     datasets = serializers.SerializerMethodField()
 
@@ -57,7 +57,9 @@ class AbstractSerializer(serializers.ModelSerializer):
         return abstract
 
 
-class AbstractSlimSerializer(serializers.ModelSerializer):
+class AbstractSerializer(serializers.ModelSerializer):
+    authors = serializers.SerializerMethodField()
+    datasets = serializers.SerializerMethodField()
     callpaper_title = serializers.SerializerMethodField()
     repository_url = serializers.SerializerMethodField()
     contact_email = serializers.SerializerMethodField()
@@ -88,10 +90,6 @@ class AbstractSlimSerializer(serializers.ModelSerializer):
             "issue",
             "repository_url",
         )
-        extra_kwargs = {
-            "authors": {"required": False},
-            "datasets": {"required": False},
-        }
 
     def get_callpaper_title(self, obj):
         if obj.callpaper:
@@ -138,3 +136,13 @@ class AbstractSlimSerializer(serializers.ModelSerializer):
         if article and article.issue:
             return article.issue.id
         return None
+
+    def get_authors(self, obj):
+        from jdhapi.serializers.author import AuthorSlimSerializer
+
+        return AuthorSlimSerializer(obj.authors.all().order_by("id"), many=True).data
+
+    def get_datasets(self, obj):
+        from jdhapi.serializers.dataset import DatasetSlimSerializer
+
+        return DatasetSlimSerializer(obj.datasets.all(), many=True).data
