@@ -61,6 +61,7 @@ class AbstractSlimSerializer(serializers.ModelSerializer):
     callpaper_title = serializers.SerializerMethodField()
     repository_url = serializers.SerializerMethodField()
     contact_email = serializers.SerializerMethodField()
+    contact_orcid = serializers.SerializerMethodField()
     issue = serializers.SerializerMethodField()
 
     class Meta:
@@ -78,6 +79,7 @@ class AbstractSlimSerializer(serializers.ModelSerializer):
             "contact_lastname",
             "contact_email",
             "contact_firstname",
+            "contact_orcid",
             "language_preference",
             "status",
             "consented",
@@ -116,6 +118,19 @@ class AbstractSlimSerializer(serializers.ModelSerializer):
                 return author.email
             else:
                 return obj.contact_email
+        return None
+
+    def get_contact_orcid(self, obj):
+        # Try to find an author matching the contact's first and last name
+        contact_lastname = getattr(obj, "contact_lastname", None)
+        contact_firstname = getattr(obj, "contact_firstname", None)
+
+        if contact_lastname and contact_firstname:
+            author = obj.authors.filter(
+                lastname=contact_lastname, firstname=contact_firstname
+            ).first()
+            if author and author.orcid:
+                return author.orcid
         return None
 
     def get_issue(self, obj):
