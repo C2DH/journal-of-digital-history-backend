@@ -9,6 +9,7 @@ from apscheduler.schedulers.blocking import BlockingScheduler
 from apscheduler.executors.pool import ThreadPoolExecutor
 from apscheduler.events import EVENT_JOB_EXECUTED, EVENT_JOB_ERROR
 from datetime import datetime, timezone
+from django.conf import settings
 from urllib.parse import urlparse
 
 logger = logging.getLogger(__name__)
@@ -26,6 +27,17 @@ BROWSER_UA = (
 _background_scheduler = None
 
 
+def get_github_headers():
+    """Get GitHub API headers with token authentication if available."""
+    try:
+        headers = {}
+        if hasattr(settings, "GITHUB_ACCESS_TOKEN") and settings.GITHUB_ACCESS_TOKEN:
+            headers["Authorization"] = f"token {settings.GITHUB_ACCESS_TOKEN}"
+        return headers
+    except ImportError:
+        return {}
+
+
 def _get_background_scheduler():
     global _background_scheduler
     if _background_scheduler is None:
@@ -39,7 +51,9 @@ def _get_background_scheduler():
 # Parse GitHub URL
 # Accepts https://github.com/owner/repo or .git suffix
 def parse_repo_url(repo_url: str):
-    p = urlparse(repo_url)
+    p = urlparse(
+        repo_url,
+    )
     path = p.path.lstrip("/").rstrip(".git")
     parts = path.split("/")
     if len(parts) < 2:
@@ -50,7 +64,7 @@ def parse_repo_url(repo_url: str):
 # GitHub API helpers
 def get_default_branch(owner: str, repo: str) -> str:
     api = f"https://api.github.com/repos/{owner}/{repo}"
-    r = requests.get(api)
+    r = requests.get(api, headers=get_github_headers())
     if r.status_code != 200:
         raise ValueError(f"GitHub API error: {r.status_code} {r.text}")
     return r.json()["default_branch"]
@@ -58,7 +72,7 @@ def get_default_branch(owner: str, repo: str) -> str:
 
 def file_exists(owner: str, repo: str, branch: str, path: str) -> bool:
     url = f"https://api.github.com/repos/{owner}/{repo}/contents/{path}"
-    r = requests.head(url, params={"ref": branch})
+    r = requests.head(url, params={"ref": branch}, headers=get_github_headers())
     return r.status_code == 200
 
 
@@ -69,7 +83,7 @@ def url_exists(url: str) -> bool:
 
 def fetch_file_bytes(owner: str, repo: str, branch: str, path: str) -> bytes:
     raw = f"https://raw.githubusercontent.com/{owner}/{repo}/{branch}/{path}"
-    r = requests.get(raw)
+    r = requests.get(raw, headers=get_github_headers())
     if r.status_code != 200:
         raise ValueError(f"Failed to fetch file from {raw}: {r.status_code}")
     return r.content
@@ -83,9 +97,6 @@ def parse_tweets_md(content: str):
     for line in lines:
         if line.strip().startswith("Post thread:"):
             mode = "thread"
-            continue
-        if line.strip().startswith("As independent posts:"):
-            mode = "independent"
             continue
         if not line.strip() or mode is None:
             continue

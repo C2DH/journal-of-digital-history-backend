@@ -4,6 +4,7 @@ import requests
 import time
 from datetime import datetime, timedelta, timezone
 from urllib.parse import urlparse
+from .bluesky import get_github_headers
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +24,9 @@ def parse_repo_url(repo_url: str):
 
 
 def get_default_branch(owner: str, repo: str) -> str:
-    r = requests.get("https://api.github.com/repos/{owner}/{repo}")
+    r = requests.get(
+        "https://api.github.com/repos/{owner}/{repo}", headers=get_github_headers()
+    )
     if r.status_code != 200:
         raise ValueError(
             f"GitHub repo not found: https://api.github.com/repos/{owner}/{repo}"
@@ -33,7 +36,7 @@ def get_default_branch(owner: str, repo: str) -> str:
 
 def fetch_file_bytes(owner: str, repo: str, branch: str, path: str) -> bytes:
     url = f"https://raw.githubusercontent.com/{owner}/{repo}/{branch}/{path}"
-    r = requests.get(url)
+    r = requests.get(url, headers=get_github_headers())
     if r.status_code != 200:
         raise ValueError(f"File not found: {url}")
     return r.content
