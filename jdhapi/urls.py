@@ -34,6 +34,16 @@ urlpatterns = [
         views.ArticleDetail.as_view(),
         name="article-detail",
     ),
+    path(
+        "api/articles/bluesky",
+        views.bluesky_campaign,
+        name="articles-bluesky",
+    ),
+    path(
+        "api/articles/facebook",
+        views.facebook_campaign,
+        name="articles-facebook",
+    ),
     path("api/authors/", views.AuthorList.as_view(), name="author-list"),
     path("api/authors/<int:pk>/", views.AuthorDetail.as_view(), name="author-detail"),
     path(

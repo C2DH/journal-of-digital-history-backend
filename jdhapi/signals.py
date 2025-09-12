@@ -5,7 +5,7 @@ from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 
 from jdhapi.models import Article
-from jdhapi.utils.articleUtils import convert_string_to_base64
+from jdhapi.utils.articles import convert_string_to_base64
 
 
 @receiver(post_save, sender=Article)
