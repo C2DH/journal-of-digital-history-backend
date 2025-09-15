@@ -2,7 +2,7 @@ from django.core.mail import send_mail
 from django.db import transaction
 from jdh.validation import JSONSchema
 from jdhapi.models import Abstract, Author, Dataset, CallForPaper
-from jdhapi.serializers import AbstractSerializer
+from jdhapi.serializers import AbstractSlimSerializer
 from jsonschema.exceptions import ValidationError, SchemaError
 from rest_framework.decorators import (
     api_view,
@@ -209,5 +209,5 @@ def validate_and_submit_abstract(request):
         logger.info("End sending email confirmation")
 
     logger.info("End submit abstract")
-    abstract_serialized = AbstractSerializer(abstract)
+    abstract_serialized = AbstractSlimSerializer(abstract)
     return abstract_serialized.data
