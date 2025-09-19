@@ -2,13 +2,13 @@ from datetime import date
 from django_filters.rest_framework import DjangoFilterBackend
 from jdhapi.serializers.callforpaper import CallForPaperSerializer
 from jdhapi.models import CallForPaper
-from rest_framework import generics
+from rest_framework import generics, filters
 
 
 class CallForPaperList(generics.ListCreateAPIView):
     queryset = CallForPaper.objects.all()
     serializer_class = CallForPaperSerializer
-    filter_backends = [DjangoFilterBackend]
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
     filterset_fields = [
         "id",
         "deadline_abstract",
@@ -16,6 +16,7 @@ class CallForPaperList(generics.ListCreateAPIView):
         "title",
         "folder_name",
     ]
+    ordering_fields = ["id", "deadline_abstract", "deadline_article"]
 
 
 class CallForPaperListOpen(generics.ListCreateAPIView):
