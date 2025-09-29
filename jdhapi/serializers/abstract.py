@@ -13,7 +13,7 @@ class CreateAbstractSerializer(serializers.ModelSerializer):
         return data
 
 
-class AbstractSerializer(serializers.ModelSerializer):
+class AbstractSlimSerializer(serializers.ModelSerializer):
     authors = serializers.SerializerMethodField()
     datasets = serializers.SerializerMethodField()
 
@@ -57,10 +57,13 @@ class AbstractSerializer(serializers.ModelSerializer):
         return abstract
 
 
-class AbstractSlimSerializer(serializers.ModelSerializer):
+class AbstractSerializer(serializers.ModelSerializer):
+    authors = serializers.SerializerMethodField()
+    datasets = serializers.SerializerMethodField()
     callpaper_title = serializers.SerializerMethodField()
     repository_url = serializers.SerializerMethodField()
     contact_email = serializers.SerializerMethodField()
+    contact_orcid = serializers.SerializerMethodField()
     issue = serializers.SerializerMethodField()
 
     class Meta:
@@ -78,6 +81,7 @@ class AbstractSlimSerializer(serializers.ModelSerializer):
             "contact_lastname",
             "contact_email",
             "contact_firstname",
+            "contact_orcid",
             "language_preference",
             "status",
             "consented",
@@ -86,10 +90,6 @@ class AbstractSlimSerializer(serializers.ModelSerializer):
             "issue",
             "repository_url",
         )
-        extra_kwargs = {
-            "authors": {"required": False},
-            "datasets": {"required": False},
-        }
 
     def get_callpaper_title(self, obj):
         if obj.callpaper:
@@ -118,8 +118,31 @@ class AbstractSlimSerializer(serializers.ModelSerializer):
                 return obj.contact_email
         return None
 
+    def get_contact_orcid(self, obj):
+        # Try to find an author matching the contact's first and last name
+        contact_lastname = getattr(obj, "contact_lastname", None)
+        contact_firstname = getattr(obj, "contact_firstname", None)
+
+        if contact_lastname and contact_firstname:
+            author = obj.authors.filter(
+                lastname=contact_lastname, firstname=contact_firstname
+            ).first()
+            if author and author.orcid:
+                return author.orcid
+        return None
+
     def get_issue(self, obj):
         article = Article.objects.filter(abstract__pid=obj.pid).first()
         if article and article.issue:
             return article.issue.id
         return None
+
+    def get_authors(self, obj):
+        from jdhapi.serializers.author import AuthorSlimSerializer
+
+        return AuthorSlimSerializer(obj.authors.all().order_by("id"), many=True).data
+
+    def get_datasets(self, obj):
+        from jdhapi.serializers.dataset import DatasetSlimSerializer
+
+        return DatasetSlimSerializer(obj.datasets.all(), many=True).data

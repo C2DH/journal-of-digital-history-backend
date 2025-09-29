@@ -1,4 +1,4 @@
-from jdhapi.serializers.abstract import AbstractSerializer
+from jdhapi.serializers.abstract import AbstractSlimSerializer
 from rest_framework import serializers
 from ..models.author import Author
 from django_countries.serializer_fields import CountryField
@@ -9,7 +9,7 @@ class CountrySerializer(serializers.Serializer):
 
 
 class AuthorAbstractsSerializer(serializers.ModelSerializer):
-    abstracts = AbstractSerializer(many=True, read_only=True)
+    abstracts = AbstractSlimSerializer(many=True, read_only=True)
 
     class Meta:
         model = Author

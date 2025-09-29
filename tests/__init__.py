@@ -8,3 +8,6 @@ from .jdhapi.views.test_check_github_id import *
 from .jdhapi.views.test_search_abstract import *
 from .jdhapi.views.abstracts.test_update_abstract import *
 from .jdhapi.views.articles.test_update_article import *
+from .jdhapi.views.articles.test_social_media import *
+from .jdhapi.utils.test_bluesky import *
+from .jdhapi.utils.test_facebook import *
