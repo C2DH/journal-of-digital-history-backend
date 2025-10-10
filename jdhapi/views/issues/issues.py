@@ -1,5 +1,6 @@
-from jdhapi.models import Article, Issue
+from jdhapi.models import Article, Issue, Abstract
 from jdhapi.serializers.article import ArticleSerializer
+from jdhapi.serializers.abstract import AbstractSerializer
 from rest_framework import generics, filters
 from jdhapi.serializers.issue import IssueSerializer
 from django_filters.rest_framework import DjangoFilterBackend
@@ -43,3 +44,16 @@ class IssueArticlesList(generics.ListAPIView):
         pid = self.kwargs["pid"]
         issue = get_object_or_404(Issue, pid=pid)
         return Article.objects.filter(issue=issue)
+    
+    
+    
+class IssueAbstractsList(generics.ListAPIView):
+    serializer_class = AbstractSerializer
+    
+    def get_queryset(self):
+        pid =self.kwargs["pid"]
+        issue = get_object_or_404(Issue, pid=pid)
+        articles = Article.objects.filter(issue=issue)
+        abstract_pids = articles.values_list("abstract__pid", flat=True)
+        return Abstract.objects.filter(pid__in=abstract_pids)
+    
