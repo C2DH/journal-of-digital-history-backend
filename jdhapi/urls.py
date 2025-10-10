@@ -72,6 +72,7 @@ urlpatterns = [
     path("api/generate-notebook/<str:pid>", views.generate_notebook),
     path("api/issues/", views.IssueList.as_view(), name="issue-list"),
     path("api/issues/<str:pid>/", views.IssueDetail.as_view(), name="issue-detail"),
+    path("api/issues/<str:pid>/articles/",views.IssueArticlesList.as_view(),name="issue-articles-list"),
     path("api/login/", views.CustomLoginView.as_view(), name="custom-login"),
     path("api/logout/", views.custom_logout, name="custom_logout"),
     path("api/tags/", views.TagList.as_view(), name="tag-list"),
