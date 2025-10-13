@@ -15,6 +15,7 @@ def api_root(request, format=None):
             "abstract-detail": reverse("abstract-detail", args=["example-pid"], request=request, format=format),
             "articles": reverse("article-list", request=request, format=format),
             "article-detail": reverse("article-detail", args=["example-pid"], request=request, format=format),
+            "article-status": reverse("article-status", args=["example-pid"], request=request, format=format),
             "issues": reverse("issue-list", request=request, format=format),
             "issue-detail": reverse("issue-detail", args=["example-pid"], request=request, format=format),
             "issue-articles": reverse("issue-articles-list", args=["example-pid"], request=request, format=format),
