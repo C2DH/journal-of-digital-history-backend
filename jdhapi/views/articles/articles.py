@@ -3,7 +3,12 @@ from jdhapi.serializers.article import ArticleSerializer
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import generics, filters
 from rest_framework.permissions import BasePermission
-
+from django.shortcuts import get_object_or_404
+from jdhapi.views.articles.status_handlers import TechnicalReviewHandler
+from rest_framework.permissions import IsAdminUser
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework.permissions import IsAdminUser
 
 class IsOwnerFilterBackend(filters.BaseFilterBackend):
     """
@@ -82,3 +87,20 @@ class ArticleDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Article.objects.all()
     serializer_class = ArticleSerializer
     lookup_field = "abstract__pid"
+
+
+
+class ArticleStatus(APIView):
+    permission_classes = [IsAdminUser]
+    STATUS_HANDLERS = {
+        'TECHNICAL_REVIEW': TechnicalReviewHandler(),
+    }
+    
+    def patch(self, request, abstract__pid):
+        article = get_object_or_404(Article, abstract__pid=abstract__pid)
+        new_status = request.data.get('status')
+        
+        handler = self.STATUS_HANDLERS.get(new_status)
+        if handler:
+            return handler.handle(article, request)
+        return Response({"error": "Invalid status"}, status=400)
