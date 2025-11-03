@@ -54,27 +54,42 @@ def getAuthorDateFromReference(ref):
 
 def getReferencesFromJupyterNotebook(notebook):
     metadata = notebook.get("metadata")
-    references = []
+    references = {}
     bibliography = []
     inline_references_table = dict()
     try:
+        # Check for cite2c format
         cite2c = metadata.get("cite2c", {})
-        references = cite2c.get("citations", {})
-        # logger.info("Loging references ---> {0}".format(references))
-        bib_source = CiteProcJSON(references.values())
-        bib_style = CitationStylesStyle(
-            "jdhseo/styles/modern-language-association.csl", validate=False
-        )
-        bib = CitationStylesBibliography(bib_style, bib_source, formatter.html)
-        # register citation
-        for key, entry in bib_source.items():
-            # exclude  "undefined" due to bug cite2c
-            if key != "undefined":
-                bib.register(Citation([CitationItem(key)]))
-        for item in bib.bibliography():
-            bibliography.append(str(item))
-        for k, entry in references.items():
-            inline_references_table[k] = getAuthorDateFromReference(entry)
+        cite2c_citations = cite2c.get("citations", {})
+        if cite2c_citations:
+            references.update(cite2c_citations)
+        
+        # Check for citation-manager format
+        citation_manager = metadata.get("citation-manager", {})
+        citation_items = citation_manager.get("items", {})
+        if citation_items:
+            # citation-manager may have nested structure like "zotero"
+            for source_key, source_items in citation_items.items():
+                if isinstance(source_items, dict):
+                    references.update(source_items)
+        
+        # Only process if we have references
+        if references:
+            # logger.info("Loging references ---> {0}".format(references))
+            bib_source = CiteProcJSON(references.values())
+            bib_style = CitationStylesStyle(
+                "jdhseo/styles/modern-language-association.csl", validate=False
+            )
+            bib = CitationStylesBibliography(bib_style, bib_source, formatter.html)
+            # register citation
+            for key, entry in bib_source.items():
+                # exclude  "undefined" due to bug cite2c
+                if key != "undefined":
+                    bib.register(Citation([CitationItem(key)]))
+            for item in bib.bibliography():
+                bibliography.append(str(item))
+            for k, entry in references.items():
+                inline_references_table[k] = getAuthorDateFromReference(entry)
     except Exception as e:
         logger.exception(e)
         pass
@@ -85,7 +100,6 @@ def getReferencesFromJupyterNotebook(notebook):
         sorted(bibliography, key=lambda x: re.sub("[^A-Za-z]+", "", x).lower()),
         inline_references_table,
     )
-
 
 def parseJupyterNotebook(notebook, merged_authors_affiliations):
     cells = notebook.get("cells")
