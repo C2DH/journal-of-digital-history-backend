@@ -20,7 +20,7 @@ from django.conf import settings  # import the settings file
 logger = logging.getLogger(__name__)
 
 
-def getAuthorDateFromReference(ref):
+def getAuthorDateFromReference(ref):    
     year = ""
     author = None
     editor = None
@@ -75,7 +75,7 @@ def getReferencesFromJupyterNotebook(notebook):
         
         # Only process if we have references
         if references:
-            # logger.info("Loging references ---> {0}".format(references))
+            #logger.info("Loging references ---> {0}".format(references))
             bib_source = CiteProcJSON(references.values())
             bib_style = CitationStylesStyle(
                 "jdhseo/styles/modern-language-association.csl", validate=False
@@ -117,16 +117,26 @@ def parseJupyterNotebook(notebook, merged_authors_affiliations):
             return f"{m[1]}"
         return parsed_ref
     
+    
+    def formatSimplyCitations(m):
+        raw_citation_key = m.group(1)
+        display_text = m.group(2)
+        if display_text:
+            # remove any parentheses and surrounding whitespace, then wrap in italics using asterisks
+            cleaned = display_text.replace("(", "").replace(")", "").strip()
+            return f"*{cleaned}*"
+        return raw_citation_key
+        
+    
     def formatCitationManager(m):               
         # m[1] is the citation key from the href="#citation_key" 
         # m[2] is the display text between the <a> tags
         raw_citation_key = m.group(1)
         display_text = m.group(2)
-            
         # URL decode the citation key
         decoded_citation_key = urllib.parse.unquote(raw_citation_key)
-        print(f"Raw citation key: '{raw_citation_key}'")
-        print(f"Decoded citation key: '{decoded_citation_key}'")
+        #print(f"Raw citation key: '{raw_citation_key}'")
+        #print(f"Decoded citation key: '{decoded_citation_key}'")
             
         # Extract the actual reference ID from the decoded key
         # Format appears to be: zotero|20666258/9F2REN36
@@ -139,8 +149,8 @@ def parseJupyterNotebook(notebook, merged_authors_affiliations):
         else:
             citation_key = decoded_citation_key
             
-        print(f"Extracted citation key: '{citation_key}'")
-        print(f"Available refs keys: {list(refs.keys())}")
+        #print(f"Extracted citation key: '{citation_key}'")
+      
             
         # Try exact match first
         parsed_ref = refs.get(citation_key, None)
@@ -148,19 +158,19 @@ def parseJupyterNotebook(notebook, merged_authors_affiliations):
         # If no exact match, try to find a partial match based on the number part
         if parsed_ref is None and citation_key and '/' in citation_key:
             number_part = citation_key.split('/')[0]  # Get "20666258" from "20666258/9F2REN36"
-            print(f"Trying to match by number part: '{number_part}'")
+            #print(f"Trying to match by number part: '{number_part}'")
                 
             for key, value in refs.items():
                 if key.startswith(number_part):
                     parsed_ref = value
-                    print(f"Found partial match: '{key}' for number '{number_part}'")
+                    #print(f"Found partial match: '{key}' for number '{number_part}'")
                     break
             
         if parsed_ref is None:
-            print(f"No reference found for key: '{citation_key}'")
+            #print(f"No reference found for key: '{citation_key}'")
             return display_text if display_text else raw_citation_key
             
-        print("citation citation-manager: " + parsed_ref)
+        #print("citation citation-manager: " + parsed_ref)
         return parsed_ref 
 
     # Build contributor array based on merged_authors_affiliations
@@ -184,10 +194,15 @@ def parseJupyterNotebook(notebook, merged_authors_affiliations):
             formatInlineCitations,
             source,
         )
-        source = re.sub(
+        """ source = re.sub(
         r"<cite\s+id=[\"'][^\"']*[\"']><a\s+href=[\"']#([^\"']+)[\"']>([^<]*)</a></cite>",
         formatCitationManager,
-        source,
+        source, 
+        )  """ 
+        source = re.sub(
+        r"<cite\s+id=[\"'][^\"']*[\"']><a\s+href=[\"']#([^\"']+)[\"']>([^<]*)</a></cite>",
+        formatSimplyCitations,
+        source, 
         ) 
         if "hidden" in tags or "contributor" in tags:
             continue
