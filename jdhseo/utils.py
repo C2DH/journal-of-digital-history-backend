@@ -4,7 +4,7 @@ import logging
 import base64
 import qrcode
 import requests
-
+import urllib.parse
 from io import BytesIO
 from citeproc import formatter
 from citeproc import Citation
@@ -20,7 +20,7 @@ from django.conf import settings  # import the settings file
 logger = logging.getLogger(__name__)
 
 
-def getAuthorDateFromReference(ref):
+def getAuthorDateFromReference(ref):    
     year = ""
     author = None
     editor = None
@@ -54,27 +54,42 @@ def getAuthorDateFromReference(ref):
 
 def getReferencesFromJupyterNotebook(notebook):
     metadata = notebook.get("metadata")
-    references = []
+    references = {}
     bibliography = []
     inline_references_table = dict()
     try:
+        # Check for cite2c format
         cite2c = metadata.get("cite2c", {})
-        references = cite2c.get("citations", {})
-        # logger.info("Loging references ---> {0}".format(references))
-        bib_source = CiteProcJSON(references.values())
-        bib_style = CitationStylesStyle(
-            "jdhseo/styles/modern-language-association.csl", validate=False
-        )
-        bib = CitationStylesBibliography(bib_style, bib_source, formatter.html)
-        # register citation
-        for key, entry in bib_source.items():
-            # exclude  "undefined" due to bug cite2c
-            if key != "undefined":
-                bib.register(Citation([CitationItem(key)]))
-        for item in bib.bibliography():
-            bibliography.append(str(item))
-        for k, entry in references.items():
-            inline_references_table[k] = getAuthorDateFromReference(entry)
+        cite2c_citations = cite2c.get("citations", {})
+        if cite2c_citations:
+            references.update(cite2c_citations)
+        
+        # Check for citation-manager format
+        citation_manager = metadata.get("citation-manager", {})
+        citation_items = citation_manager.get("items", {})
+        if citation_items:
+            # citation-manager may have nested structure like "zotero"
+            for source_key, source_items in citation_items.items():
+                if isinstance(source_items, dict):
+                    references.update(source_items)
+        
+        # Only process if we have references
+        if references:
+            #logger.info("Loging references ---> {0}".format(references))
+            bib_source = CiteProcJSON(references.values())
+            bib_style = CitationStylesStyle(
+                "jdhseo/styles/modern-language-association.csl", validate=False
+            )
+            bib = CitationStylesBibliography(bib_style, bib_source, formatter.html)
+            # register citation
+            for key, entry in bib_source.items():
+                # exclude  "undefined" due to bug cite2c
+                if key != "undefined":
+                    bib.register(Citation([CitationItem(key)]))
+            for item in bib.bibliography():
+                bibliography.append(str(item))
+            for k, entry in references.items():
+                inline_references_table[k] = getAuthorDateFromReference(entry)
     except Exception as e:
         logger.exception(e)
         pass
@@ -85,7 +100,6 @@ def getReferencesFromJupyterNotebook(notebook):
         sorted(bibliography, key=lambda x: re.sub("[^A-Za-z]+", "", x).lower()),
         inline_references_table,
     )
-
 
 def parseJupyterNotebook(notebook, merged_authors_affiliations):
     cells = notebook.get("cells")
@@ -102,6 +116,62 @@ def parseJupyterNotebook(notebook, merged_authors_affiliations):
         if parsed_ref is None:
             return f"{m[1]}"
         return parsed_ref
+    
+    
+    def formatSimplyCitations(m):
+        raw_citation_key = m.group(1)
+        display_text = m.group(2)
+        if display_text:
+            # remove any parentheses and surrounding whitespace, then wrap in italics using asterisks
+            cleaned = display_text.replace("(", "").replace(")", "").strip()
+            return f"*{cleaned}*"
+        return raw_citation_key
+        
+    
+    def formatCitationManager(m):               
+        # m[1] is the citation key from the href="#citation_key" 
+        # m[2] is the display text between the <a> tags
+        raw_citation_key = m.group(1)
+        display_text = m.group(2)
+        # URL decode the citation key
+        decoded_citation_key = urllib.parse.unquote(raw_citation_key)
+        #print(f"Raw citation key: '{raw_citation_key}'")
+        #print(f"Decoded citation key: '{decoded_citation_key}'")
+            
+        # Extract the actual reference ID from the decoded key
+        # Format appears to be: zotero|20666258/9F2REN36
+        citation_key = None
+        if '|' in decoded_citation_key:
+            # Split by pipe and take the second part (the actual reference ID)
+            parts = decoded_citation_key.split('|')
+            if len(parts) > 1:
+                citation_key = parts[1]  # This should be something like "20666258/9F2REN36"
+        else:
+            citation_key = decoded_citation_key
+            
+        #print(f"Extracted citation key: '{citation_key}'")
+      
+            
+        # Try exact match first
+        parsed_ref = refs.get(citation_key, None)
+            
+        # If no exact match, try to find a partial match based on the number part
+        if parsed_ref is None and citation_key and '/' in citation_key:
+            number_part = citation_key.split('/')[0]  # Get "20666258" from "20666258/9F2REN36"
+            #print(f"Trying to match by number part: '{number_part}'")
+                
+            for key, value in refs.items():
+                if key.startswith(number_part):
+                    parsed_ref = value
+                    #print(f"Found partial match: '{key}' for number '{number_part}'")
+                    break
+            
+        if parsed_ref is None:
+            #print(f"No reference found for key: '{citation_key}'")
+            return display_text if display_text else raw_citation_key
+            
+        #print("citation citation-manager: " + parsed_ref)
+        return parsed_ref 
 
     # Build contributor array based on merged_authors_affiliations
     contributor = []
@@ -124,6 +194,16 @@ def parseJupyterNotebook(notebook, merged_authors_affiliations):
             formatInlineCitations,
             source,
         )
+        """ source = re.sub(
+        r"<cite\s+id=[\"'][^\"']*[\"']><a\s+href=[\"']#([^\"']+)[\"']>([^<]*)</a></cite>",
+        formatCitationManager,
+        source, 
+        )  """ 
+        source = re.sub(
+        r"<cite\s+id=[\"'][^\"']*[\"']><a\s+href=[\"']#([^\"']+)[\"']>([^<]*)</a></cite>",
+        formatSimplyCitations,
+        source, 
+        ) 
         if "hidden" in tags or "contributor" in tags:
             continue
         if "title" in tags:

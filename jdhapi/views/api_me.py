@@ -13,6 +13,7 @@ def api_me(request):
         {
             "username": request.user.username,
             "first_name": request.user.first_name,
+            "id": request.user.id,
             "csrf_token": get_token(request),
             "session_id": request.session.session_key,
         }
