@@ -34,6 +34,7 @@ urlpatterns = [
         views.ArticleDetail.as_view(),
         name="article-detail",
     ),
+    path("api/articles/advance", views.AdvanceArticleList.as_view(), name="advance-article-list"),
     path(
         "api/articles/bluesky",
         views.bluesky_campaign,
