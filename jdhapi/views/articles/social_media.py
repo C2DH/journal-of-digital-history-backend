@@ -1,4 +1,6 @@
+import base64
 import logging
+import requests
 from django.conf import settings
 from jsonschema.exceptions import ValidationError
 from rest_framework.decorators import (
@@ -121,6 +123,37 @@ def facebook_campaign(request):
             },
             status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             content_type="application/json",
+        )
+
+
+@api_view(["GET"])
+@permission_classes([IsAdminUser])
+def get_tweet_md_file(request):
+    """
+    Helper function to get the tweet markdown file path from the request.
+    """
+    pid = request.GET.get("pid")
+    if not pid:
+        raise ValueError("Article PID is required.")
+
+    url = f"https://api.github.com/repos/jdh-observer/{pid}/contents/tweets.md"
+
+    try:
+        response = requests.get(url)
+
+        if response.status_code == 200:
+            content = response.json()["content"]
+            decoded_tweet = base64.b64decode(content).decode("utf-8")
+
+            return Response({"content": decoded_tweet}, status=200)
+        elif response.status_code == 404:
+            raise ValueError(f"Tweet.md file not found for article ID '{pid}'.")
+        else:
+            raise ValueError("Unexpected error occurred while contacting GitHub API.")
+
+    except requests.exceptions.RequestException as e:
+        return Response(
+            {"error": "Failed to get Tweet.md", "details": str(e)}, status=500
         )
 
 
