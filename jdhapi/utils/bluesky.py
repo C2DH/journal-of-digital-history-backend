@@ -8,7 +8,8 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.schedulers.blocking import BlockingScheduler
 from apscheduler.executors.pool import ThreadPoolExecutor
 from apscheduler.events import EVENT_JOB_EXECUTED, EVENT_JOB_ERROR
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
+from zoneinfo import ZoneInfo
 from django.conf import settings
 from urllib.parse import urlparse
 
@@ -141,44 +142,6 @@ def fetch_image(url: str) -> bytes:
     return r.content
 
 
-def _is_absolute_url(value: str) -> bool:
-    p = urlparse(value or "")
-    return bool(p.scheme and p.netloc)
-
-
-def fetch_image_from_link(
-    link: str, owner: str = None, repo: str = None, branch: str = None
-) -> bytes:
-    """
-    Fetch image bytes from either:
-      - an absolute URL (https://...)
-      - a path inside the GitHub repo (owner/repo/branch/path) — when owner/repo/branch provided
-    Raises ValueError on failure or when content-type is not an image.
-    """
-    if _is_absolute_url(link):
-        headers = {"User-Agent": BROWSER_UA}
-        r = requests.get(link, headers=headers, timeout=10, allow_redirects=True)
-        if r.status_code != 200:
-            raise ValueError(f"Failed to fetch image URL {link}: {r.status_code}")
-        content_type = r.headers.get("Content-Type", "")
-        if "image" not in content_type:
-            raise ValueError(
-                f"URL does not point to an image: {link} (Content-Type: {content_type})"
-            )
-        return r.content
-
-    # treat as repo-relative path when repo info provided
-    if owner and repo and branch:
-        try:
-            return fetch_file_bytes(owner, repo, branch, link)
-        except Exception as e:
-            raise ValueError(f"Failed to fetch image from repo path '{link}': {e}")
-
-    raise ValueError(
-        "Image link must be an absolute URL or a repo path with owner/repo/branch supplied"
-    )
-
-
 # Get CID for replies
 def get_record_cid(client, uri: str) -> str:
     did, collection, rkey = uri[len("at://") :].split("/")[:3]
@@ -282,9 +245,25 @@ def parse_times(arg, count):
     else:
         raise TypeError("Schedule must be a JSON string or a list of timestamps")
 
-    if not isinstance(arr, list) or len(arr) != count:
+    if not isinstance(arr, list):
         raise ValueError(f"Schedule list must contain exactly {count} timestamps.")
-
+    if len(arr) != count:
+        if len(arr) == 1:
+            try:
+                base_dt = datetime.fromisoformat(arr[0])
+            except Exception:
+                raise TypeError(f"Invalid timestamp format: {arr[0]}")
+            arr = [(base_dt + timedelta(minutes=i)).isoformat() for i in range(count)]
+        elif len(arr) < count:
+            try:
+                last_dt = datetime.fromisoformat(arr[-1])
+            except Exception:
+                raise TypeError(f"Invalid timestamp format: {arr[-1]}")
+            while len(arr) < count:
+                last_dt = last_dt + timedelta(minutes=1)
+                arr.append(last_dt.isoformat())
+        else:
+            raise ValueError(f"Schedule list has {len(arr)} timestamps but expected {count}")
     times = []
     for s in arr:
         try:
@@ -339,7 +318,12 @@ def launch_social_media_bluesky(
     if schedule_main:
         times = parse_times(schedule_main, len(thread_texts))
         now = datetime.now(timezone.utc)
+        
+        # Handle CEST/CET timezone 
+        now = datetime.now(ZoneInfo("Europe/Luxembourg"))
+   
         future = [(idx, dt) for idx, dt in enumerate(times) if dt > now]
+  
         if future:
 
             scheduler.add_listener(
@@ -348,6 +332,7 @@ def launch_social_media_bluesky(
             )
         for idx, dt in enumerate(times):
             if dt <= now:
+               
                 logger.info(
                     f"Scheduled time {dt.isoformat()} for thread item {idx + 1} has passed; posting immediately"
                 )
