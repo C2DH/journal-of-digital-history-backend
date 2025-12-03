@@ -8,7 +8,9 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.schedulers.blocking import BlockingScheduler
 from apscheduler.executors.pool import ThreadPoolExecutor
 from apscheduler.events import EVENT_JOB_EXECUTED, EVENT_JOB_ERROR
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
+from zoneinfo import ZoneInfo
+from django.conf import settings
 from urllib.parse import urlparse
 
 logger = logging.getLogger(__name__)
@@ -26,6 +28,17 @@ BROWSER_UA = (
 _background_scheduler = None
 
 
+def get_github_headers():
+    """Get GitHub API headers with token authentication if available."""
+    try:
+        headers = {}
+        if hasattr(settings, "GITHUB_ACCESS_TOKEN") and settings.GITHUB_ACCESS_TOKEN:
+            headers["Authorization"] = f"token {settings.GITHUB_ACCESS_TOKEN}"
+        return headers
+    except ImportError:
+        return {}
+
+
 def _get_background_scheduler():
     global _background_scheduler
     if _background_scheduler is None:
@@ -39,7 +52,9 @@ def _get_background_scheduler():
 # Parse GitHub URL
 # Accepts https://github.com/owner/repo or .git suffix
 def parse_repo_url(repo_url: str):
-    p = urlparse(repo_url)
+    p = urlparse(
+        repo_url,
+    )
     path = p.path.lstrip("/").rstrip(".git")
     parts = path.split("/")
     if len(parts) < 2:
@@ -50,7 +65,7 @@ def parse_repo_url(repo_url: str):
 # GitHub API helpers
 def get_default_branch(owner: str, repo: str) -> str:
     api = f"https://api.github.com/repos/{owner}/{repo}"
-    r = requests.get(api)
+    r = requests.get(api, headers=get_github_headers())
     if r.status_code != 200:
         raise ValueError(f"GitHub API error: {r.status_code} {r.text}")
     return r.json()["default_branch"]
@@ -58,7 +73,7 @@ def get_default_branch(owner: str, repo: str) -> str:
 
 def file_exists(owner: str, repo: str, branch: str, path: str) -> bool:
     url = f"https://api.github.com/repos/{owner}/{repo}/contents/{path}"
-    r = requests.head(url, params={"ref": branch})
+    r = requests.head(url, params={"ref": branch}, headers=get_github_headers())
     return r.status_code == 200
 
 
@@ -69,7 +84,7 @@ def url_exists(url: str) -> bool:
 
 def fetch_file_bytes(owner: str, repo: str, branch: str, path: str) -> bytes:
     raw = f"https://raw.githubusercontent.com/{owner}/{repo}/{branch}/{path}"
-    r = requests.get(raw)
+    r = requests.get(raw, headers=get_github_headers())
     if r.status_code != 200:
         raise ValueError(f"Failed to fetch file from {raw}: {r.status_code}")
     return r.content
@@ -83,9 +98,6 @@ def parse_tweets_md(content: str):
     for line in lines:
         if line.strip().startswith("Post thread:"):
             mode = "thread"
-            continue
-        if line.strip().startswith("As independent posts:"):
-            mode = "independent"
             continue
         if not line.strip() or mode is None:
             continue
@@ -128,44 +140,6 @@ def fetch_image(url: str) -> bytes:
     if r.status_code != 200 or "image" not in r.headers.get("Content-Type", ""):
         raise ValueError(f"Failed to fetch image from {url}")
     return r.content
-
-
-def _is_absolute_url(value: str) -> bool:
-    p = urlparse(value or "")
-    return bool(p.scheme and p.netloc)
-
-
-def fetch_image_from_link(
-    link: str, owner: str = None, repo: str = None, branch: str = None
-) -> bytes:
-    """
-    Fetch image bytes from either:
-      - an absolute URL (https://...)
-      - a path inside the GitHub repo (owner/repo/branch/path) — when owner/repo/branch provided
-    Raises ValueError on failure or when content-type is not an image.
-    """
-    if _is_absolute_url(link):
-        headers = {"User-Agent": BROWSER_UA}
-        r = requests.get(link, headers=headers, timeout=10, allow_redirects=True)
-        if r.status_code != 200:
-            raise ValueError(f"Failed to fetch image URL {link}: {r.status_code}")
-        content_type = r.headers.get("Content-Type", "")
-        if "image" not in content_type:
-            raise ValueError(
-                f"URL does not point to an image: {link} (Content-Type: {content_type})"
-            )
-        return r.content
-
-    # treat as repo-relative path when repo info provided
-    if owner and repo and branch:
-        try:
-            return fetch_file_bytes(owner, repo, branch, link)
-        except Exception as e:
-            raise ValueError(f"Failed to fetch image from repo path '{link}': {e}")
-
-    raise ValueError(
-        "Image link must be an absolute URL or a repo path with owner/repo/branch supplied"
-    )
 
 
 # Get CID for replies
@@ -271,9 +245,25 @@ def parse_times(arg, count):
     else:
         raise TypeError("Schedule must be a JSON string or a list of timestamps")
 
-    if not isinstance(arr, list) or len(arr) != count:
+    if not isinstance(arr, list):
         raise ValueError(f"Schedule list must contain exactly {count} timestamps.")
-
+    if len(arr) != count:
+        if len(arr) == 1:
+            try:
+                base_dt = datetime.fromisoformat(arr[0])
+            except Exception:
+                raise TypeError(f"Invalid timestamp format: {arr[0]}")
+            arr = [(base_dt + timedelta(minutes=i)).isoformat() for i in range(count)]
+        elif len(arr) < count:
+            try:
+                last_dt = datetime.fromisoformat(arr[-1])
+            except Exception:
+                raise TypeError(f"Invalid timestamp format: {arr[-1]}")
+            while len(arr) < count:
+                last_dt = last_dt + timedelta(minutes=1)
+                arr.append(last_dt.isoformat())
+        else:
+            raise ValueError(f"Schedule list has {len(arr)} timestamps but expected {count}")
     times = []
     for s in arr:
         try:
@@ -328,7 +318,12 @@ def launch_social_media_bluesky(
     if schedule_main:
         times = parse_times(schedule_main, len(thread_texts))
         now = datetime.now(timezone.utc)
+        
+        # Handle CEST/CET timezone 
+        now = datetime.now(ZoneInfo("Europe/Luxembourg"))
+   
         future = [(idx, dt) for idx, dt in enumerate(times) if dt > now]
+  
         if future:
 
             scheduler.add_listener(
@@ -337,6 +332,7 @@ def launch_social_media_bluesky(
             )
         for idx, dt in enumerate(times):
             if dt <= now:
+               
                 logger.info(
                     f"Scheduled time {dt.isoformat()} for thread item {idx + 1} has passed; posting immediately"
                 )

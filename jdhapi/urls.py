@@ -45,6 +45,8 @@ urlpatterns = [
         views.facebook_campaign,
         name="articles-facebook",
     ),
+    path("api/articles/cover", views.get_social_cover_image, name="articles-social-media-cover"),
+    path("api/articles/tweet", views.get_tweet_md_file, name="articles-tweet"),
     path("api/authors/", views.AuthorList.as_view(), name="author-list"),
     path("api/authors/<int:pk>/", views.AuthorDetail.as_view(), name="author-detail"),
     path(

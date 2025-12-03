@@ -1,4 +1,8 @@
+import base64
+import io
 import logging
+import requests
+from PIL import Image
 from django.conf import settings
 from jsonschema.exceptions import ValidationError
 from rest_framework.decorators import (
@@ -8,7 +12,7 @@ from rest_framework.decorators import (
 from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
 from rest_framework import status
-from jdhapi.utils.bluesky import launch_social_media_bluesky
+from jdhapi.utils.bluesky import launch_social_media_bluesky, fetch_image, fetch_link_metadata
 from jdhapi.utils.facebook import launch_social_media_facebook
 
 logger = logging.getLogger(__name__)
@@ -123,6 +127,70 @@ def facebook_campaign(request):
             content_type="application/json",
         )
 
+
+@api_view(["GET"])
+@permission_classes([IsAdminUser])
+def get_tweet_md_file(request):
+    """
+    Helper function to get the tweet markdown file path from the request.
+    """
+    pid = request.GET.get("pid")
+    if not pid:
+        raise ValueError("Article PID is required.")
+
+    url = f"https://api.github.com/repos/jdh-observer/{pid}/contents/tweets.md"
+    headers = {
+        "Authorization": f"Bearer {settings.GITHUB_ACCESS_TOKEN}"  
+    }
+
+    try:
+        response = requests.get(url, headers=headers)
+
+        if response.status_code == 200:
+            content = response.json()["content"]
+            decoded_tweet = base64.b64decode(content).decode("utf-8")
+
+            return Response({"content": decoded_tweet}, status=200)
+        elif response.status_code == 404:
+            raise ValueError(f"Tweet.md file not found for article ID '{pid}'.")
+        else:
+            raise ValueError("Unexpected error occurred while contacting GitHub API.")
+
+    except requests.exceptions.RequestException as e:
+        return Response(
+            {"error": "Failed to get Tweet.md", "details": str(e)}, status=500
+        )
+    
+@api_view(["GET"])
+@permission_classes([IsAdminUser])
+def get_social_cover_image(request):
+    """
+    Helper function to get the social media cover image path from the request.
+    """
+    pid = request.GET.get("pid")
+    if not pid:
+        raise ValueError("Article PID is required.")
+
+    url = f"https://api.github.com/repos/jdh-observer/{pid}/contents/socialmediacover.png?ref=main"
+    headers = {
+        "Authorization": f"Bearer {settings.GITHUB_ACCESS_TOKEN}"  
+    }
+
+    try:
+        response = requests.get(url, headers=headers)
+
+        if response.status_code == 200:
+            return Response({"download_url": response.json()["download_url"]}, status=200)
+        elif response.status_code == 404:
+            raise ValueError(f"socialmediacover.png file not found for article ID '{pid}'.")
+        else:
+            raise ValueError("Unexpected error occurred while contacting GitHub API.")
+
+
+    except requests.exceptions.RequestException as e:
+        return Response(
+            {"error": "Failed to get socialmediacover.png", "details": str(e)}, status=500
+        )
 
 def launching_bluesky_campaign(request):
     """
