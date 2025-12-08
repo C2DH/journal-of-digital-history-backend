@@ -5,7 +5,6 @@ import time
 from bs4 import BeautifulSoup
 from atproto import Client, models
 from apscheduler.schedulers.background import BackgroundScheduler
-from apscheduler.schedulers.blocking import BlockingScheduler
 from apscheduler.executors.pool import ThreadPoolExecutor
 from apscheduler.events import EVENT_JOB_EXECUTED, EVENT_JOB_ERROR
 from datetime import datetime, timezone, timedelta
@@ -41,11 +40,14 @@ def get_github_headers():
 
 def _get_background_scheduler():
     global _background_scheduler
-    if _background_scheduler is None:
+    if _background_scheduler is None or not getattr(_background_scheduler, "running", False):
         _background_scheduler = BackgroundScheduler(
-            executors={"default": ThreadPoolExecutor(max_workers=1)}
+            timezone=timezone.utc,
+            executors={"default": ThreadPoolExecutor(max_workers=3)},
+            job_defaults={"coalesce": False, "max_instances": 3},
         )
         _background_scheduler.start()
+        logger.info("Background scheduler started")
     return _background_scheduler
 
 
@@ -217,6 +219,21 @@ def post_item(client, text, link=None, image_bytes=None, alt=None, index=0):
 
     return resp
 
+def post_item_scheduled(login, password, text, link=None, image_bytes=None, alt=None, index=0):
+    logger.info("Scheduled job running — logging into Bluesky for index=%s", index)
+    client = Client()
+    try:
+        client.login(login, password)
+    except Exception:
+        logger.exception("Scheduled job: login failed for index=%s", index)
+        raise
+
+    try:
+        return post_item(client, text, link, image_bytes, alt, index)
+    except Exception:
+        logger.exception("Scheduled job failed for index=%s", index)
+        raise
+
 
 # Listener to shutdown scheduler when all jobs completed
 def make_listener(total_jobs, scheduler):
@@ -226,8 +243,8 @@ def make_listener(total_jobs, scheduler):
         if event.code in (EVENT_JOB_EXECUTED, EVENT_JOB_ERROR):
             count["remaining"] -= 1
             if count["remaining"] <= 0:
-                scheduler.shutdown(wait=False)
-
+                logger.info("All scheduled jobs for this campaign finished.")
+                #leave global scheduler running
     return listener
 
 
@@ -341,11 +358,12 @@ def launch_social_media_bluesky(
                 )
             else:
                 job = scheduler.add_job(
-                    post_item,
+                    post_item_scheduled,
                     "date",
                     run_date=dt,
                     args=[
-                        client,
+                        login, 
+                        password,
                         thread_texts[idx],
                         article_link,
                         image_bytes,
