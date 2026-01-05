@@ -23,6 +23,7 @@ urlpatterns = [
         name="abstract-change-status-with-email",
     ),
     path("api/abstracts/submit", views.submit_abstract, name="submit-abstract"),
+    path("api/abstracts/accepted", views.AcceptedAbstractList.as_view(), name="accepted-abstract-in-writing"),
     path("api/articles/", views.ArticleList.as_view(), name="article-list"),
     path(
         "api/articles/status",
