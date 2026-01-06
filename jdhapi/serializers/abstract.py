@@ -152,6 +152,9 @@ class AbstractSerializer(serializers.ModelSerializer):
 
     def get_days_left(self, obj):
 
+        if obj.callpaper is None:
+            return None
+
         if obj.status != 'ACCEPTED' and obj.callpaper is  None :
             return None 
 
