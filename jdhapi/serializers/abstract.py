@@ -1,5 +1,6 @@
 from jdhapi.models import Abstract, Article
 from rest_framework import serializers
+from datetime import datetime, timezone, date
 
 
 class CreateAbstractSerializer(serializers.ModelSerializer):
@@ -65,6 +66,7 @@ class AbstractSerializer(serializers.ModelSerializer):
     contact_email = serializers.SerializerMethodField()
     contact_orcid = serializers.SerializerMethodField()
     issue = serializers.SerializerMethodField()
+    days_left = serializers.SerializerMethodField()
 
     class Meta:
         model = Abstract
@@ -89,6 +91,7 @@ class AbstractSerializer(serializers.ModelSerializer):
             "datasets",
             "issue",
             "repository_url",
+            "days_left"
         )
 
     def get_callpaper_title(self, obj):
@@ -146,3 +149,18 @@ class AbstractSerializer(serializers.ModelSerializer):
         from jdhapi.serializers.dataset import DatasetSlimSerializer
 
         return DatasetSlimSerializer(obj.datasets.all(), many=True).data
+
+    def get_days_left(self, obj):
+
+        if obj.status != 'ACCEPTED' and obj.callpaper is  None :
+            return None 
+
+        if obj.callpaper.deadline_article.date() > date(2050,1,1):
+            return 0
+    
+        callforpaper_deadline = obj.callpaper.deadline_article.isoformat()
+        delta = datetime.fromisoformat(callforpaper_deadline) - datetime.now(timezone.utc)
+        return abs(delta.days)
+      
+  
+
