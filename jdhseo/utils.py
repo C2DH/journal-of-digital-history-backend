@@ -194,11 +194,6 @@ def parseJupyterNotebook(notebook, merged_authors_affiliations):
             formatInlineCitations,
             source,
         )
-        """ source = re.sub(
-        r"<cite\s+id=[\"'][^\"']*[\"']><a\s+href=[\"']#([^\"']+)[\"']>([^<]*)</a></cite>",
-        formatCitationManager,
-        source, 
-        )  """ 
         source = re.sub(
         r"<cite\s+id=[\"'][^\"']*[\"']><a\s+href=[\"']#([^\"']+)[\"']>([^<]*)</a></cite>",
         formatSimplyCitations,

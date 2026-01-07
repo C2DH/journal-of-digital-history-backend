@@ -4,23 +4,27 @@
 <div style="margin-top: 40px;">
 <p>Dear reviewer,</p>
 
-<p>Thank you for agreeing to review {{ articleTitle }}.</p>
+<p>To access the manuscript {{ articleTitle }}, you may use one of the three URLs below:</p>
 
-<p>There are three ways to access the article:</p>
 
 <ol>
-    <li>On GitHub</li>
+    <li>On GitHub:</li>
     <p><a href="{{ article.repository_url }}">{{ article.repository_url }}</a></p>
-    <p>From there, you will be able to download the notebook and the attached files, or to launch the notebook on MyBinder by pushing the ‘launch binder’ button.</p>
-    <li>On MyBinder</li>
+    <p>Following this link, you will be able to clone the repository on your computer (Github Desktop), access the notebook and the attached files, and run the code locally.
+</p>
+    <li>On MyBinder:</li>
     <p><a href="{{ article.binder_url }}">{{ article.binder_url }}</a></p>
-    <p>On MyBinder, bibliographic references will not be visible, but you will be able to run the code. Beware, the loading time can be quite long.</p>
-    <li>Within the Journal of Digital History website</li>
-    <p><a href="https://journalofdigitalhistory.org/en/notebook-viewer/{{ article.notebook_url|add:'/' }}">here</a></p>
-    <p>Please note that the article (the notebook) can be large: expect a rather long loading time.</p>
+    <p>From there, you will be able to run the notebook in your browser. No installation is needed, but expect a quite long loading time. Please note that MyBinder cannot reproduce bibliographic citations.</p>
+    <li>Within the JDH website:</li>
+    <p><a href="https://journalofdigitalhistory.org/en/notebook-viewer/{{ article.notebook_url|add:'/?v=3' }}">here</a></p>
+    <p>Please note that a loading time is expected when using this link, as the article (the notebook) can be quite large.</p>
 </ol>
 
+<p>Should you have any technical doubt accessing the article via the two first URLs, we recommend reading the article using <a href="https://journalofdigitalhistory.org/en/notebook-viewer/{{ article.notebook_url|add:'/?v=3' }}">the journal’ platform</a> as it does not require advanced technical skills.</p>
+
+<p>If you need further assistance to access the article, please get in touch with us at jdh.admin@uni.lu.</p>
+
 <p>Best regards,</p>
-<p>The editors, Frédéric Clavert, Hannah Smyth, Lorella Viola</p>
+<p>The Editors, Frédéric Clavert, Hannah Smyth, Lorella Viola</p>
 <p>Journal of Digital History</p>
 </div>
