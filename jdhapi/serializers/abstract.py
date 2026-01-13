@@ -163,7 +163,7 @@ class AbstractSerializer(serializers.ModelSerializer):
     
         callforpaper_deadline = obj.callpaper.deadline_article.isoformat()
         delta = datetime.fromisoformat(callforpaper_deadline) - datetime.now(timezone.utc)
-        return abs(delta.days)
+        return delta.days
       
   
 
