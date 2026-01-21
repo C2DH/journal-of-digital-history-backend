@@ -278,7 +278,6 @@ DEFAULT_FROM_EMAIL = get_env_variable("DEFAULT_FROM_EMAIL", "jdh.admin@uni.lu")
 DEFAULT_TO_EMAIL = get_env_variable("DEFAULT_TO_EMAIL", "jdh.admin@uni.lu")
 
 # Github API
-
 GITHUB_ACCESS_TOKEN = get_env_variable("GITHUB_ACCESS_TOKEN")
 
 # Social network
@@ -286,3 +285,7 @@ BLUESKY_JDH_ACCOUNT = get_env_variable("BLUESKY_JDH_ACCOUNT")
 BLUESKY_JDH_PASSWORD = get_env_variable("BLUESKY_JDH_PASSWORD")
 FACEBOOK_JDH_PAGE_ID = get_env_variable("FACEBOOK_JDH_PAGE_ID")
 FACEBOOK_JDH_ACCESS_TOKEN = get_env_variable("FACEBOOK_JDH_ACCESS_TOKEN")
+
+#OJS API
+OJS_API_KEY_TOKEN= get_env_variable("OJS_API_KEY_TOKEN", "default")
+OJS_API_URL = get_env_variable("OJS_API_URL", "http://ojs.journalofdigitalhistory.org")

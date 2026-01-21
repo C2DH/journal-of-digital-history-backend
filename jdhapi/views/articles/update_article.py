@@ -1,7 +1,7 @@
+from django.db import transaction
 from jdh.validation import JSONSchema
 from jdhapi.models import Article
-from django.db import transaction
-from jsonschema.exceptions import ValidationError, SchemaError
+from jsonschema.exceptions import ValidationError
 from rest_framework.decorators import (
     api_view,
     permission_classes,
