@@ -1,12 +1,14 @@
 import requests
-
+import logging
 from django.core.exceptions import ValidationError
 from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
-
 from jdhapi.models import Article
 from jdhapi.utils.articles import convert_string_to_base64
+from jdhapi.utils.run_github_action import trigger_workflow
 
+
+logger = logging.getLogger(__name__)
 
 @receiver(post_save, sender=Article)
 def send_email_for_peer_review_article(sender, instance, created, **kwargs):
@@ -16,7 +18,22 @@ def send_email_for_peer_review_article(sender, instance, created, **kwargs):
         and instance.status == Article.Status.PEER_REVIEW
     ):
         instance.send_email_if_peer_review()
-
+    elif (
+        not created
+        and instance.tracker.has_changed("status")
+        and instance.status == Article.Status.TECHNICAL_REVIEW
+    ):
+        try:
+            trigger_workflow(
+                    repo_url=instance.repository_url,
+                    workflow_filename="github-actions-preflight.yml",
+                )
+            logger.info(f"Successfully triggered workflow for article {instance.abstract.pid}")
+        except requests.exceptions.HTTPError as e:
+            logger.error(f"Failed to trigger workflow for article {instance.abstract.pid}: HTTP {e.response.status_code} - {e.response.text}")
+        except Exception as e:
+            logger.error(f"Unexpected error triggering workflow for article {instance.abstract.pid}: {str(e)}")
+            
 
 @receiver(pre_save, sender=Article)
 def validate_urls_for_article_submission(sender, instance, **kwargs):
