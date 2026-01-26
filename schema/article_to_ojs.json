@@ -3,10 +3,10 @@
   "$id": "https://journaldigitalhistory.eu/schemas/article-to-ojs.json",
   "type": "object",
   "properties": {
-    "pids": {
+    "pid": {
       "type": "string"
     }
   },
-  "required": ["pids"],
+  "required": ["pid"],
   "additionalProperties": false
 }
