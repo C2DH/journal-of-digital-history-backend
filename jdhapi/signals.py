@@ -8,16 +8,6 @@ from jdhapi.models import Article
 from jdhapi.utils.articles import convert_string_to_base64
 
 
-@receiver(post_save, sender=Article)
-def send_email_for_peer_review_article(sender, instance, created, **kwargs):
-    if (
-        not created
-        and instance.tracker.has_changed("status")
-        and instance.status == Article.Status.PEER_REVIEW
-    ):
-        instance.send_email_if_peer_review()
-
-
 @receiver(pre_save, sender=Article)
 def validate_urls_for_article_submission(sender, instance, **kwargs):
     def check_github_url(url):

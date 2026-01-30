@@ -174,37 +174,3 @@ class Article(models.Model):
 
     def __str__(self):
         return self.abstract.title
-
-    def send_email_if_peer_review(self):
-        if self.status == self.Status.PEER_REVIEW:
-            # Render the PDF template
-            template = "jdhseo/peer_review.html"
-            if "title" in self.data:
-                articleTitle = html.fromstring(
-                    marko.convert(self.data["title"][0])
-                ).text_content()
-                context = {"article": self, "articleTitle": articleTitle}
-                html_string = render_to_string(template, context)
-
-                # Generate the PDF
-                pdf_file = HTML(string=html_string).write_pdf()
-                logger.info("Pdf generated")
-                filename = "peer_review_" + self.abstract.pid + ".pdf"
-                # Save the PDF to a file
-                # with open(filename, 'wb') as f:
-                #    f.write(pdf_file)
-                # logger.info("Pdf saved")
-                # Create an email message with the PDF attachment
-                subject = f"{articleTitle} can been sent to peer review!"
-                body = "Please find attached the links useful for the peer review."
-                from_email = settings.DEFAULT_FROM_EMAIL
-                to_email = settings.DEFAULT_TO_EMAIL
-                email = EmailMessage(subject, body, from_email, [to_email])
-                email.attach(filename, pdf_file, "application/pdf")
-
-                # Send the email
-                try:
-                    email.send()
-                    logger.info("Email sent")
-                except Exception as e:
-                    print(f"Error sending email: {str(e)}")
