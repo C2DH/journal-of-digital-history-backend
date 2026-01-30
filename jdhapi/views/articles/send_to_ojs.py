@@ -86,10 +86,9 @@ def submit_to_ojs(request):
             logger.error("No PID provided in request data.")
             raise ValidationError({"error": "One article PID is required."})
         
-        article = Article.objects.filter(abstract__pid=pid)
-        print("🚀 ~ file: send_to_ojs.py:92 ~ article:", article.abstract)
+        article = Article.objects.get(abstract__pid=pid)
 
-        if not article.exists():
+        if article is None:
             logger.error(f"No article found for PID : {pid}.")
             raise Exception({"error": "Article not found."})
     
@@ -108,7 +107,7 @@ def submit_to_ojs(request):
             'orcid': 'orcid',
         }
 
-        for author in article.abstract.authors:
+        for author in article.abstract.authors.all():
             for field, fieldname in required_fields.items():
                 if not getattr(author, field):
                     author_name=f"{author.firstname} {author.lastname}" 
@@ -118,26 +117,44 @@ def submit_to_ojs(request):
 
         try:
             # 1. create a blank submission in OJS
+
             res = create_blank_submission()
+            logger.info(f"Blank submission created with response: {res.json()}")
 
             submission_id = res.json().get('id',0)
             publication_id = res.json().get('currentPublicationId', 0)
-            
+             
             # 2. upload the pdf file to OJS
             pdf_file = generate_pdf_for_submission(article)
             res = upload_manuscript_to_ojs(article.abstract.pid, submission_id, pdf_file)
 
+            if res.status_code not in [200, 201]:
+                error_msg = f"Failed to upload manuscript to OJS. Status: {res.status_code}, Response: {res.text}"
+                logger.error(error_msg)
+                raise Exception(error_msg)
+            
+            logger.info(f"Manuscript uploaded with response: {res.json()}")
+
             # 3. Create the article contributor in OJS
             primary_contact_id=create_contributor_in_ojs(submission_id, publication_id, article)
+            
+            if not primary_contact_id:
+                raise Exception("Failed to create contributor or retrieve primary contact ID")
 
             contributor_id=primary_contact_id
 
             # 4. Assign the author as primary Contact to the submission + title + abstract + competingInterests 
-            assign_primary_contact_and_metadata(submission_id, publication_id, contributor_id, article)
+            res = assign_primary_contact_and_metadata(submission_id, publication_id, contributor_id, article)
+
+            if res.status_code not in [200, 201]:
+                error_msg = f"Failed to assign metadata. Status: {res.status_code}, Response: {res.text}"
+                logger.error(error_msg)
+                raise Exception(error_msg)
 
             # 5. Submit the submission to OJS
             # uncomment if we do not need human check on OJS dashboard anymore
             # submit_to_ojs(submission_id)
+
         except Exception as e:
             logger.error(f"Error during OJS submission process: {e}")
             raise e
@@ -159,30 +176,36 @@ def create_blank_submission():
 def upload_manuscript_to_ojs(pid, submission_id, pdf_bytes):
     logger.info("uploading manuscript to OJS")
 
-    url=f"{OJS_API_URL}/submission/{submission_id}/files"
-    payload={
+    url=f"{OJS_API_URL}/submissions/{submission_id}/files"
+    headers_form_data = {
+        'Authorization': f'Bearer {settings.OJS_API_KEY_TOKEN}'
+    }
+    files = {
         "file": (f"peer_review_{pid}.pdf", pdf_bytes, "application/pdf"),
-        "fileStage": 1, # 1 is for stage SUBMISSION_FILE_SUBMISSION
+    }
+    data={
+        "fileStage": 2, # 2 is for stage SUBMISSION_FILE_SUBMISSION
         "genreId": 1, # 1 is for manuscript
     }
 
-    res=requests.post(url=url, headers=headers, files=payload)
+    res=requests.post(url=url, headers=headers_form_data, files=files, data=data)
 
     return res
 
-def create_contributor_in_ojs(submission_id, publication_id, article): 
+def create_contributor_in_ojs(submission_id, publication_id, article: Article): 
     logger.info("creating the article contributor in OJS")  
 
     primary_contact_id = 0 
 
-    url=f"{settings.OJS_API_URL}/submission/{submission_id}/publications/{publication_id}/contributors"
+    url=f"{settings.OJS_API_URL}/submissions/{submission_id}/publications/{publication_id}/contributors"
 
-    for author in article.authors.all():
+    for author in article.abstract.authors.all():
+        logger.info(f"Contributor {author.firstname} {author.lastname} creation in OJS")
         payload = {
             "affiliation": {
                 "en": author.affiliation
             },
-            "country": author.country,
+            "country": str(author.country),
             "email":  author.email,
             "familyName": {
                 "en":  author.lastname
@@ -205,15 +228,17 @@ def create_contributor_in_ojs(submission_id, publication_id, article):
             }
         }
         res = requests.post(url=url, headers=headers, json=payload)
-        if article.abstract.contact_orcid == author.orcid :
-            primary_contact_id = res.json().get('contributor_id',0)
+        logger.info(f"Contributor {author.firstname} {author.lastname} created with response: {res.json()}")
+
+        if article.abstract.contact_email == author.email and article.abstract.contact_lastname == author.lastname :
+            primary_contact_id = res.json().get('id',0) 
 
     return primary_contact_id
 
 def assign_primary_contact_and_metadata(submission_id, publication_id, contributor_id, article):
     logger.info("Assign the author as primary contact to the submission and add title, abstract and competingInterests")
 
-    url=f"{OJS_API_URL}/submission/{submission_id}/publications/{publication_id}"
+    url=f"{OJS_API_URL}/submissions/{submission_id}/publications/{publication_id}"
     payload={
         "primaryContactId": contributor_id,
         "title": {
