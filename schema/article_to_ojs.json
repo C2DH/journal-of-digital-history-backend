@@ -1,0 +1,12 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://journaldigitalhistory.eu/schemas/article-to-ojs.json",
+  "type": "object",
+  "properties": {
+    "pid": {
+      "type": "string"
+    }
+  },
+  "required": ["pid"],
+  "additionalProperties": false
+}
