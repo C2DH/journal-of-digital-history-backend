@@ -24,6 +24,7 @@ urlpatterns = [
     ),
     path("api/abstracts/submit", views.submit_abstract, name="submit-abstract"),
     path("api/articles/", views.ArticleList.as_view(), name="article-list"),
+    path("api/articles/<str:abstract__pid>/status/", views.ArticleStatus.as_view(), name='article-status'),
     path(
         "api/articles/status",
         views.update_article_status,
