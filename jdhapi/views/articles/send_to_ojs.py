@@ -5,6 +5,7 @@ from django.db import transaction
 from django.template.loader import render_to_string
 from jdhapi.models import Article
 from jdh.validation import JSONSchema
+from jdhseo.utils import get_country_with_ROR
 from jsonschema.exceptions import ValidationError
 from lxml import html
 from rest_framework.decorators import (
@@ -113,11 +114,19 @@ def submit_to_ojs(request):
                     author_name=f"{author.firstname} {author.lastname}" 
                     error_msg = f"Author {fieldname} is missing. Author concerned : {author_name}"
                     logger.error(error_msg)
+                    if fieldname == 'country' : 
+                        country = get_country_with_ROR(affiliation_name=author.affiliation)
+                        if not country:
+                            raise ValidationError(error_msg)
+                        else:
+                            author.country = country
+                            author.save()
+                            return
+                        
                     raise ValidationError(error_msg)
 
         try:
             # 1. create a blank submission in OJS
-
             res = create_blank_submission()
             logger.info(f"Blank submission created with response: {res.json()}")
 

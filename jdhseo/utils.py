@@ -287,6 +287,63 @@ def get_affiliation(orcid):
         logger.error(f"Other error occurred: {err}")
 
 
+def get_country_with_ROR(affiliation_name: str) -> str:
+    """
+    Get country code from affiliation name using ROR API search.
+    
+    Args:
+        affiliation_name (str): The name of the institution (e.g., "MIT", "Harvard University")
+        
+    Returns:
+        str: Two-letter country code (e.g., 'US', 'FR', 'GB') or None if not found
+    """
+    logger.debug(f"START get_country_from_affiliation_name - searching for: {affiliation_name}")
+    ROR_API_SEARCH_URL = "https://api.ror.org/organizations"
+    
+    if not affiliation_name or affiliation_name.strip() == "":
+        logger.warning("Empty affiliation name provided")
+        return None
+    
+    try:
+        params = {
+            "query": affiliation_name.strip()
+        }
+        resp = requests.get(ROR_API_SEARCH_URL, params=params, timeout=10)
+        resp.raise_for_status()
+        json_response = resp.json()
+        items = json_response.get('items', [])
+        
+        if not items:
+            logger.warning(f"No results found for affiliation: {affiliation_name}")
+            return None
+        
+        # Take the first (most relevant) result
+        first_result = items[0]
+        
+        # Extract country code
+        country_code = first_result.get('locations', {})[0].get('geonames_details',{}).get('country_code', None)
+
+        if country_code:
+            org_name = first_result.get('name', 'Unknown')
+            logger.debug(f"Country code found for '{org_name}': {country_code}")
+            return country_code
+        else:
+            logger.warning(f"No country code found in ROR result for: {affiliation_name}")
+            return None
+            
+    except HTTPError as http_err:
+        logger.error(f"HTTP error occurred while searching ROR: {http_err}")
+        return None
+    except requests.exceptions.Timeout:
+        logger.error(f"Timeout while searching ROR for: {affiliation_name}")
+        return None
+    except Exception as err:
+        logger.error(f"Error occurred while searching ROR: {err}")
+        return None
+    finally:
+        logger.debug("END get_country_from_affiliation_name")
+
+
 def get_employment_affiliation(orcid, api_url, headers):
     url = f"{api_url}/{orcid}/employments"
     resp = requests.get(url, headers=headers)

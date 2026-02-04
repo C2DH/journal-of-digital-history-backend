@@ -1,5 +1,4 @@
 import logging
-from re import I
 import pycountry
 from jdhseo.utils import get_affiliation
 from jdhapi.models import Author
