@@ -45,13 +45,13 @@ def send_article_to_ojs(request):
             status=status.HTTP_200_OK,
         )
     except ValidationError as e:
-        logger.error(f"JSON schema validation failed: {e}")
+        logger.error(f"JSON schema validation failed: {str(e)}")
         return Response(
             {"error": "Invalid data format", "details": str(e)},
             status=status.HTTP_400_BAD_REQUEST,
         )
     except (KeyError, IndexError) as e:
-        logger.exception("Data invalid after validation")
+        logger.exception(f"Data invalid after validation: {str(e)}")
         return Response(
             {"error": "KeyError", "message": str(e)},
             status=status.HTTP_400_BAD_REQUEST,
@@ -84,13 +84,13 @@ def submit_to_ojs(request):
 
         if not pid: 
             logger.error("No PID provided in request data.")
-            raise ValidationError({"error": "One article PID is required."})
+            raise ValidationError( "One article PID is required.")
         
         article = Article.objects.get(abstract__pid=pid)
 
         if article is None:
             logger.error(f"No article found for PID : {pid}.")
-            raise Exception({"error": "Article not found."})
+            raise Exception( "Article not found.")
     
         logger.info("Send article to OJS.")
 
@@ -113,7 +113,7 @@ def submit_to_ojs(request):
                     author_name=f"{author.firstname} {author.lastname}" 
                     error_msg = f"Author {fieldname} is missing. Author concerned : {author_name}"
                     logger.error(error_msg)
-                    raise ValidationError({"error": error_msg})
+                    raise ValidationError(error_msg)
 
         try:
             # 1. create a blank submission in OJS
