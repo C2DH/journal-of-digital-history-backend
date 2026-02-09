@@ -3,6 +3,7 @@ from django.db import transaction
 from django.shortcuts import get_object_or_404
 from jdhapi.models import Abstract
 from jdhapi.forms import EmailConfigurationForm
+from jdhapi.utils.logger import logger as get_logger
 from jdh.validation import JSONSchema
 from jsonschema.exceptions import ValidationError, SchemaError
 from rest_framework.decorators import (
@@ -12,7 +13,6 @@ from rest_framework.decorators import (
 from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
 from rest_framework import status
-from ..logger import logger as get_logger
 
 logger = get_logger()
 
