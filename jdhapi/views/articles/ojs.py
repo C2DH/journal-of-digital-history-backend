@@ -1,13 +1,12 @@
-import marko 
 import requests
 from django.conf import settings
 from django.db import transaction
-from django.template.loader import render_to_string
 from jdhapi.models import Article
+from jdhapi.utils.ojs import create_blank_submission, upload_manuscript_to_ojs, create_contributor_in_ojs, assign_primary_contact_and_metadata, generate_pdf_for_submission
+from jdhapi.utils.logger import logger as get_logger
 from jdh.validation import JSONSchema
 from jdhseo.utils import get_country_with_ROR
 from jsonschema.exceptions import ValidationError
-from lxml import html
 from rest_framework.decorators import (
     api_view,
     permission_classes,
@@ -15,9 +14,7 @@ from rest_framework.decorators import (
 from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
 from rest_framework import status
-from weasyprint import HTML
 
-from ..logger import logger as get_logger
 
 logger = get_logger()
 article_to_ojs_schema = JSONSchema(filepath="article_to_ojs.json")
@@ -26,6 +23,36 @@ headers = {
     'Authorization': f'Bearer {settings.OJS_API_KEY_TOKEN}'
 }
 OJS_API_URL = settings.OJS_API_URL
+
+@api_view(["GET"])
+@permission_classes([IsAdminUser])
+def get_count_submission_from_ojs(_):
+    """
+    Get the list of all abstracts submitted to OJS ans being either in 'Incomplete' submission stage or 'Submission' stage.
+    This corresponds to the stageIds : 1 in OJS API v3.4.
+    """
+
+    logger.info("GET /api/articles/ojs")
+
+    url=f"{OJS_API_URL}/submissions?stageIds=1"
+
+    try:
+        response = requests.get(url, headers=headers)
+        if response.status_code == 200:
+            return Response({"count": response.json().get("itemsMax", 0)}, status=200)
+        else:
+            return Response(
+                {
+                    "error": "Unexpected error occurred while contacting OJS API.",
+                    "status_code": response.status_code,
+                },
+                status=response.status_code,
+            )
+    except requests.exceptions.RequestException as e:
+        return Response(
+            {"error": "Failed to connect to OJS API.", "details": str(e)}, status=500
+        )
+
 
 @api_view(["POST"])
 @permission_classes([IsAdminUser])
@@ -168,127 +195,3 @@ def submit_to_ojs(request):
             logger.error(f"Error during OJS submission process: {e}")
             raise e
 
-
-def create_blank_submission(): 
-    logger.info("creating a blank submission in OJS")
-
-    url = f"{OJS_API_URL}/submissions"
-    payload= {
-        "commentsForTheEditors": "none",
-        "locale":"en",
-        "sectionId":1
-    }
-    res = requests.post(url=url, headers=headers, json=payload )
-
-    return res
-
-def upload_manuscript_to_ojs(pid, submission_id, pdf_bytes):
-    logger.info("uploading manuscript to OJS")
-
-    url=f"{OJS_API_URL}/submissions/{submission_id}/files"
-    headers_form_data = {
-        'Authorization': f'Bearer {settings.OJS_API_KEY_TOKEN}'
-    }
-    files = {
-        "file": (f"peer_review_{pid}.pdf", pdf_bytes, "application/pdf"),
-    }
-    data={
-        "fileStage": 2, # 2 is for stage SUBMISSION_FILE_SUBMISSION
-        "genreId": 1, # 1 is for manuscript
-    }
-
-    res=requests.post(url=url, headers=headers_form_data, files=files, data=data)
-
-    return res
-
-def create_contributor_in_ojs(submission_id, publication_id, article: Article): 
-    logger.info("creating the article contributor in OJS")  
-
-    primary_contact_id = 0 
-
-    url=f"{settings.OJS_API_URL}/submissions/{submission_id}/publications/{publication_id}/contributors"
-
-    for author in article.abstract.authors.all():
-        logger.info(f"Contributor {author.firstname} {author.lastname} creation in OJS")
-        payload = {
-            "affiliation": {
-                "en": author.affiliation
-            },
-            "country": str(author.country),
-            "email":  author.email,
-            "familyName": {
-                "en":  author.lastname
-            },
-            "fullName": f"{author.firstname} {author.lastname}",
-            "givenName": {
-                "en": author.firstname
-            },
-            "includeInBrowse": True,
-            "locale": "en",
-            "orcid": author.orcid,
-            "preferredPublicName": {
-                "en": ""
-            },
-            "publicationId": publication_id,
-            "seq": 0,
-            "userGroupId": 14,
-            "userGroupName": {
-                "en": "Author"
-            }
-        }
-        res = requests.post(url=url, headers=headers, json=payload)
-        logger.info(f"Contributor {author.firstname} {author.lastname} created with response: {res.json()}")
-
-        if article.abstract.contact_email == author.email and article.abstract.contact_lastname == author.lastname :
-            primary_contact_id = res.json().get('id',0) 
-
-    return primary_contact_id
-
-def assign_primary_contact_and_metadata(submission_id, publication_id, contributor_id, article):
-    logger.info("Assign the author as primary contact to the submission and add title, abstract and competingInterests")
-
-    url=f"{OJS_API_URL}/submissions/{submission_id}/publications/{publication_id}"
-    payload={
-        "primaryContactId": contributor_id,
-        "title": {
-            "en": article.abstract.title
-        },
-        "abstract": {
-            "en": article.abstract.abstract
-        },
-        "competingInterests": {
-            "en":  "I declare that I have no competing interests"
-        }
-    }
-
-    res=requests.put(url=url, headers=headers, json=payload)
-
-    return res
-
-def submit_submission_to_ojs(submission_id):
-    logger.info("Submit the article to OJS")
-
-    url=f"{OJS_API_URL}/submissions/{submission_id}/submit"
-    payload= {
-        "confirmCopyright": "true"
-    }
-
-    res=requests.put(url, headers=headers, json=payload)
-
-    return res
-
-def generate_pdf_for_submission(article):
-    template = "jdhseo/peer_review.html"
-    if "title" in article.data:
-        articleTitle = html.fromstring(
-            marko.convert(article.abstract.title)
-        ).text_content()
-        context = {"article": article, "articleTitle": articleTitle}
-        html_string = render_to_string(template, context)
-
-        # Generate the PDF
-        pdf_file = HTML(string=html_string).write_pdf()
-
-        logger.info("Pdf generated")
-        return pdf_file
-    
