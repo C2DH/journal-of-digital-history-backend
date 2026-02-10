@@ -1,14 +1,11 @@
-import json
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import Mock, patch
 from django.test import TestCase
 from django.contrib.auth import get_user_model
 from rest_framework.test import APIClient
 from rest_framework import status
 from jdhapi.models import Article, Abstract, Author, Issue
-from jsonschema.exceptions import ValidationError as JsonSchemaValidationError
 
 User = get_user_model()
-
 
 class SendArticleToOJSTestCase(TestCase):
     def setUp(self):
@@ -57,7 +54,7 @@ class SendArticleToOJSTestCase(TestCase):
             issue=self.issue
         )
         
-        self.url = '/api/articles/ojs'
+        self.url = '/api/articles/submission/ojs'
         self.valid_payload = {'pid': 'test-article-001'}
 
     def test_send_article_to_ojs_not_authenticated(self):
@@ -78,9 +75,9 @@ class SendArticleToOJSTestCase(TestCase):
         response = self.client.post(self.url, self.valid_payload, format='json')
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
-    @patch('jdhapi.views.articles.send_to_ojs.generate_pdf_for_submission')
-    @patch('jdhapi.views.articles.send_to_ojs.requests.post')
-    @patch('jdhapi.views.articles.send_to_ojs.requests.put')
+    @patch('jdhapi.views.articles.ojs.generate_pdf_for_submission')
+    @patch('jdhapi.views.articles.ojs.requests.post')
+    @patch('jdhapi.views.articles.ojs.requests.put')
     def test_send_article_to_ojs_success(self, mock_put, mock_post, mock_pdf):
         """Test successful article submission to OJS"""
         self.client.force_authenticate(user=self.admin_user)
@@ -131,7 +128,7 @@ class SendArticleToOJSTestCase(TestCase):
         self.assertEqual(mock_put.call_count, 1)
         mock_pdf.assert_called_once()
 
-    @patch('jdhapi.views.articles.send_to_ojs.article_to_ojs_schema')
+    @patch('jdhapi.views.articles.ojs.article_to_ojs_schema')
     def test_send_article_to_ojs_missing_pid(self, mock_schema):
         """Test that missing PID returns validation error"""
         self.client.force_authenticate(user=self.admin_user)
@@ -144,7 +141,7 @@ class SendArticleToOJSTestCase(TestCase):
         
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
-    @patch('jdhapi.views.articles.send_to_ojs.article_to_ojs_schema')
+    @patch('jdhapi.views.articles.ojs.article_to_ojs_schema')
     def test_send_article_to_ojs_article_not_found(self, mock_schema):
         """Test that non-existent article returns error"""
         self.client.force_authenticate(user=self.admin_user)
@@ -157,7 +154,7 @@ class SendArticleToOJSTestCase(TestCase):
         
         self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    @patch('jdhapi.views.articles.send_to_ojs.article_to_ojs_schema')
+    @patch('jdhapi.views.articles.ojs.article_to_ojs_schema')
     def test_send_article_to_ojs_missing_author_fields(self, mock_schema):
         """Test that missing required author fields returns validation error"""
         self.client.force_authenticate(user=self.admin_user)
@@ -195,8 +192,8 @@ class SendArticleToOJSTestCase(TestCase):
         
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
-    @patch('jdhapi.views.articles.send_to_ojs.generate_pdf_for_submission')
-    @patch('jdhapi.views.articles.send_to_ojs.requests.post')
+    @patch('jdhapi.views.articles.ojs.generate_pdf_for_submission')
+    @patch('jdhapi.views.articles.ojs.requests.post')
     def test_send_article_to_ojs_upload_fails(self, mock_post, mock_pdf):
         """Test that failed manuscript upload returns error"""
         self.client.force_authenticate(user=self.admin_user)
@@ -223,9 +220,9 @@ class SendArticleToOJSTestCase(TestCase):
         self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
         self.assertIn('error', response.data)
 
-    @patch('jdhapi.views.articles.send_to_ojs.generate_pdf_for_submission')
-    @patch('jdhapi.views.articles.send_to_ojs.requests.post')
-    @patch('jdhapi.views.articles.send_to_ojs.requests.put')
+    @patch('jdhapi.views.articles.ojs.generate_pdf_for_submission')
+    @patch('jdhapi.views.articles.ojs.requests.post')
+    @patch('jdhapi.views.articles.ojs.requests.put')
     def test_send_article_to_ojs_metadata_assignment_fails(self, mock_put, mock_post, mock_pdf):
         """Test that failed metadata assignment returns error"""
         self.client.force_authenticate(user=self.admin_user)

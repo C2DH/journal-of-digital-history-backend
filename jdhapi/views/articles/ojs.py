@@ -28,11 +28,13 @@ OJS_API_URL = settings.OJS_API_URL
 @permission_classes([IsAdminUser])
 def get_count_submission_from_ojs(_):
     """
+    GET /api/articles/ojs/submissions
+
     Get the list of all abstracts submitted to OJS ans being either in 'Incomplete' submission stage or 'Submission' stage.
-    This corresponds to the stageIds : 1 in OJS API v3.4.
+    Requires admin permissions.
     """
 
-    logger.info("GET /api/articles/ojs")
+    logger.info("GET /api/articles/ojs/submissions")
 
     url=f"{OJS_API_URL}/submissions?stageIds=1"
 
@@ -58,13 +60,13 @@ def get_count_submission_from_ojs(_):
 @permission_classes([IsAdminUser])
 def send_article_to_ojs(request):
     """
-    POST /api/articles/ojs 
+    POST /api/articles/ojs/submission
 
-    Endpoint to send an article ready for peer review to OJS.
+    Endpoint to create an article submission ready for peer review to OJS.
     Requires admin permissions.
     """
 
-    logger.info("POST /api/articles/ojs")
+    logger.info("POST /api/articles/ojs/submission")
 
     try:
         res = submit_to_ojs(request)
@@ -159,6 +161,9 @@ def submit_to_ojs(request):
 
             submission_id = res.json().get('id',0)
             publication_id = res.json().get('currentPublicationId', 0)
+
+            article.ojs_submission_id = submission_id
+            article.save()
              
             # 2. upload the pdf file to OJS
             pdf_file = generate_pdf_for_submission(article)
