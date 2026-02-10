@@ -38,5 +38,6 @@ class ArticleSerializer(serializers.ModelSerializer):
             "tags",
             "issue",
             "authors",
+            "ojs_submission_id",
             "fingerprint",
         ]
