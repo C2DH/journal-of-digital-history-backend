@@ -297,7 +297,7 @@ def get_country_with_ROR(affiliation_name: str) -> str:
     Returns:
         str: Two-letter country code (e.g., 'US', 'FR', 'GB') or None if not found
     """
-    logger.debug(f"START get_country_from_affiliation_name - searching for: {affiliation_name}")
+    logger.debug(f"START get_country_with_ROR - searching for: {affiliation_name}")
     ROR_API_SEARCH_URL = "https://api.ror.org/organizations"
     
     if not affiliation_name or affiliation_name.strip() == "":
@@ -324,7 +324,7 @@ def get_country_with_ROR(affiliation_name: str) -> str:
         country_code = first_result.get('locations', {})[0].get('geonames_details',{}).get('country_code', None)
 
         if country_code:
-            org_name = first_result.get('name', 'Unknown')
+            org_name = first_result.get('names', 'Unknown')[0].get('value', 'Unknown')
             logger.debug(f"Country code found for '{org_name}': {country_code}")
             return country_code
         else:
@@ -341,7 +341,7 @@ def get_country_with_ROR(affiliation_name: str) -> str:
         logger.error(f"Error occurred while searching ROR: {err}")
         return None
     finally:
-        logger.debug("END get_country_from_affiliation_name")
+        logger.debug("END get_country_with_ROR")
 
 
 def get_employment_affiliation(orcid, api_url, headers):

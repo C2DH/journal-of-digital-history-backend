@@ -150,9 +150,11 @@ def submit_to_ojs(request):
                         else:
                             author.country = country
                             author.save()
-                            return
-                        
-                    raise ValidationError(error_msg)
+        
+        if not article.data.get('title') :
+            error_msg = "Field 'title' is missing in the 'data' field of the article."
+            logger.error(error_msg)
+            raise ValidationError(error_msg)
 
         try:
             # 1. create a blank submission in OJS
