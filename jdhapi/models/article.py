@@ -43,7 +43,6 @@ class Article(models.Model):
     Methods:
         get_kernel_language(): Returns the kernel language based on the 'tool' tag.
         __str__(): Returns the title of the abstract.
-        send_email_if_peer_review(): Sends an email with a PDF attachment if the article is in peer review status.
     """
 
     class Status(models.TextChoices):
