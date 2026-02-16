@@ -87,7 +87,7 @@ class SendArticleToOJSTestCase(TestCase):
         
         # Mock blank submission creation response
         mock_blank_submission_response = Mock()
-        mock_blank_submission_response.status_code = 201
+        mock_blank_submission_response.status_code = 200
         mock_blank_submission_response.json.return_value = {
             'id': 123,
             'currentPublicationId': 456
@@ -154,10 +154,28 @@ class SendArticleToOJSTestCase(TestCase):
         
         self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+    @patch('jdhapi.views.articles.ojs.generate_pdf_for_submission')
+    @patch('jdhapi.views.articles.ojs.requests.post')
     @patch('jdhapi.views.articles.ojs.article_to_ojs_schema')
-    def test_send_article_to_ojs_missing_author_fields(self, mock_schema):
+    def test_send_article_to_ojs_missing_author_fields(self, mock_schema, mock_post, mock_pdf):
         """Test that missing required author fields returns validation error"""
         self.client.force_authenticate(user=self.admin_user)
+        
+        # Mock PDF generation
+        mock_pdf.return_value = b'fake_pdf_content'
+        
+        # Mock blank submission creation response
+        mock_blank_submission_response = Mock()
+        mock_blank_submission_response.status_code = 200
+        mock_blank_submission_response.json.return_value = {
+            'id': 123,
+            'currentPublicationId': 456
+        }
+        
+        # Mock file upload response
+        mock_upload_response = Mock()
+        mock_upload_response.status_code = 200
+        mock_upload_response.json.return_value = {'id': 789}
         
         # Mock schema validation to pass
         mock_schema.validate.return_value = None
@@ -186,6 +204,11 @@ class SendArticleToOJSTestCase(TestCase):
             data={'title': 'Test Article 2'},
             issue=self.issue
         )
+
+        mock_post.side_effect = [
+            mock_blank_submission_response,  # create_blank_submission
+            mock_upload_response,             # upload_manuscript_to_ojs
+        ]
         
         payload = {'pid': 'test-article-002'}
         response = self.client.post(self.url, payload, format='json')
