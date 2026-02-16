@@ -2,6 +2,7 @@ from django.core.mail import send_mail
 from django.db import transaction
 from jdh.validation import JSONSchema
 from jdhapi.models import Abstract, Author, Dataset, CallForPaper
+from jdhapi.utils.logger import logger as get_logger
 from jdhapi.serializers import AbstractSlimSerializer
 from jsonschema.exceptions import ValidationError, SchemaError
 from rest_framework.decorators import (
@@ -13,9 +14,6 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import AllowAny
 from textwrap import dedent
-
-from ..logger import logger as get_logger
-
 
 logger = get_logger()
 

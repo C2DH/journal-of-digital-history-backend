@@ -1,15 +1,7 @@
 import logging
-import marko
-
-from django.conf import settings
-
-from django.core.mail import EmailMessage
 from django.db import models
-from django.template.loader import render_to_string
-
-from lxml import html
 from model_utils import FieldTracker
-from weasyprint import HTML
+
 
 logger = logging.getLogger(__name__)
 
@@ -162,6 +154,7 @@ class Article(models.Model):
     )
     tags = models.ManyToManyField("jdhapi.Tag", blank=True)
     authors = models.ManyToManyField("jdhapi.Author", through="Role")
+    ojs_submission_id = models.IntegerField(null=True, blank=True, default=None)
 
     def get_kernel_language(self):
         tool_tags = self.tags.filter(category="tool")
