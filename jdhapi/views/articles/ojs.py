@@ -80,13 +80,6 @@ def send_article_to_ojs(request):
             {"error": "Invalid data format", "details": str(e)},
             status=status.HTTP_400_BAD_REQUEST,
         )
-    except (KeyError, IndexError) as e:
-        logger.exception(f"Data invalid after validation: {str(e)}")
-        return Response(
-            {"error": "KeyError", "message": str(e)},
-            status=status.HTTP_400_BAD_REQUEST,
-            content_type="application/json",
-        )
     except Exception as e:
         logger.exception("An unexpected error occurred.")
         return Response(

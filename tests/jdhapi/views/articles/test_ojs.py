@@ -54,7 +54,7 @@ class SendArticleToOJSTestCase(TestCase):
             issue=self.issue
         )
         
-        self.url = '/api/articles/submission/ojs'
+        self.url = '/api/articles/ojs/submission'
         self.valid_payload = {'pid': 'test-article-001'}
 
     def test_send_article_to_ojs_not_authenticated(self):
@@ -190,7 +190,7 @@ class SendArticleToOJSTestCase(TestCase):
         payload = {'pid': 'test-article-002'}
         response = self.client.post(self.url, payload, format='json')
         
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @patch('jdhapi.views.articles.ojs.generate_pdf_for_submission')
     @patch('jdhapi.views.articles.ojs.requests.post')
