@@ -1,4 +1,5 @@
 from .abstracts import *
+from .altcha import *
 from .articles import *
 from .authors import *
 from .callforpapers import *
