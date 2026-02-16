@@ -1,6 +1,5 @@
 import datetime
 import logging
-import dataclasses
 from altcha import ChallengeOptions, create_challenge, verify_solution
 from django.conf import settings
 
@@ -51,9 +50,5 @@ def verify_challenge_solution(payload: dict) -> bool :
     """
 
     ok, err = verify_solution(payload, hmac_key, check_expires=True)
-    if err:
-        logger.error("Captcha - Error:", err)
-    elif ok:
-        logger.info("Captcha - Solution verified!")
-    else:
-        logger.error("Captcha - Invalid solution.")
+
+    return ok, err

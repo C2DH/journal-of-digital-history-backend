@@ -1,10 +1,9 @@
-from django.http import JsonResponse
+from jdhapi.utils.altcha import create_captcha_challenge
+from jdhapi.utils.logger import logger as get_logger
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from jdhapi.utils.altcha import create_captcha_challenge
 
-from .logger import logger as get_logger
 
 logger=get_logger()
 
