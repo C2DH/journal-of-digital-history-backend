@@ -45,6 +45,7 @@ jobs:
 
       - name: Run tests
         env:
+          ALTCHA_HMAC_KEY: ${{ secrets.ALTCHA_HMAC_KEY }}
           SECRET_KEY: default-secret-key-for-testing
           DATABASE_ENGINE: django.db.backends.postgresql_psycopg2
           DATABASE_NAME: test_db
