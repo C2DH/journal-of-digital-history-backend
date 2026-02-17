@@ -67,25 +67,9 @@ def submit_abstract(request):
     """
         
     try:
-        logger.info("Checking Captcha Solution")
-
-        payload = request.data.get("altcha")
-
-        if not payload:
-            return  Response({"error": "Altcha payload missing"}, status=status.HTTP_400_BAD_REQUEST)
-
-        try:
-            verified, err = verify_challenge_solution(payload)
-  
-            if not verified:
-                return Response({"error": f"Invalid Altcha payload: {err}"}, status=status.HTTP_400_BAD_REQUEST)
-                
-            data = validate_and_submit_abstract(request)
-            return Response(data, status=status.HTTP_201_CREATED)
-        
-        except Exception as e:
-            return Response({"error": f"Failed to process Altcha payload: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
-        
+        data = validate_and_submit_abstract(request)
+        return Response(data, status=status.HTTP_201_CREATED)
+    
     except ValidationError as e:
         logger.exception("Validation error occurred.")
         response = Response(
@@ -121,7 +105,21 @@ def submit_abstract(request):
 
 
 def validate_and_submit_abstract(request):
-    print("🚀 ~ file: submit_abstract.py:99 ~ request:", request)
+    logger.info("Start captcha validation")
+    payload = request.data.get("altcha")
+
+    if not payload:
+        raise ValidationError("Altcha payload missing")
+
+    try:
+        verified, err = verify_challenge_solution(payload)
+
+        if not verified:
+            raise ValidationError(f"Invalid Altcha payload: {err}")
+            
+    except ValidationError as e:
+        raise ValidationError(f"Failed to process Altcha payload: {str(e)}")
+
     logger.info("Start JSON validation")
     with transaction.atomic():
         # Single transaction block for the entire function
