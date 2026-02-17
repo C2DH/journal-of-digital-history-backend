@@ -202,7 +202,7 @@ class SubmitAbstractTestCase(APITestCase):
 
     @patch('jdhapi.views.abstracts.submit_abstract.verify_challenge_solution')
     def test_failed_to_solve_the_captcha(self, mock_captcha):
-        """Test that an existing author's information is updated."""
+        """Test that the user did not solve the captcha correctly."""
 
         # Mock the captcha verification to fail
         mock_captcha.return_value = False, None
