@@ -14,7 +14,6 @@ def create_captcha_challenge():
     :return: The created challenge.
     :rtype: Challenge
     """
-
     logger.info("[create_challenge] Starting create challenge for captcha")
 
     # Create a new challenge
@@ -26,7 +25,6 @@ def create_captcha_challenge():
     challenge = create_challenge(options)
     logger.info(f"Challenge created:", challenge)
 
-    # Manually convert the Challenge object to a dictionary
     challenge_dict = {
         'algorithm': challenge.algorithm,
         'challenge': challenge.challenge,
@@ -34,8 +32,7 @@ def create_captcha_challenge():
         'salt': challenge.salt,
         'signature': challenge.signature,
     }
-
-    logger.info("Challenge converted to a dict")
+    logger.info("Challenge converted to a dictionary object")
 
     return challenge_dict
 
@@ -46,8 +43,8 @@ def verify_challenge_solution(payload: dict) -> bool :
     :return: True or false.
     :rtype: Boolean.
     :param payload: The payload to verify, it should contain the following keys: algorithm, challenge, number, salt and signature.
-
     """
+    logger.info("[verify_challenge_solution] Verifying challenge for captcha")
 
     ok, err = verify_solution(payload, hmac_key, check_expires=True)
 
