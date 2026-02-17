@@ -1,7 +1,9 @@
+from django.conf import settings
 from django.core.mail import send_mail
 from django.db import transaction
 from jdh.validation import JSONSchema
 from jdhapi.models import Abstract, Author, Dataset, CallForPaper
+from jdhapi.utils.altcha import verify_challenge_solution
 from jdhapi.utils.logger import logger as get_logger
 from jdhapi.serializers import AbstractSlimSerializer
 from jsonschema.exceptions import ValidationError, SchemaError
@@ -18,7 +20,6 @@ from textwrap import dedent
 logger = get_logger()
 
 document_json_schema = JSONSchema(filepath="submit_abstract.json")
-
 
 def get_default_body(id, title, firstname, lastname):
     default_body = dedent(
@@ -57,9 +58,18 @@ def send_mail_abstract_received(pid, subject, sent_to, firstname, lastname):
 @authentication_classes([])
 @permission_classes([AllowAny])
 def submit_abstract(request):
+    """
+    POST /api/abstracts/submit
+
+    Create an abstract submission.
+    The endpoint is public.
+    Requires a valid captcha solution only.
+    """
+        
     try:
         data = validate_and_submit_abstract(request)
         return Response(data, status=status.HTTP_201_CREATED)
+    
     except ValidationError as e:
         logger.exception("Validation error occurred.")
         response = Response(
@@ -95,6 +105,21 @@ def submit_abstract(request):
 
 
 def validate_and_submit_abstract(request):
+    logger.info("Start captcha validation")
+    payload = request.data.get("altcha")
+
+    if not payload:
+        raise ValidationError("Altcha payload missing")
+
+    try:
+        verified, err = verify_challenge_solution(payload)
+
+        if not verified:
+            raise ValidationError(f"Invalid Altcha payload: {err}")
+            
+    except ValidationError as e:
+        raise ValidationError(f"Failed to process Altcha payload: {str(e)}")
+
     logger.info("Start JSON validation")
     with transaction.atomic():
         # Single transaction block for the entire function

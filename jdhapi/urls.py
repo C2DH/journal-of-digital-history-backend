@@ -5,6 +5,7 @@ from rest_framework.urlpatterns import format_suffix_patterns
 urlpatterns = [
     path("api/", views.api_root),
     path("api/me", views.api_me, name="me"),
+    path("api/captcha", views.get_captcha_challenge, name="captcha"),
     path("api-auth/", include("rest_framework.urls")),
     path("api/abstracts/", views.AbstractList.as_view(), name="abstract-list"),
     path(

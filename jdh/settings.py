@@ -30,18 +30,23 @@ DEBUG = get_env_variable("DEBUG", "False")
 
 DJANGO_LOG_LEVEL = get_env_variable("DJANGO_LOG_LEVEL", "DEBUG")
 
+CORS_ALLOWED_ORIGINS = get_env_variable("CORS_ALLOWED_ORIGINS", "").split(",")
+
 CSRF_TRUSTED_ORIGINS = get_env_variable("CSRF_TRUSTED_ORIGINS", "").split(",")
 
 ALLOWED_HOSTS = get_env_variable("ALLOWED_HOSTS", "").split(",")
 
+ALTCHA_HMAC_KEY = get_env_variable("ALTCHA_HMAC_KEY", "").split(",")
+
 DRF_RECAPTCHA_SECRET_KEY = get_env_variable(
     "DRF_RECAPTCHA_SECRET_KEY", "default-recaptacha-secret-key"
-)
+).split(",")
 
 
 # Application definition
 
 INSTALLED_APPS = [
+    "corsheaders",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -79,6 +84,7 @@ CRISPY_TEMPLATE_PACK = "bootstrap4"
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    'corsheaders.middleware.CorsMiddleware',
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
