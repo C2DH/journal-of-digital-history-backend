@@ -5,7 +5,7 @@ from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 from jdhapi.models import Article
 from jdhapi.utils.articles import convert_string_to_base64
-from jdhapi.utils.run_github_action import trigger_workflow
+
 
 
 @receiver(pre_save, sender=Article)

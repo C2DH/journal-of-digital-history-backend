@@ -1,6 +1,5 @@
 import io
 import logging
-import threading
 import requests
 from django.conf import settings
 from django.http import HttpResponse
@@ -13,7 +12,7 @@ from rest_framework.decorators import (
 from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
 from jdhapi.models import Article
-from jdhapi.utils.run_github_action import trigger_workflow
+from jdhapi.utils.run_github_action import trigger_workflow_and_wait
 
 logger = logging.getLogger(__name__)
 
@@ -45,15 +44,15 @@ def get_docx(request):
 
         try:
             logger.debug(
-                "Trigger pandoc workflow for pid=%s, repo=%s",
+                "Run pandoc workflow and wait for completion pid=%s, repo=%s",
                 pid,
                 article.repository_url,
             )
-            run_pandoc_workflow(article.repository_url, async_trigger=True)
-            logger.debug("Pandoc workflow trigger dispatched for pid=%s", pid)
+            run_pandoc_workflow(article.repository_url)
+            logger.debug("Pandoc workflow completed for pid=%s", pid)
         except Exception as e:
             return Response(
-                {"error": "Failed to trigger pandoc workflow", "details": str(e)},
+                {"error": "Failed to run pandoc workflow", "details": str(e)},
                 status=502,
             )
 
@@ -140,35 +139,17 @@ def send_email_copy_editor(pid, docx_bytes):
     message.send(fail_silently=False)
 
 
-def run_pandoc_workflow(repository_url, async_trigger=True):
-    logger.debug(
-        "run_pandoc_workflow(async_trigger=%s) repo=%s",
-        async_trigger,
-        repository_url,
-    )
-    if async_trigger:
-        thread = threading.Thread(
-            target=_run_pandoc_workflow_safe, args=(repository_url,), daemon=True
-        )
-        thread.start()
-        return
-
-    _run_pandoc_workflow_safe(repository_url, raise_errors=True)
-
-
-def _run_pandoc_workflow_safe(repository_url, raise_errors=False):
+def run_pandoc_workflow(repository_url):
     try:
         logger.debug(
-            "_run_pandoc_workflow_safe(raise_errors=%s) repo=%s",
-            raise_errors,
+            "run_pandoc_workflow wait repo=%s",
             repository_url,
         )
-        trigger_workflow(
+        trigger_workflow_and_wait(
             repository_url,
             workflow_filename="pandoc.yml",
         )
-        logger.debug("Pandoc workflow trigger completed repo=%s", repository_url)
+        logger.debug("Pandoc workflow completed repo=%s", repository_url)
     except Exception as e:
         logger.error("run_pandoc_workflow failed: %s", e)
-        if raise_errors:
-            raise
+        raise
