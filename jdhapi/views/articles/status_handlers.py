@@ -33,3 +33,11 @@ class CopyEditingHandler(StatusHandler):
         logger.info("Set status COPY_EDITING pid=%s", article.abstract.pid)
         return Response({"status": "COPY_EDITING set", "article pid": article.abstract.pid})
 
+
+class PeerReviewHandler(StatusHandler):
+    def handle(self, article, request):
+        logger.info("Setting status PEER_REVIEW pid=%s", article.abstract.pid)
+        article.status = article.Status.PEER_REVIEW
+        article.save()
+        return Response({"status": "PEER_REVIEW set", "article pid": article.abstract.pid})
+    
