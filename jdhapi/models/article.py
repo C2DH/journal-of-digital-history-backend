@@ -62,7 +62,14 @@ class Article(models.Model):
             "DESIGN_REVIEW",
             "Design review",
         )
-        PUBLISHED = "PUBLISHED", "Published"
+        COPY_EDITING = (
+            "COPY_EDITING",
+            "Copy editing",
+        )
+        PUBLISHED = (
+            "PUBLISHED", 
+            "Published",
+        )
 
     class CopyrightType(models.TextChoices):
         DRAFT = (

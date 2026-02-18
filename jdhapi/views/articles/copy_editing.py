@@ -60,6 +60,10 @@ def send_docx_email(request):
     if not pid:
         return Response({"error": "Article PID is required."}, status=400)
 
+    return send_docx_email_pid(pid, branch_name=branch_name)
+
+
+def send_docx_email_pid(pid, branch_name="pandoc"):
     try:
         workflow_error = ensure_pandoc_workflow(pid)
         if workflow_error:

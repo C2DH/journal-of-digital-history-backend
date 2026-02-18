@@ -4,7 +4,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import generics, filters
 from rest_framework.permissions import BasePermission
 from django.shortcuts import get_object_or_404
-from jdhapi.views.articles.status_handlers import TechnicalReviewHandler
+from jdhapi.views.articles.status_handlers import TechnicalReviewHandler, CopyEditingHandler
 from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -94,6 +94,7 @@ class ArticleStatus(APIView):
     permission_classes = [IsAdminUser]
     STATUS_HANDLERS = {
         'TECHNICAL_REVIEW': TechnicalReviewHandler(),
+        'COPY_EDITING': CopyEditingHandler(),
     }
     
     def patch(self, request, abstract__pid):
