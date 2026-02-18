@@ -29,32 +29,9 @@ def get_docx(request):
     if not pid:
         return Response({"error": "Article PID is required."}, status=400)
     try:
-        try:
-            article = Article.objects.get(abstract__pid=pid)
-        except Article.DoesNotExist:
-            return Response(
-                {"error": f"Article not found for PID '{pid}'."}, status=404
-            )
-
-        if not article.repository_url:
-            return Response(
-                {"error": f"repository_url is missing for PID '{pid}'."},
-                status=400,
-            )
-
-        try:
-            logger.debug(
-                "Run pandoc workflow and wait for completion pid=%s, repo=%s",
-                pid,
-                article.repository_url,
-            )
-            run_pandoc_workflow(article.repository_url)
-            logger.debug("Pandoc workflow completed for pid=%s", pid)
-        except Exception as e:
-            return Response(
-                {"error": "Failed to run pandoc workflow", "details": str(e)},
-                status=502,
-            )
+        workflow_error = ensure_pandoc_workflow(pid)
+        if workflow_error:
+            return workflow_error
 
         docx_bytes = fetch_docx_bytes(pid, branch_name)
         return HttpResponse(
@@ -84,6 +61,10 @@ def send_docx_email(request):
         return Response({"error": "Article PID is required."}, status=400)
 
     try:
+        workflow_error = ensure_pandoc_workflow(pid)
+        if workflow_error:
+            return workflow_error
+
         docx_bytes = fetch_docx_bytes(pid, branch_name)
         send_email_copy_editor(pid, docx_bytes)
         return Response({"status": "sent", "pid": pid})
@@ -153,3 +134,34 @@ def run_pandoc_workflow(repository_url):
     except Exception as e:
         logger.error("run_pandoc_workflow failed: %s", e)
         raise
+
+
+def ensure_pandoc_workflow(pid):
+    try:
+        try:
+            article = Article.objects.get(abstract__pid=pid)
+        except Article.DoesNotExist:
+            return Response(
+                {"error": f"Article not found for PID '{pid}'."}, status=404
+            )
+
+        if not article.repository_url:
+            return Response(
+                {"error": f"repository_url is missing for PID '{pid}'."},
+                status=400,
+            )
+
+        logger.debug(
+            "Run pandoc workflow and wait for completion pid=%s, repo=%s",
+            pid,
+            article.repository_url,
+        )
+        run_pandoc_workflow(article.repository_url)
+        logger.debug("Pandoc workflow completed for pid=%s", pid)
+    except Exception as e:
+        return Response(
+            {"error": "Failed to run pandoc workflow", "details": str(e)},
+            status=502,
+        )
+
+    return None
