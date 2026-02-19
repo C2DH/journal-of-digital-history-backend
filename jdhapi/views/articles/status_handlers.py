@@ -1,7 +1,10 @@
 import logging
+from django.utils import timezone
+from rest_framework import status
 from rest_framework.response import Response
 from jdhapi.models import Article
 from jdhapi.views.articles.copy_editing import send_docx_email_pid
+from jdhapi.utils.articles import save_citation
 
 logger = logging.getLogger(__name__)
 
@@ -40,4 +43,38 @@ class PeerReviewHandler(StatusHandler):
         article.status = article.Status.PEER_REVIEW
         article.save()
         return Response({"status": "PEER_REVIEW set", "article pid": article.abstract.pid})
+    
+    
+class PublishedHandler(StatusHandler):
+    def handle(self, article, request):
+        logger.info("Setting status PUBLISHED pid=%s", article.abstract.pid)
+        # control on the DOI field mandatory
+        if not article.doi:
+            return Response(
+                {"error": "Doi is mandatory if published"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        # quick synchronous validation before scheduling
+        article_data = article.data if isinstance(article.data, dict) else {}
+        if not article_data.get("title"):
+            return Response(
+                {"error": "Article data title is mandatory if published"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # run save_citation synchronously; publish only on success
+        try:
+            save_citation(article_id=article.pk)
+        except Exception as exc:
+            logger.exception("save_citation failed pid=%s", article.abstract.pid)
+            return Response(
+                {"error": "save_citation failed", "details": str(exc)},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # set the publication_date to now
+        article.publication_date = timezone.now()
+        article.status = article.Status.PUBLISHED
+        article.save()
+        return Response({"status": "PUBLISHED set", "article pid": article.abstract.pid})
     
