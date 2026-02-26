@@ -1,7 +1,7 @@
 import logging
+
 from django.db import models
 from model_utils import FieldTracker
-
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +35,6 @@ class Article(models.Model):
     Methods:
         get_kernel_language(): Returns the kernel language based on the 'tool' tag.
         __str__(): Returns the title of the abstract.
-        send_email_if_peer_review(): Sends an email with a PDF attachment if the article is in peer review status.
     """
 
     class Status(models.TextChoices):
@@ -55,7 +54,14 @@ class Article(models.Model):
             "DESIGN_REVIEW",
             "Design review",
         )
-        PUBLISHED = "PUBLISHED", "Published"
+        COPY_EDITING = (
+            "COPY_EDITING",
+            "Copy editing",
+        )
+        PUBLISHED = (
+            "PUBLISHED", 
+            "Published",
+        )
 
     class CopyrightType(models.TextChoices):
         DRAFT = (
@@ -130,7 +136,7 @@ class Article(models.Model):
         blank=True,
         null=True,
         help_text="Url to find here https://data.journalofdigitalhistory.org/",
-    )  # New field for Dataverse URL
+    ) 
     publication_date = models.DateTimeField(blank=True, null=True)
     copyright_type = models.CharField(
         max_length=15,

@@ -10,9 +10,10 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.1/ref/settings/
 """
 
-from pathlib import Path
 import os
 import sys
+from pathlib import Path
+
 from .base import get_env_variable
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -292,6 +293,8 @@ BLUESKY_JDH_PASSWORD = get_env_variable("BLUESKY_JDH_PASSWORD")
 FACEBOOK_JDH_PAGE_ID = get_env_variable("FACEBOOK_JDH_PAGE_ID")
 FACEBOOK_JDH_ACCESS_TOKEN = get_env_variable("FACEBOOK_JDH_ACCESS_TOKEN")
 
-#OJS API
-OJS_API_KEY_TOKEN= get_env_variable("OJS_API_KEY_TOKEN", "default")
+# OJS API
+OJS_API_KEY_TOKEN = get_env_variable("OJS_API_KEY_TOKEN", "default")
 OJS_API_URL = get_env_variable("OJS_API_URL", "http://ojs.journalofdigitalhistory.org")
+
+COPY_EDITOR_ADDRESS = get_env_variable("COPY_EDITOR_ADDRESS", "")
