@@ -1,11 +1,10 @@
 import requests
-import logging
 from django.core.exceptions import ValidationError
-from django.db.models.signals import post_save, pre_save
+from django.db.models.signals import pre_save
 from django.dispatch import receiver
+
 from jdhapi.models import Article
 from jdhapi.utils.articles import convert_string_to_base64
-
 
 
 @receiver(pre_save, sender=Article)
@@ -37,5 +36,4 @@ def validate_urls_for_article_submission(sender, instance, **kwargs):
     if instance.notebook_url and check_notebook_url(
         instance.notebook_url, instance.repository_url
     ):
-
         raise ValidationError("Notebook url is not correct")
