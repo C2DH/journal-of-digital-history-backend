@@ -15,7 +15,6 @@ from rest_framework.response import Response
 logger = logging.getLogger(__name__)
 
 COPY_EDITOR_ADDRESS = settings.COPY_EDITOR_ADDRESS
-COPY_EDITOR_NAME = settings.COPY_EDITOR_NAME
 
 @api_view(["GET"])
 @permission_classes([IsAdminUser])
@@ -56,20 +55,22 @@ def get_docx(request):
         )
 
 
-@api_view(["GET"])
+@api_view(["POST"])
 @permission_classes([IsAdminUser])
 def send_docx_email(request):
     """
-    GET api/articles/docx/email
+    POST api/articles/docx/email
 
     Send the docx as an email attachment.
     :params pid: the article PID
+    :params body: the email body to send to copy editor
     :params branch_name: the branch name where the docx file is located, by default "pandoc"
     """
-    logger.info("GET api/articles/docx/email")
+    logger.info("POST api/articles/docx/email")
 
     branch_name = "pandoc"
-    pid = request.GET.get("pid")
+    pid = request.data.get("pid")
+    body= request.data.get("body")
 
     if not pid:
         return Response({"error": "Article PID is required."}, status=400)
@@ -80,8 +81,8 @@ def send_docx_email(request):
             return workflow_error
 
         docx_bytes = fetch_docx_bytes(pid, branch_name)
-        send_email_copy_editor(pid, docx_bytes)
-        return Response({"message": "Docx sent succesfully by email for article : {pid}"}, status=200)
+        send_email_copy_editor(pid, docx_bytes, body)
+        return Response({"message": f"Docx sent succesfully by email for article : {pid}"}, status=200)
     
     except FileNotFoundError as e:
         return Response({"error": str(e)}, status=404)
@@ -126,7 +127,7 @@ def fetch_docx_bytes(pid, branch_name):
     raise ValueError("Unexpected error occurred while contacting GitHub API.")
     
 
-def send_email_copy_editor(pid, docx_bytes):
+def send_email_copy_editor(pid, docx_bytes, body):
     """
     Helper function to send the email to copy editing editor
     :params pid: the article PID
@@ -134,7 +135,6 @@ def send_email_copy_editor(pid, docx_bytes):
     """
     logger.info("[run_pandoc_workflow] Running pandoc workflow for PID '%s'", pid)
 
-    body = f"Dear {COPY_EDITOR_NAME}, find in attachment the docx to review for copy editing."
     filename = f"article_{pid}.docx"
     message = EmailMessage(
         subject="Article to review for copy editing",

@@ -291,4 +291,3 @@ OJS_API_KEY_TOKEN= get_env_variable("OJS_API_KEY_TOKEN", "default")
 OJS_API_URL = get_env_variable("OJS_API_URL", "http://ojs.journalofdigitalhistory.org")
 
 COPY_EDITOR_ADDRESS=get_env_variable("COPY_EDITOR_ADDRESS", "")
-COPY_EDITOR_NAME=get_env_variable("COPY_EDITOR_NAME", "")
