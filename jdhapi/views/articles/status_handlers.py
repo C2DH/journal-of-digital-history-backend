@@ -21,14 +21,6 @@ class TechnicalReviewHandler(StatusHandler):
 class CopyEditingHandler(StatusHandler):
     def handle(self, article, request):
         logger.info("Starting COPY_EDITING flow pid=%s", article.abstract.pid)
-        email_response = send_docx_email(article)
-        if getattr(email_response, "status_code", 200) >= 400:
-            logger.warning(
-                "COPY_EDITING email failed pid=%s status_code=%s",
-                article.abstract.pid,
-                getattr(email_response, "status_code", None),
-            )
-            return email_response
 
         article.status = article.Status.COPY_EDITING
         article.save()
