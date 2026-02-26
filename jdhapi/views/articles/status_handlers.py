@@ -1,10 +1,9 @@
 import logging
 from django.utils import timezone
+from jdhapi.views.articles.copy_editing import send_docx_email
+from jdhapi.utils.articles import save_citation
 from rest_framework import status
 from rest_framework.response import Response
-from jdhapi.models import Article
-from jdhapi.views.articles.copy_editing import send_docx_email_pid
-from jdhapi.utils.articles import save_citation
 
 logger = logging.getLogger(__name__)
 
@@ -13,7 +12,7 @@ class StatusHandler:
         raise NotImplementedError
 
 class TechnicalReviewHandler(StatusHandler):
-    def handle(self, article, request):
+    def handle(self, article, request): 
         logger.info("Setting status TECHNICAL_REVIEW pid=%s", article.abstract.pid)
         article.status = article.Status.TECHNICAL_REVIEW
         article.save()
@@ -22,7 +21,7 @@ class TechnicalReviewHandler(StatusHandler):
 class CopyEditingHandler(StatusHandler):
     def handle(self, article, request):
         logger.info("Starting COPY_EDITING flow pid=%s", article.abstract.pid)
-        email_response = send_docx_email_pid(article.abstract.pid)
+        email_response = send_docx_email(article)
         if getattr(email_response, "status_code", 200) >= 400:
             logger.warning(
                 "COPY_EDITING email failed pid=%s status_code=%s",

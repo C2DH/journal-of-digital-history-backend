@@ -1,7 +1,7 @@
 # import marko
 from django import forms
 from jdhapi.models import Article, Abstract
-from jdhapi.utils.gitup_repository import is_socialmediacover_exist
+from jdhapi.utils.github_repository import is_socialmediacover_exist
 import logging
 import datetime
 from django.http import Http404

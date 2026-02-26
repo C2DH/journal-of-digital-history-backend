@@ -1,15 +1,7 @@
 import logging
-import marko
 
-from django.conf import settings
-
-from django.core.mail import EmailMessage
 from django.db import models
-from django.template.loader import render_to_string
-
-from lxml import html
 from model_utils import FieldTracker
-from weasyprint import HTML
 
 logger = logging.getLogger(__name__)
 
@@ -144,7 +136,7 @@ class Article(models.Model):
         blank=True,
         null=True,
         help_text="Url to find here https://data.journalofdigitalhistory.org/",
-    )  # New field for Dataverse URL
+    ) 
     publication_date = models.DateTimeField(blank=True, null=True)
     copyright_type = models.CharField(
         max_length=15,
