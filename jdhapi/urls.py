@@ -5,6 +5,7 @@ from rest_framework.urlpatterns import format_suffix_patterns
 urlpatterns = [
     path("api/", views.api_root),
     path("api/me", views.api_me, name="me"),
+    path("api/captcha", views.get_captcha_challenge, name="captcha"),
     path("api-auth/", include("rest_framework.urls")),
     path("api/abstracts/", views.AbstractList.as_view(), name="abstract-list"),
     path(
@@ -47,7 +48,8 @@ urlpatterns = [
         name="articles-facebook",
     ),
     path("api/articles/cover", views.get_social_cover_image, name="articles-social-media-cover"),
-    path("api/articles/ojs", views.send_article_to_ojs, name="articles-send-to-ojs"),
+    path("api/articles/ojs/submissions", views.get_count_submission_from_ojs, name="count-submission-from-ojs"),
+    path("api/articles/ojs/submission", views.send_article_to_ojs, name="articles-send-to-ojs"),
     path("api/articles/tweet", views.get_tweet_md_file, name="articles-tweet"),
     path("api/articles/docx", views.get_docx, name="article-docx"),
     path("api/articles/docx/email", views.send_docx_email, name="article-docx-email"),

@@ -160,6 +160,7 @@ class Article(models.Model):
     )
     tags = models.ManyToManyField("jdhapi.Tag", blank=True)
     authors = models.ManyToManyField("jdhapi.Author", through="Role")
+    ojs_submission_id = models.IntegerField(null=True, blank=True, default=None)
 
     def get_kernel_language(self):
         tool_tags = self.tags.filter(category="tool")
