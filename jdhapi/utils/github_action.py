@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 import logging
-import requests
 import time
 from datetime import datetime, timezone
 from urllib.parse import urlparse
+
+import requests
 from jdh.settings import GITHUB_ACCESS_TOKEN
 
 logger = logging.getLogger(__name__)
@@ -15,12 +16,17 @@ def trigger_workflow(repo_url, workflow_filename, token=None, ref="main"):
     :param workflow_filename: Filename of the workflow in .github/workflows (e.g. "hello-world.yml")
     :param token: GitHub access token with repo permissions (optional, will use env variable if not provided)
     :param ref: Git ref (branch or tag) to run the workflow on
-    """    
-    
-    logger.info("[trigger_workflow] - Trigger workflow '%s' on ref '%s' for %s/%s", workflow_filename, ref, owner, repo)
-    
+    """
     token = _get_github_token(token)
     owner, repo = _parse_owner_repo(repo_url)
+
+    logger.info(
+        "[trigger_workflow] - Trigger workflow '%s' on ref '%s' for %s/%s",
+        workflow_filename,
+        ref,
+        owner,
+        repo,
+    )
 
     url = f"https://api.github.com/repos/{owner}/{repo}/actions/workflows/{workflow_filename}/dispatches"
     headers = {
@@ -38,7 +44,7 @@ def trigger_workflow(repo_url, workflow_filename, token=None, ref="main"):
                 owner,
                 repo,
             )
-        else :
+        else:
             logger.error(
                 "Failed to dispatch workflow '%s' (%s): %s",
                 workflow_filename,
@@ -66,13 +72,19 @@ def trigger_workflow_and_wait(
     :param ref: Git ref (branch or tag) to run the workflow on
     :param timeout_seconds: Maximum time to wait for workflow completion
     :param poll_interval_seconds: Time to wait between polling for workflow status
-    """    
-    
-    logger.info("[trigger_workflow_and_wait] - Trigger workflow and wait for '%s' on ref '%s' for %s/%s", workflow_filename, ref, owner, repo)
-    
+    """
+
     token = _get_github_token(token)
     owner, repo = _parse_owner_repo(repo_url)
     started_at = datetime.now(timezone.utc)
+
+    logger.info(
+        "[trigger_workflow_and_wait] - Trigger workflow and wait for '%s' on ref '%s' for %s/%s",
+        workflow_filename,
+        ref,
+        owner,
+        repo,
+    )
 
     trigger_workflow(repo_url, workflow_filename, token=token, ref=ref)
 
@@ -137,11 +149,13 @@ def trigger_workflow_and_wait(
 def _parse_owner_repo(repo_url):
     """
     Retrieve owner and repository name from a github repository url
-    
+
     :param repo_url: Description
     :return: Return a tuple of (owner name, repository name)
     """
-    logger.info("[_parse_owner_repo] - Retrieve owner and repository name from a github repository url")
+    logger.info(
+        "[_parse_owner_repo] - Retrieve owner and repository name from a github repository url"
+    )
 
     parsed = urlparse(repo_url)
     path = parsed.path.lstrip("/")
@@ -156,7 +170,7 @@ def _parse_owner_repo(repo_url):
 
     if len(parts) >= 2:
         return owner, repo
-    else : 
+    else:
         raise ValueError(f"Invalid repository URL: '{repo_url}'")
 
 
@@ -176,7 +190,6 @@ def _get_github_token(token):
             "No GitHub access token provided and GITHUB_ACCESS_TOKEN is not set."
         )
     return resolved
-
 
 
 def _parse_github_datetime(value):
