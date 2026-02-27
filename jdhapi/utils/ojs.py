@@ -19,6 +19,11 @@ OJS_API_URL = settings.OJS_API_URL
 
 
 def create_blank_submission():
+    """
+    Create a blank submission in OJS to get the submission_id for the article
+
+    Returns: Response object from the OJS API with the submission_id in the response body
+    """
     logger.info("creating a blank submission in OJS")
 
     url = f"{OJS_API_URL}/submissions"
@@ -29,6 +34,13 @@ def create_blank_submission():
 
 
 def upload_manuscript_to_ojs(pid, submission_id, pdf_bytes):
+    """
+    Upload the pdf with the list of links to give access to the article (GitHub repository, Binder and JDH viewer)
+
+    :param pid: The article pid
+    :param submission_id: The OJS submission id to which the manuscript will be uploaded
+    :param pdf_bytes: The pdf file in bytes to be uploaded to OJS
+    """
     logger.info("uploading manuscript to OJS")
 
     url = f"{OJS_API_URL}/submissions/{submission_id}/files"
@@ -47,6 +59,13 @@ def upload_manuscript_to_ojs(pid, submission_id, pdf_bytes):
 
 
 def create_contributor_in_ojs(submission_id, publication_id, article: Article):
+    """
+    Create a contributor in OJS
+
+    :param submission_id: The OJS submission id to which the contributor will be added
+    :param publication_id: The OJS publication id to which the contributor will be added
+    :param article: The article object
+    """
     logger.info("creating the article contributor in OJS")
 
     primary_contact_id = 0
@@ -85,6 +104,14 @@ def create_contributor_in_ojs(submission_id, publication_id, article: Article):
 def assign_primary_contact_and_metadata(
     submission_id, publication_id, contributor_id, article
 ):
+    """
+    Assign the primary contact to the submission and add title, abstract and competing interests
+
+    :param submission_id: The OJS submission id to which the contributor will be added
+    :param publication_id: The OJS publication id to which the contributor will be added
+    :param contributor_id: The OJS contributor id to be assigned as primary contact
+    :param article: The article object
+    """
     logger.info(
         "Assign the author as primary contact to the submission and add title, abstract and competingInterests"
     )
@@ -103,6 +130,11 @@ def assign_primary_contact_and_metadata(
 
 
 def submit_submission_to_ojs(submission_id):
+    """
+    Finalize the submission in OJS to move it from Incomplete stage to Submission stage
+
+    :param submission_id: The OJS submission id to which the contributor will be added
+    """
     logger.info("Submit the article to OJS")
 
     url = f"{OJS_API_URL}/submissions/{submission_id}/submit"
@@ -114,6 +146,11 @@ def submit_submission_to_ojs(submission_id):
 
 
 def generate_pdf_for_submission(article):
+    """
+    Generate a PDF file with a list of links to give access to the article (GitHub repository, Binder and JDH viewer)
+
+    :param article: The article object
+    """
     template = "jdhseo/peer_review.html"
     if "title" in article.data:
         articleTitle = html.fromstring(
