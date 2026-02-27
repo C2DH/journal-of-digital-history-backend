@@ -1,20 +1,26 @@
 import requests
 from django.conf import settings
 from django.db import transaction
-from jdhapi.models import Article
-from jdhapi.utils.ojs import create_blank_submission, upload_manuscript_to_ojs, create_contributor_in_ojs, assign_primary_contact_and_metadata, generate_pdf_for_submission
-from jdhapi.utils.logger import logger as get_logger
 from jdh.validation import JSONSchema
 from jdhseo.utils import get_country_with_ROR
 from jsonschema.exceptions import ValidationError
+from rest_framework import status
 from rest_framework.decorators import (
     api_view,
     permission_classes,
 )
 from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
-from rest_framework import status
 
+from jdhapi.models import Article
+from jdhapi.utils.logger import logger as get_logger
+from jdhapi.utils.ojs import (
+    assign_primary_contact_and_metadata,
+    create_blank_submission,
+    create_contributor_in_ojs,
+    generate_pdf_for_submission,
+    upload_manuscript_to_ojs,
+)
 
 logger = get_logger()
 article_to_ojs_schema = JSONSchema(filepath="article_to_ojs.json")
@@ -36,7 +42,7 @@ def get_count_submission_from_ojs(_):
 
     logger.info("GET /api/articles/ojs/submissions")
 
-    url=f"{OJS_API_URL}/submissions?stageIds=1"
+    url = f"{OJS_API_URL}/submissions?stageIds=1"
 
     try:
         response = requests.get(url, headers=headers)
@@ -71,7 +77,7 @@ def send_article_to_ojs(request):
     try:
         res = submit_to_ojs(request)
         return Response(
-            {"message": "Article(s) send successfully to OJS.", "data": res},
+            {"message": "Article send successfully to OJS.", "data": res},
             status=status.HTTP_200_OK,
         )
     except ValidationError as e:
@@ -81,7 +87,6 @@ def send_article_to_ojs(request):
             status=status.HTTP_400_BAD_REQUEST,
         )
     except Exception as e:
-        logger.exception("An unexpected error occurred.")
         return Response(
             {
                 "error": "InternalError",
@@ -97,101 +102,117 @@ def submit_to_ojs(request):
 
     logger.info('Submitting article to OJS')
 
-    with transaction.atomic():
+    try:
 
-        article_to_ojs_schema.validate(instance=request.data)
+        with transaction.atomic():
 
-        pid = request.data.get("pid", None)
+            article_to_ojs_schema.validate(instance=request.data)
 
-        logger.info("Retrieve article according to the PID.")
+            pid = request.data.get("pid", None)
 
-        if not pid: 
-            logger.error("No PID provided in request data.")
-            raise ValidationError( "One article PID is required.")
+            logger.info("Retrieve article according to the PID.")
+
+            if not pid:
+                logger.error("No PID provided in request data.")
+                raise ValidationError("One article PID is required.")
+            
+            article = Article.objects.get(abstract__pid=pid)
+
+            if article is None:
+                logger.error(f"No article found for PID : {pid}.")
+                raise Exception("Article not found.")
         
-        article = Article.objects.get(abstract__pid=pid)
+            logger.info("Send article to OJS.")
 
-        if article is None:
-            logger.error(f"No article found for PID : {pid}.")
-            raise Exception( "Article not found.")
-    
-        logger.info("Send article to OJS.")
+            submission_id = 0
+            publication_id = 0
+            contributor_id = 0
+            is_one_contributor_primary_contact = False
 
-        submission_id = 0
-        publication_id = 0
-        contributor_id = 0
+            required_fields = {
+                'affiliation': 'affiliation',
+                'country': 'country',
+                'email': 'email',
+                'lastname': 'lastname',
+                'firstname': 'firstname',
+                'orcid': 'orcid',
+            }
 
-        required_fields = {
-            'affiliation': 'affiliation',
-            'country': 'country',
-            'email': 'email',
-            'lastname': 'lastname',
-            'firstname': 'firstname',
-            'orcid': 'orcid',
-        }
+            for author in article.abstract.authors.all():
+                for field, fieldname in required_fields.items():
+                    if not getattr(author, field):
+                        author_name = f"{author.firstname} {author.lastname}" 
+                        error_msg = f"Author {fieldname} is missing. Author concerned : {author_name}"
+                        logger.error(error_msg)
+                        if fieldname == 'country': 
+                            country = get_country_with_ROR(affiliation_name=author.affiliation)
+                            if not country:
+                                raise ValidationError(error_msg)
+                            else:
+                                author.country = country
+                                author.save()
+            
+            for author in article.abstract.authors.all():
+                if article.abstract.contact_email == author.email:
+                    is_one_contributor_primary_contact = True
+                    break
+            
+            if not is_one_contributor_primary_contact:
+                error_msg = "No primary contact identified among authors."
+                logger.error(error_msg)
+                raise ValidationError(error_msg)
+            
+            if not article.data.get('title'):
+                error_msg = "Field 'title' is missing in the 'data' field of the article."
+                logger.error(error_msg)
+                raise ValidationError(error_msg)
 
-        for author in article.abstract.authors.all():
-            for field, fieldname in required_fields.items():
-                if not getattr(author, field):
-                    author_name=f"{author.firstname} {author.lastname}" 
-                    error_msg = f"Author {fieldname} is missing. Author concerned : {author_name}"
+            try:
+                # 1. create a blank submission in OJS
+                res = create_blank_submission()
+                logger.info(f"Blank submission created with response: {res.json()}")
+
+                submission_id = res.json().get('id', 0)
+                publication_id = res.json().get('currentPublicationId', 0)
+
+                article.ojs_submission_id = submission_id
+                article.save()
+                
+                # 2. upload the pdf file to OJS
+                pdf_file = generate_pdf_for_submission(article)
+                res = upload_manuscript_to_ojs(article.abstract.pid, submission_id, pdf_file)
+
+                if res.status_code not in [200, 201]:
+                    error_msg = f"Failed to upload manuscript to OJS. Status: {res.status_code}, Response: {res.text}"
                     logger.error(error_msg)
-                    if fieldname == 'country' : 
-                        country = get_country_with_ROR(affiliation_name=author.affiliation)
-                        if not country:
-                            raise ValidationError(error_msg)
-                        else:
-                            author.country = country
-                            author.save()
-        
-        if not article.data.get('title') :
-            error_msg = "Field 'title' is missing in the 'data' field of the article."
-            logger.error(error_msg)
-            raise ValidationError(error_msg)
+                    raise Exception(error_msg)
+                
+                logger.info(f"Manuscript uploaded with response: {res.json()}")
 
-        try:
-            # 1. create a blank submission in OJS
-            res = create_blank_submission()
-            logger.info(f"Blank submission created with response: {res.json()}")
+                # 3. Create the article contributor in OJS
+                primary_contact_id = create_contributor_in_ojs(submission_id, publication_id, article)
+                
+                if not primary_contact_id:
+                    raise Exception("Failed to create contributor or retrieve primary contact ID")
 
-            submission_id = res.json().get('id',0)
-            publication_id = res.json().get('currentPublicationId', 0)
+                contributor_id = primary_contact_id
 
-            article.ojs_submission_id = submission_id
-            article.save()
-             
-            # 2. upload the pdf file to OJS
-            pdf_file = generate_pdf_for_submission(article)
-            res = upload_manuscript_to_ojs(article.abstract.pid, submission_id, pdf_file)
+                # 4. Assign the author as primary Contact to the submission + title + abstract + competingInterests 
+                res = assign_primary_contact_and_metadata(submission_id, publication_id, contributor_id, article)
 
-            if res.status_code not in [200, 201]:
-                error_msg = f"Failed to upload manuscript to OJS. Status: {res.status_code}, Response: {res.text}"
-                logger.error(error_msg)
-                raise Exception(error_msg)
+                if res.status_code not in [200, 201]:
+                    error_msg = f"Failed to assign metadata. Status: {res.status_code}, Response: {res.text}"
+                    logger.error(error_msg)
+                    raise Exception(error_msg)
+
+                # 5. Submit the submission to OJS
+                # uncomment if we do not need human check on OJS dashboard anymore
+                # submit_to_ojs(submission_id)
+
+            except Exception as e:
+                logger.error(f"Error during OJS submission process: {e}")
+                raise e
             
-            logger.info(f"Manuscript uploaded with response: {res.json()}")
-
-            # 3. Create the article contributor in OJS
-            primary_contact_id=create_contributor_in_ojs(submission_id, publication_id, article)
-            
-            if not primary_contact_id:
-                raise Exception("Failed to create contributor or retrieve primary contact ID")
-
-            contributor_id=primary_contact_id
-
-            # 4. Assign the author as primary Contact to the submission + title + abstract + competingInterests 
-            res = assign_primary_contact_and_metadata(submission_id, publication_id, contributor_id, article)
-
-            if res.status_code not in [200, 201]:
-                error_msg = f"Failed to assign metadata. Status: {res.status_code}, Response: {res.text}"
-                logger.error(error_msg)
-                raise Exception(error_msg)
-
-            # 5. Submit the submission to OJS
-            # uncomment if we do not need human check on OJS dashboard anymore
-            # submit_to_ojs(submission_id)
-
-        except Exception as e:
-            logger.error(f"Error during OJS submission process: {e}")
-            raise e
-
+    except Exception as e:
+        logger.error(f"Transaction failed: {e}")
+        raise e
