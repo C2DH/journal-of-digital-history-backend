@@ -1,7 +1,9 @@
-from jdhapi.serializers.abstract import AbstractSlimSerializer
-from rest_framework import serializers
-from ..models.author import Author
 from django_countries.serializer_fields import CountryField
+from rest_framework import serializers
+
+from jdhapi.serializers.abstract import AbstractSlimSerializer
+
+from ..models.author import Author
 
 
 class CountrySerializer(serializers.Serializer):
@@ -23,12 +25,12 @@ class AuthorAbstractsSerializer(serializers.ModelSerializer):
             "github_id",
             "bluesky_id",
             "facebook_id",
-            "abstracts",
+            "linkedin_id",
+            "abstracts"
         ]
 
 
 class AuthorSlimSerializer(serializers.ModelSerializer):
-
     country = serializers.SerializerMethodField()
 
     def get_country(self, obj):
@@ -48,4 +50,5 @@ class AuthorSlimSerializer(serializers.ModelSerializer):
             "github_id",
             "bluesky_id",
             "facebook_id",
+            "linkedin_id",
         ]
