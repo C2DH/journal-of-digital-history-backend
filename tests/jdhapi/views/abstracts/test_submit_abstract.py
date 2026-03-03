@@ -1,12 +1,11 @@
 from datetime import date
+from unittest.mock import patch
+
 from django.test import Client
 from django.urls import reverse
-from jdhapi.models import Abstract, Author, Dataset, CallForPaper
-from rest_framework.test import APITestCase
+from jdhapi.models import Abstract, Author, CallForPaper, Dataset
 from rest_framework import status
-
-
-from unittest.mock import Mock, patch
+from rest_framework.test import APITestCase
 
 
 class SubmitAbstractTestCase(APITestCase):
@@ -36,6 +35,7 @@ class SubmitAbstractTestCase(APITestCase):
                     "githubId": "janesmith",
                     "blueskyId": "jane.bsky.social",
                     "facebookId": "jane.smith",
+                    "linkedinId": "jane-smith",
                     "primaryContact": True,
                 }
             ],
@@ -70,6 +70,7 @@ class SubmitAbstractTestCase(APITestCase):
                     "githubId": "",
                     "blueskyId": "jane.bsky.social",
                     "facebookId": "jane.smith",
+                    "linkedinId": "jane-smith",
                     "primaryContact": True,
                 }
             ],
@@ -180,6 +181,7 @@ class SubmitAbstractTestCase(APITestCase):
             github_id="existinggithub",
             bluesky_id="existing.bsky.social",
             facebook_id="existing.author",
+            linkedin_id="existing.author.linkedin",
         )
 
         url = reverse("submit-abstract")
@@ -199,6 +201,7 @@ class SubmitAbstractTestCase(APITestCase):
         self.assertEqual(updated_author.github_id, "janesmith")
         self.assertEqual(updated_author.bluesky_id, "jane.bsky.social")
         self.assertEqual(updated_author.facebook_id, "jane.smith")
+        self.assertEqual(updated_author.linkedin_id, "jane-smith")
 
     @patch('jdhapi.views.abstracts.submit_abstract.verify_challenge_solution')
     def test_failed_to_solve_the_captcha(self, mock_captcha):
