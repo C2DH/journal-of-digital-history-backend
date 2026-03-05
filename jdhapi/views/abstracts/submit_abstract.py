@@ -1,5 +1,6 @@
 from textwrap import dedent
 
+from django.core.mail import send_mail
 from django.db import transaction
 from jdh.validation import JSONSchema
 from jsonschema.exceptions import SchemaError, ValidationError
