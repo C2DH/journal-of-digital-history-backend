@@ -1,5 +1,6 @@
 from textwrap import dedent
 
+from django.core.mail import send_mail
 from django.db import transaction
 from jdh.validation import JSONSchema
 from jsonschema.exceptions import SchemaError, ValidationError
@@ -50,14 +51,13 @@ def get_default_body(id, title, firstname, lastname):
 def send_mail_abstract_received(pid, subject, sent_to, firstname, lastname):
     body = get_default_body(pid, subject, firstname, lastname)
     try:
-        # send_mail(
-        #     subject,
-        #     body,
-        #     "jdh.admin@uni.lu",
-        #     [sent_to, "jdh.admin@uni.lu"],
-        #     fail_silently=False,
-        # )
-        print("TEST DONE")
+        send_mail(
+            subject,
+            body,
+            "jdh.admin@uni.lu",
+            [sent_to, "jdh.admin@uni.lu"],
+            fail_silently=False,
+        )
     except Exception as e:
         print(e)
 
