@@ -13,7 +13,7 @@ from django.shortcuts import get_object_or_404
 from django.utils.html import strip_tags
 
 from jdhapi.utils.doi import get_doi_url_formatted_jdh
-from jdhapi.models import Author, Tag
+from jdhapi.models import Article, Author, Tag
 
 from jdhseo.utils import getReferencesFromJupyterNotebook
 from requests.exceptions import HTTPError
@@ -215,6 +215,18 @@ def get_citation(raw_url, article):
         "container-title": "Journal of Digital History",
         "container-title-short": "JDH",
     }
+
+
+def save_citation(article_id):
+    logger.info(f"save_article_citation:{article_id}")
+    try:
+        article = Article.objects.get(pk=article_id)
+    except Article.DoesNotExist:
+        logger.error(f"save_article_citation:{article_id} not found")
+        return
+    citation = get_citation(raw_url=article.notebook_ipython_url, article=article)
+    article.citation = citation
+    article.save()
 
 
 def get_raw_from_github(

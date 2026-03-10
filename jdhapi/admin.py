@@ -11,10 +11,10 @@ from .filter.dataverseurlfilter import EmptyDataverseURLFilter
 from .tasks import (
     save_article_fingerprint,
     save_article_specific_content,
-    save_citation,
     save_libraries,
     save_references,
 )
+from .utils.articles import save_citation
 from import_export.admin import ExportActionMixin
 from django.utils.html import format_html
 
@@ -37,7 +37,7 @@ save_notebook_specific_cell.short_description = "2: Generate preload information
 
 def save_article_citation(modeladmin, request, queryset):
     for article in queryset:
-        save_citation.delay(article_id=article.pk)
+        save_citation(article_id=article.pk)
 
 
 save_article_citation.short_description = "3: Generate citation"

@@ -1,7 +1,8 @@
+from django.db import transaction
 from jdh.validation import JSONSchema
 from jdhapi.models import Article
-from django.db import transaction
-from jsonschema.exceptions import ValidationError, SchemaError
+from jdhapi.utils.logger import logger as get_logger
+from jsonschema.exceptions import ValidationError
 from rest_framework.decorators import (
     api_view,
     permission_classes,
@@ -9,8 +10,6 @@ from rest_framework.decorators import (
 from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
 from rest_framework import status
-
-from ..logger import logger as get_logger
 
 logger = get_logger()
 article_status_schema = JSONSchema(filepath="article_status.json")

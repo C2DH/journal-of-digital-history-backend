@@ -1,21 +1,22 @@
+from textwrap import dedent
+
 from django.core.mail import send_mail
 from django.db import transaction
 from jdh.validation import JSONSchema
-from jdhapi.models import Abstract, Author, Dataset, CallForPaper
-from jdhapi.serializers import AbstractSlimSerializer
-from jsonschema.exceptions import ValidationError, SchemaError
+from jsonschema.exceptions import SchemaError, ValidationError
+from rest_framework import status
 from rest_framework.decorators import (
     api_view,
-    permission_classes,
     authentication_classes,
+    permission_classes,
 )
-from rest_framework.response import Response
-from rest_framework import status
 from rest_framework.permissions import AllowAny
-from textwrap import dedent
+from rest_framework.response import Response
 
-from ..logger import logger as get_logger
-
+from jdhapi.models import Abstract, Author, CallForPaper, Dataset
+from jdhapi.serializers import AbstractSlimSerializer
+from jdhapi.utils.altcha import verify_challenge_solution
+from jdhapi.utils.logger import logger as get_logger
 
 logger = get_logger()
 
@@ -28,10 +29,16 @@ def get_default_body(id, title, firstname, lastname):
         Dear {firstname} {lastname}, 
         Thank you for submitting your abstract {title} (ID: {id}) to the Journal of Digital History (JDH).
 
-        The JDH publishes data-driven research articles, and we require authors to adhere to specific writing guidelines. These include collaboration via GitHub, the use of Jupyter Notebooks, and the writing of code using R or Python. Please refer to the following link for detailed instructions on our submission guidelines and for setting up the required writing environment on your machine: https://journalofdigitalhistory.org/en/guidelines.
-        If you require assistance with installing the necessary software or encounter any questions about the writing process, please do not hesitate to contact us at jdh.admin@uni.lu. We will be happy to support you.
+        The JDH publishes data-driven research articles, and we require authors to adhere to specific writing 
+        guidelines. These include collaboration via GitHub, the use of Jupyter Notebooks, and the writing of code 
+        using R or Python. Please refer to the following link for detailed instructions on our submission guidelines 
+        and for setting up the required writing environment on your machine: 
+        https://journalofdigitalhistory.org/en/guidelines.
+        If you require assistance with installing the necessary software or encounter any questions about the writing 
+        process, please do not hesitate to contact us at jdh.admin@uni.lu. We will be happy to support you.
 
-        Regarding the next steps, we will contact you to propose a few dates to discuss the principle of multilayered articles.
+        Regarding the next steps, we will contact you to propose a few dates to discuss the principle of multilayered 
+        articles.
 
         Kind regards,
         The JDH Team
@@ -59,9 +66,18 @@ def send_mail_abstract_received(pid, subject, sent_to, firstname, lastname):
 @authentication_classes([])
 @permission_classes([AllowAny])
 def submit_abstract(request):
+    """
+    POST /api/abstracts/submit
+
+    Create an abstract submission.
+    The endpoint is public.
+    Requires a valid captcha solution only.
+    """
+
     try:
         data = validate_and_submit_abstract(request)
         return Response(data, status=status.HTTP_201_CREATED)
+
     except ValidationError as e:
         logger.exception("Validation error occurred.")
         response = Response(
@@ -97,6 +113,21 @@ def submit_abstract(request):
 
 
 def validate_and_submit_abstract(request):
+    logger.info("Start captcha validation")
+    payload = request.data.get("altcha")
+
+    if not payload:
+        raise ValidationError("Altcha payload missing")
+
+    try:
+        verified, err = verify_challenge_solution(payload)
+
+        if not verified:
+            raise ValidationError(f"Invalid Altcha payload: {err}")
+
+    except ValidationError as e:
+        raise ValidationError(f"Failed to process Altcha payload: {str(e)}")
+
     logger.info("Start JSON validation")
     with transaction.atomic():
         # Single transaction block for the entire function
@@ -173,6 +204,7 @@ def validate_and_submit_abstract(request):
                     "github_id": author.get("githubId", ""),
                     "bluesky_id": author.get("blueskyId", ""),
                     "facebook_id": author.get("facebookId", ""),
+                    "linkedin_id": author.get("linkedinId", ""),
                 },
             )
             abstract.authors.add(author_instance)

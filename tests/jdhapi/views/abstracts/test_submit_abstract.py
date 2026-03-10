@@ -1,9 +1,11 @@
-from rest_framework.test import APITestCase
-from rest_framework import status
-from django.test import Client
-from jdhapi.models import Abstract, Author, Dataset, CallForPaper
-from django.urls import reverse
 from datetime import date
+from unittest.mock import patch
+
+from django.test import Client
+from django.urls import reverse
+from jdhapi.models import Abstract, Author, CallForPaper, Dataset
+from rest_framework import status
+from rest_framework.test import APITestCase
 
 
 class SubmitAbstractTestCase(APITestCase):
@@ -33,6 +35,7 @@ class SubmitAbstractTestCase(APITestCase):
                     "githubId": "janesmith",
                     "blueskyId": "jane.bsky.social",
                     "facebookId": "jane.smith",
+                    "linkedinId": "jane-smith",
                     "primaryContact": True,
                 }
             ],
@@ -46,6 +49,7 @@ class SubmitAbstractTestCase(APITestCase):
             "dateLastModified": date.today(),
             "languagePreference": "Default",
             "termsAccepted": True,
+            "altcha": "fake-altcha-payload"
         }
 
         self.invalid_payload_missing_github_id = {
@@ -66,6 +70,7 @@ class SubmitAbstractTestCase(APITestCase):
                     "githubId": "",
                     "blueskyId": "jane.bsky.social",
                     "facebookId": "jane.smith",
+                    "linkedinId": "jane-smith",
                     "primaryContact": True,
                 }
             ],
@@ -79,6 +84,7 @@ class SubmitAbstractTestCase(APITestCase):
             "dateLastModified": date.today(),
             "languagePreference": "Default",
             "termsAccepted": True,
+            "altcha": "fake-altcha-payload"
         }
 
         self.invalid_payload = {
@@ -87,8 +93,13 @@ class SubmitAbstractTestCase(APITestCase):
             "contact": [],
         }
 
-    def test_submit_abstract_valid_payload(self):
+    @patch('jdhapi.views.abstracts.submit_abstract.verify_challenge_solution')
+    def test_submit_abstract_valid_payload(self, mock_captcha):
         """Test submitting an abstract with a valid payload."""
+
+        # Mock the captcha verification to return true
+        mock_captcha.return_value = True, None
+
         url = reverse("submit-abstract")
         c = Client()
         response = c.post(
@@ -102,8 +113,13 @@ class SubmitAbstractTestCase(APITestCase):
         self.assertEqual(Dataset.objects.count(), 1)
         self.assertEqual(response.data["title"], self.valid_payload["title"])
 
-    def test_submit_abstract_invalid_payload(self):
+    @patch('jdhapi.views.abstracts.submit_abstract.verify_challenge_solution')
+    def test_submit_abstract_invalid_payload(self, mock_captcha):
         """Test submitting an abstract with an invalid payload."""
+
+        # Mock the captcha verification to return true
+        mock_captcha.return_value = True, None
+
         url = reverse("submit-abstract")
         c = Client()
         response = c.post(
@@ -117,15 +133,20 @@ class SubmitAbstractTestCase(APITestCase):
         self.assertEqual(Author.objects.count(), 0)
         response = c.post(
             url,
-            self.invalid_payload_missing_github_id,
+            self.invalid_payload,
             content_type="application/json",
         )
 
-    def test_submit_abstract_invalid_payload_missing_github_id(self):
+    @patch('jdhapi.views.abstracts.submit_abstract.verify_challenge_solution')
+    def test_submit_abstract_invalid_payload_missing_github_id(self, mock_captcha):
         """
         Test submitting an abstract with an invalid payload
         (missing GitHub ID).
         """
+
+        # Mock the captcha verification to return true
+        mock_captcha.return_value = True, None
+
         url = reverse("submit-abstract")
         c = Client()
         response = c.post(
@@ -133,6 +154,7 @@ class SubmitAbstractTestCase(APITestCase):
             self.invalid_payload_missing_github_id,
             content_type="application/json",
         )
+        
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("error", response.data)
         self.assertEqual(
@@ -143,8 +165,13 @@ class SubmitAbstractTestCase(APITestCase):
         self.assertEqual(Author.objects.count(), 0)
         self.assertEqual(Dataset.objects.count(), 0)
 
-    def test_update_existing_author(self):
+    @patch('jdhapi.views.abstracts.submit_abstract.verify_challenge_solution')
+    def test_update_existing_author(self, mock_captcha):
         """Test that an existing author's information is updated."""
+
+        # Mock the captcha verification to return true
+        mock_captcha.return_value = True, None
+
         self.existing_author = Author.objects.create(
             orcid="https://orcid.org/0000-0000-0000-0000",
             lastname="Existing",
@@ -154,6 +181,7 @@ class SubmitAbstractTestCase(APITestCase):
             github_id="existinggithub",
             bluesky_id="existing.bsky.social",
             facebook_id="existing.author",
+            linkedin_id="existing.author.linkedin",
         )
 
         url = reverse("submit-abstract")
@@ -173,3 +201,28 @@ class SubmitAbstractTestCase(APITestCase):
         self.assertEqual(updated_author.github_id, "janesmith")
         self.assertEqual(updated_author.bluesky_id, "jane.bsky.social")
         self.assertEqual(updated_author.facebook_id, "jane.smith")
+        self.assertEqual(updated_author.linkedin_id, "jane-smith")
+
+    @patch('jdhapi.views.abstracts.submit_abstract.verify_challenge_solution')
+    def test_failed_to_solve_the_captcha(self, mock_captcha):
+        """Test that the user did not solve the captcha correctly."""
+
+        # Mock the captcha verification to fail
+        mock_captcha.return_value = False, None
+
+        url = reverse("submit-abstract")
+        c = Client()
+        response = c.post(
+            url,
+            self.valid_payload,
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("error", response.data)
+        self.assertEqual(Abstract.objects.count(), 0)
+        self.assertEqual(Author.objects.count(), 0)
+        response = c.post(
+            url,
+            "Invalid Altcha payload",
+            content_type="application/json",
+        )
