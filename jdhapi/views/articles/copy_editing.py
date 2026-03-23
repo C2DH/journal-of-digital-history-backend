@@ -182,7 +182,7 @@ def ensure_pandoc_workflow(pid):
     Helper function to ensure the pandoc workflow will be executed
     :params pid: the article PID
     """
-    logger.info("[ensure_pandoc_workflow] Starting pandoc workflow for arrticle with PID : '%s'", pid)
+    logger.info("[ensure_pandoc_workflow] Starting pandoc workflow for article with PID : '%s'", pid)
 
     try:
         article = Article.objects.get(abstract__pid=pid)    
