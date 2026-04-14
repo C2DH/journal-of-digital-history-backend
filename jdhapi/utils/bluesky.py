@@ -1,16 +1,18 @@
 import json
 import logging
-import requests
 import time
-from bs4 import BeautifulSoup
-from atproto import Client, models
-from apscheduler.schedulers.background import BackgroundScheduler
-from apscheduler.executors.pool import ThreadPoolExecutor
-from apscheduler.events import EVENT_JOB_EXECUTED, EVENT_JOB_ERROR
-from datetime import datetime, timezone, timedelta
-from zoneinfo import ZoneInfo
-from django.conf import settings
+from datetime import datetime, timedelta, timezone
 from urllib.parse import urlparse
+from zoneinfo import ZoneInfo
+
+import requests
+from apscheduler.events import EVENT_JOB_ERROR, EVENT_JOB_EXECUTED
+from apscheduler.executors.pool import ThreadPoolExecutor
+from apscheduler.schedulers.background import BackgroundScheduler
+from atproto import Client, models
+from bs4 import BeautifulSoup
+
+from .github_repository import get_github_headers
 
 logger = logging.getLogger(__name__)
 
@@ -25,17 +27,6 @@ BROWSER_UA = (
 )
 
 _background_scheduler = None
-
-
-def get_github_headers():
-    """Get GitHub API headers with token authentication if available."""
-    try:
-        headers = {}
-        if hasattr(settings, "GITHUB_ACCESS_TOKEN") and settings.GITHUB_ACCESS_TOKEN:
-            headers["Authorization"] = f"token {settings.GITHUB_ACCESS_TOKEN}"
-        return headers
-    except ImportError:
-        return {}
 
 
 def _get_background_scheduler():

@@ -7,6 +7,18 @@ from django_filters.rest_framework import DjangoFilterBackend
 from django.shortcuts import get_object_or_404
 
 
+class IsOwnerFilterBackend(filters.BaseFilterBackend):
+    """
+    Filter that only allows users to see published objects unless they are staff.
+    """
+
+    def filter_queryset(self, request, queryset, view):
+        if request.user.is_staff:
+            return queryset  # Staff members can see all articles
+        else:
+            return queryset.filter(status=Article.Status.PUBLISHED)
+
+
 class IssueList(generics.ListCreateAPIView):
     queryset = Issue.objects.all()
     serializer_class = IssueSerializer
@@ -39,6 +51,8 @@ class IssueDetail(generics.RetrieveUpdateDestroyAPIView):
 
 class IssueArticlesList(generics.ListAPIView):
     serializer_class = ArticleSerializer
+    filter_backends = [IsOwnerFilterBackend, DjangoFilterBackend]
+    filterset_fields = ["status"]
 
     def get_queryset(self):
         pid = self.kwargs["pid"]
@@ -51,9 +65,11 @@ class IssueAbstractsList(generics.ListAPIView):
     serializer_class = AbstractSerializer
     
     def get_queryset(self):
-        pid =self.kwargs["pid"]
+        pid = self.kwargs["pid"]
         issue = get_object_or_404(Issue, pid=pid)
         articles = Article.objects.filter(issue=issue)
+        if not self.request.user.is_staff:
+            articles = articles.filter(status=Article.Status.PUBLISHED)
         abstract_pids = articles.values_list("abstract__pid", flat=True)
         return Abstract.objects.filter(pid__in=abstract_pids)
     

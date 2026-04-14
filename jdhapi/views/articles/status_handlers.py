@@ -1,9 +1,10 @@
 import logging
+
 from django.utils import timezone
-from jdhapi.views.articles.copy_editing import send_docx_email
-from jdhapi.utils.articles import save_citation
 from rest_framework import status
 from rest_framework.response import Response
+
+from jdhapi.utils.articles import save_citation
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +43,7 @@ class PublishedHandler(StatusHandler):
         # control on the DOI field mandatory
         if not article.doi:
             return Response(
-                {"error": "Doi is mandatory if published"},
+                {"error": "DOI is mandatory if published"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         # quick synchronous validation before scheduling

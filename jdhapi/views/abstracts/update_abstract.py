@@ -1,18 +1,19 @@
 from django.core.mail import send_mail
 from django.db import transaction
 from django.shortcuts import get_object_or_404
-from jdhapi.models import Abstract
-from jdhapi.forms import EmailConfigurationForm
-from jdhapi.utils.logger import logger as get_logger
 from jdh.validation import JSONSchema
-from jsonschema.exceptions import ValidationError, SchemaError
+from jsonschema.exceptions import SchemaError, ValidationError
+from rest_framework import status
 from rest_framework.decorators import (
     api_view,
     permission_classes,
 )
 from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
-from rest_framework import status
+
+from jdhapi.forms import EmailConfigurationForm
+from jdhapi.models import Abstract
+from jdhapi.utils.logger import logger as get_logger
 
 logger = get_logger()
 
@@ -90,7 +91,7 @@ def update_abstract_status(request):
     except ValidationError as e:
         logger.error(f"JSON schema validation failed: {e}")
         return Response(
-            {"error": "Invalid data format", "details": str(e)},
+            {"error": "Invalid data format", "message": str(e)},
             status=status.HTTP_400_BAD_REQUEST,
         )
     except SchemaError as e:
@@ -112,8 +113,7 @@ def update_abstract_status(request):
         return Response(
             {
                 "error": "InternalError",
-                "message": "An unexpected error occurred. Please try again later.",
-                "details": str(e),
+                "message": str(e),
             },
             status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             content_type="application/json",

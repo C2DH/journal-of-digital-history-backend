@@ -1,10 +1,9 @@
 import logging
+
 import requests
 from django.conf import settings
 from django.core.mail import EmailMessage
 from django.http import HttpResponse
-from jdhapi.models import Article
-from jdhapi.utils.github_action import trigger_workflow_and_wait
 from rest_framework.decorators import (
     api_view,
     permission_classes,
@@ -12,9 +11,13 @@ from rest_framework.decorators import (
 from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
 
+from jdhapi.models import Article
+from jdhapi.utils.github_action import trigger_workflow_and_wait
+
 logger = logging.getLogger(__name__)
 
 COPY_EDITOR_ADDRESS = settings.COPY_EDITOR_ADDRESS
+
 
 @api_view(["GET"])
 @permission_classes([IsAdminUser])
@@ -29,7 +32,7 @@ def get_docx(request):
 
     branch_name = "pandoc"
     pid = request.GET.get("pid")
-    
+      
     if not pid:
         return Response({"error": "Article PID is required."}, status=400)
     
@@ -70,7 +73,8 @@ def send_docx_email(request):
 
     branch_name = "pandoc"
     pid = request.data.get("pid")
-    body= request.data.get("body")
+    subject = request.data.get("subject", "Article to review for copy editing")
+    body = request.data.get("body")
 
     if not pid:
         return Response({"error": "Article PID is required."}, status=400)
@@ -81,9 +85,8 @@ def send_docx_email(request):
             return workflow_error
 
         docx_bytes = fetch_docx_bytes(pid, branch_name)
-        send_email_copy_editor(pid, docx_bytes, body)
-        return Response({"message": f"Docx sent succesfully by email for article : {pid}"}, status=200)
-    
+        send_email_copy_editor(pid, subject, docx_bytes, body)
+        return Response({"message": f"Docx sent successfully by email for article : {pid}"}, status=200)
     except FileNotFoundError as e:
         return Response({"error": str(e)}, status=404)
     except ValueError as e:
@@ -120,14 +123,13 @@ def fetch_docx_bytes(pid, branch_name):
         file_response.raise_for_status()
 
         return file_response.content
-    
     if response.status_code == 404:
         raise FileNotFoundError(f"article.docx file not found for article ID '{pid}'.")
 
     raise ValueError("Unexpected error occurred while contacting GitHub API.")
-    
 
-def send_email_copy_editor(pid, docx_bytes, body):
+
+def send_email_copy_editor(pid, subject, docx_bytes, body):
     """
     Helper function to send the email to copy editing editor
     :params pid: the article PID
@@ -137,7 +139,7 @@ def send_email_copy_editor(pid, docx_bytes, body):
 
     filename = f"article_{pid}.docx"
     message = EmailMessage(
-        subject="Article to review for copy editing",
+        subject=subject,
         body=body,
         from_email="jdh.admin@uni.lu",
         to=[COPY_EDITOR_ADDRESS],
@@ -180,7 +182,7 @@ def ensure_pandoc_workflow(pid):
     Helper function to ensure the pandoc workflow will be executed
     :params pid: the article PID
     """
-    logger.info("[ensure_pandoc_workflow] Starting pandoc workflow for arrticle with PID : '%s'", pid)
+    logger.info("[ensure_pandoc_workflow] Starting pandoc workflow for article with PID : '%s'", pid)
 
     try:
         article = Article.objects.get(abstract__pid=pid)    
@@ -188,13 +190,12 @@ def ensure_pandoc_workflow(pid):
         return Response(
             {"error": f"Article not found for PID '{pid}'."}, status=404
         )
-    
     if not article.repository_url:
-            return Response(
-                {"error": f"repository_url is missing for PID '{pid}'."},
-                status=400,
-            )  
-    try:  
+        return Response(
+            {"error": f"repository_url is missing for PID '{pid}'."},
+            status=400,
+        )
+    try:
         logger.debug(
         "Run pandoc workflow and wait for completion pid=%s, repo=%s",
         pid,

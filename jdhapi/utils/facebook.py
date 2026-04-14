@@ -1,10 +1,12 @@
 import json
 import logging
-import requests
 from datetime import datetime, timedelta, timezone
 from urllib.parse import urlparse
 from zoneinfo import ZoneInfo
-from .bluesky import get_github_headers
+
+import requests
+
+from .github_repository import get_github_headers
 
 logger = logging.getLogger(__name__)
 
