@@ -51,7 +51,8 @@ class IssueDetail(generics.RetrieveUpdateDestroyAPIView):
 
 class IssueArticlesList(generics.ListAPIView):
     serializer_class = ArticleSerializer
-    filter_backends = [IsOwnerFilterBackend]
+    filter_backends = [IsOwnerFilterBackend, DjangoFilterBackend]
+    filterset_fields = ["status"]
 
     def get_queryset(self):
         pid = self.kwargs["pid"]
