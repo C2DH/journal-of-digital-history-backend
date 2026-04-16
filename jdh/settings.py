@@ -296,5 +296,6 @@ FACEBOOK_JDH_ACCESS_TOKEN = get_env_variable("FACEBOOK_JDH_ACCESS_TOKEN")
 # OJS API
 OJS_API_KEY_TOKEN = get_env_variable("OJS_API_KEY_TOKEN", "default")
 OJS_API_URL = get_env_variable("OJS_API_URL", "http://ojs.journalofdigitalhistory.org")
+OJS_WEBSITE_URL = get_env_variable("OJS_WEBSITE_URL", "http://ojs.journalofdigitalhistory.org")
 
 COPY_EDITOR_ADDRESS = get_env_variable("COPY_EDITOR_ADDRESS", "")

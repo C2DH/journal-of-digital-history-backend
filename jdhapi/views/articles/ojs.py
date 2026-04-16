@@ -29,6 +29,49 @@ headers = {
     'Authorization': f'Bearer {settings.OJS_API_KEY_TOKEN}'
 }
 OJS_API_URL = settings.OJS_API_URL
+OJS_WEBSITE_URL = settings.OJS_WEBSITE_URL
+
+@api_view(["GET"])
+@permission_classes([IsAdminUser])
+def get_active_submissions(_):
+
+    logger.info("GET /api/articles/ojs/submissions/active")
+
+    logger.info('Get submissions in peer review stage (stageId=3) from OJS formatted with id, link, title, author.')
+
+    url = f"{OJS_API_URL}/submissions?stageIds=3"
+    submissions = []
+
+    try:
+        response = requests.get(url, headers=headers)
+        if response.status_code == 200:
+            for item in response.json().get('items', []):
+                stage_id = item.get('stageId', 0)
+                id = item.get('id', 0)
+                fulltitle = item.get('publications', [{}])[0].get("fullTitle", "No title")
+                author = item.get('publications', [{}])[0].get("authorsString", "No author")
+
+                submissions.append({
+                    "id": id,
+                    "link": f"{OJS_WEBSITE_URL}/workflow/index/{id}/{stage_id}",
+                    "title": fulltitle,
+                    "author": author
+                })
+            logger.info(f"Active submissions in peer review stage : {submissions}")
+            return Response(submissions, status=200)
+        else:
+            return Response(
+                {
+                    "error": "Unexpected error occurred while contacting OJS API.",
+                    "status_code": response.status_code,
+                },
+                status=response.status_code
+            )
+    except requests.exceptions.RequestException as e:
+        return Response(
+            {"error": "Failed to connect to OJS API.", "details": str(e)}, status=500
+        )
+    
 
 @api_view(["GET"])
 @permission_classes([IsAdminUser])
