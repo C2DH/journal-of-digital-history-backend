@@ -19,6 +19,7 @@ from jdhapi.utils.ojs import (
     create_blank_submission,
     create_contributor_in_ojs,
     generate_pdf_for_submission,
+    get_active_submission_with_decision,
     upload_manuscript_to_ojs,
 )
 
@@ -31,47 +32,35 @@ headers = {
 OJS_API_URL = settings.OJS_API_URL
 OJS_WEBSITE_URL = settings.OJS_WEBSITE_URL
 
+
 @api_view(["GET"])
 @permission_classes([IsAdminUser])
-def get_active_submissions(_):
+def get_peer_review_article_with_decision(_):
+    """
+    GET /api/articles/ojs/submissions/decisions
 
-    logger.info("GET /api/articles/ojs/submissions/active")
-
-    logger.info('Get submissions in peer review stage (stageId=3) from OJS formatted with id, link, title, author.')
-
-    url = f"{OJS_API_URL}/submissions?stageIds=3"
-    submissions = []
+    Get the list of all articles in peer review with the decisions from OJS.
+    Requires admin permissions.
+    """
+    logger.info("GET /api/articles/ojs/submissions/decision")
 
     try:
-        response = requests.get(url, headers=headers)
-        if response.status_code == 200:
-            for item in response.json().get('items', []):
-                stage_id = item.get('stageId', 0)
-                id = item.get('id', 0)
-                fulltitle = item.get('publications', [{}])[0].get("fullTitle", "No title")
-                author = item.get('publications', [{}])[0].get("authorsString", "No author")
-
-                submissions.append({
-                    "id": id,
-                    "link": f"{OJS_WEBSITE_URL}/workflow/index/{id}/{stage_id}",
-                    "title": fulltitle,
-                    "author": author
-                })
-            logger.info(f"Active submissions in peer review stage : {submissions}")
-            return Response(submissions, status=200)
-        else:
-            return Response(
-                {
-                    "error": "Unexpected error occurred while contacting OJS API.",
-                    "status_code": response.status_code,
-                },
-                status=response.status_code
-            )
-    except requests.exceptions.RequestException as e:
+        submissions_with_decisions = get_active_submission_with_decision()
         return Response(
-            {"error": "Failed to connect to OJS API.", "details": str(e)}, status=500
+            {"data": submissions_with_decisions},
+            status=status.HTTP_200_OK,
         )
-    
+    except Exception as e:
+        return Response(
+            {
+                "error": "InternalError",
+                "message": "An unexpected error occurred. Please try again later.",
+                "details": str(e),
+            },
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content_type="application/json",
+        )
+
 
 @api_view(["GET"])
 @permission_classes([IsAdminUser])
@@ -79,7 +68,8 @@ def get_count_submission_from_ojs(_):
     """
     GET /api/articles/ojs/submissions
 
-    Get the list of all abstracts submitted to OJS ans being either in 'Incomplete' submission stage or 'Submission' stage.
+    Get the list of all abstracts submitted to OJS ans being either in 'Incomplete' submission stage or 'Submission' 
+    stage.
     Requires admin permissions.
     """
 

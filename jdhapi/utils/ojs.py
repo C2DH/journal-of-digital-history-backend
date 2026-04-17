@@ -5,6 +5,7 @@ from django.template.loader import render_to_string
 from jdh.validation import JSONSchema
 from jdhapi.models import Article
 from lxml import html
+from rest_framework.response import Response
 from weasyprint import HTML
 
 from .logger import logger as get_logger
@@ -16,6 +17,7 @@ headers = {
     "Authorization": f"Bearer {settings.OJS_API_KEY_TOKEN}",
 }
 OJS_API_URL = settings.OJS_API_URL
+OJS_WEBSITE_URL = settings.OJS_WEBSITE_URL
 
 
 def create_blank_submission():
@@ -164,3 +166,96 @@ def generate_pdf_for_submission(article):
 
         logger.info("Pdf generated")
         return pdf_file
+
+
+def get_active_submission_with_decision():
+    """
+    Get list of OJS peer review articles with oj_submission_id, ojs_workflow_url, title, author  and decision .
+    """
+    logger.info('Get submissions in peer review stage (stageId=3) from OJS formatted with id, link, title, author.')
+
+    submissions_with_decisions = []
+
+    try: 
+        submissions = get_active_submissions()
+        for submission in submissions:
+            ojs_submission_id = submission.get("ojs_submission_id", 0)
+
+            decision = get_decision_for_submission(ojs_submission_id)
+            submission["decision"] = decision
+            submissions_with_decisions.append(submission)
+
+            logger.info(f"Active submissions in peer review stage with decisions : {submissions_with_decisions}")
+        return submissions_with_decisions
+    except Exception as e:
+        logger.error(f"Error while retrieving submissions with decisions: {e}")
+        return Response(
+            {"error": "An error occurred while retrieving submissions with decisions.", "details": str(e)},
+            status=500
+        )
+
+
+def get_active_submissions():
+    """
+    Get list of OJS peer review articles with oj_submission_id, ojs_workflow_url, title and author.
+    """
+    logger.info('Get submissions in peer review stage (stageId=3) from OJS formatted with id, link, title, author.')
+
+    url = f"{OJS_API_URL}/submissions?stageIds=3"
+    submissions = []
+
+    try:
+        response = requests.get(url, headers=headers)
+        if response.status_code == 200:
+            for item in response.json().get('items', []):
+                stage_id = item.get('stageId', 0)
+                id = item.get('id', 0)
+                fulltitle = item.get('publications', [{}])[0].get("fullTitle", "No title")
+                author = item.get('publications', [{}])[0].get("authorsString", "No author")
+
+                submissions.append({
+                    "ojs_submission_id": id,
+                    "ojs_workflow_url": f"{OJS_WEBSITE_URL}/workflow/index/{id}/{stage_id}",
+                    "title": fulltitle,
+                    "author": author
+                })
+
+            logger.info(f"Active submissions in peer review stage : {submissions}")
+            return submissions
+        else:
+            return Response(
+                {
+                    "error": "Unexpected error occurred while contacting OJS API.",
+                    "status_code": response.status_code,
+                },
+                status=response.status_code
+            )
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Failed to connect to OJS API: {e}")
+        return Response(
+            {"error": "Failed to connect to OJS API.", "details": str(e)}, status=500
+        )
+    
+
+def get_decision_for_submission(id: str):
+    """
+    Get list of OJS decisions for an article in peer review stage.
+    """
+
+    logger.info('Get decision for submission in OJS.')
+
+    url = f"{OJS_API_URL}/submissions/{id}/decisions"
+
+    try: 
+        response = requests.get(url, headers=headers)
+
+        if response.status_code == 200:
+            decisions = response.json()
+            logger.info(f"Decisions retrieved for submission {id}")
+            return decisions
+
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Failed to connect to OJS API: {e}")
+        return Response(
+            {"error": "Failed to connect to OJS API.", "details": str(e)}, status=500
+        )
