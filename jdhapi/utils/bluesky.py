@@ -11,6 +11,8 @@ from apscheduler.executors.pool import ThreadPoolExecutor
 from apscheduler.schedulers.background import BackgroundScheduler
 from atproto import Client, models
 from bs4 import BeautifulSoup
+from django.conf import settings
+from jdhapi.models import Article, SocialMedia
 
 from .github_repository import get_github_headers
 
@@ -26,12 +28,16 @@ BROWSER_UA = (
     "+mailto:support@bsky.app) Chrome/W.X.Y.Z Safari/537.36"
 )
 
+BLUESKY_JDH_ACCOUNT = settings.BLUESKY_JDH_ACCOUNT
+
 _background_scheduler = None
 
 
 def _get_background_scheduler():
     global _background_scheduler
-    if _background_scheduler is None or not getattr(_background_scheduler, "running", False):
+    if _background_scheduler is None or not getattr(
+        _background_scheduler, "running", False
+    ):
         _background_scheduler = BackgroundScheduler(
             timezone=timezone.utc,
             executors={"default": ThreadPoolExecutor(max_workers=3)},
@@ -50,9 +56,12 @@ def parse_repo_url(repo_url: str):
     )
     path = p.path.lstrip("/").rstrip(".git")
     parts = path.split("/")
+    owner = parts[0]
+    pid = parts[1]
+
     if len(parts) < 2:
         raise ValueError(f"Invalid GitHub repo URL: {repo_url!r}")
-    return parts[0], parts[1]
+    return owner, pid
 
 
 # GitHub API helpers
@@ -146,8 +155,13 @@ def get_record_cid(client, uri: str) -> str:
     return resp.cid
 
 
+def get_rkey(uri: str) -> str: 
+    did, collection, rkey = uri[len("at://"):].split("/")[:3]
+    return rkey
+
+
 # Post an item (main or reply)
-def post_item(client, text, link=None, image_bytes=None, alt=None, index=0):
+def post_item(pid, client, text, link=None, image_bytes=None, alt=None, index=0):
     now = datetime.now(timezone.utc)
     logger.info(f"Posting item index {index}")
 
@@ -179,7 +193,8 @@ def post_item(client, text, link=None, image_bytes=None, alt=None, index=0):
         state["parent_cid"] = resp.cid
 
         logger.info(f"Main post URI: {resp.uri}")
-
+        save_social_media_campaign_in_database(pid, resp, now.isoformat())
+        
         time.sleep(BETWEEN_POST_DELAY)
         return resp
 
@@ -199,18 +214,23 @@ def post_item(client, text, link=None, image_bytes=None, alt=None, index=0):
             }
         )
         logger.info(f"Reply {index} URI: {resp.uri}")
-
         time.sleep(BETWEEN_POST_DELAY)
         return resp
 
     # Fallback simple post
     resp = client.post(text)
+
     logger.info(f"Simple post URI: {resp.uri}")
+    save_social_media_campaign_in_database(pid, resp, now.isoformat())
+
     time.sleep(BETWEEN_POST_DELAY)
 
     return resp
 
-def post_item_scheduled(login, password, text, link=None, image_bytes=None, alt=None, index=0):
+
+def post_item_scheduled(
+    pid, login, password, text, link=None, image_bytes=None, alt=None, index=0
+):
     logger.info("Scheduled job running — logging into Bluesky for index=%s", index)
     client = Client()
     try:
@@ -220,7 +240,8 @@ def post_item_scheduled(login, password, text, link=None, image_bytes=None, alt=
         raise
 
     try:
-        return post_item(client, text, link, image_bytes, alt, index)
+        res = post_item(pid, client, text, link, image_bytes, alt, index)
+        return res
     except Exception:
         logger.exception("Scheduled job failed for index=%s", index)
         raise
@@ -235,7 +256,8 @@ def make_listener(total_jobs, scheduler):
             count["remaining"] -= 1
             if count["remaining"] <= 0:
                 logger.info("All scheduled jobs for this campaign finished.")
-                #leave global scheduler running
+                # leave global scheduler running
+
     return listener
 
 
@@ -271,7 +293,9 @@ def parse_times(arg, count):
                 last_dt = last_dt + timedelta(minutes=1)
                 arr.append(last_dt.isoformat())
         else:
-            raise ValueError(f"Schedule list has {len(arr)} timestamps but expected {count}")
+            raise ValueError(
+                f"Schedule list has {len(arr)} timestamps but expected {count}"
+            )
     times = []
     for s in arr:
         try:
@@ -288,6 +312,26 @@ def parse_times(arg, count):
     return times
 
 
+def save_social_media_campaign_in_database(pid: str, response, first_hour: str):
+    if response.uri:
+        logger.info(f"Bluesky give us back the response.uri:{response.uri} for this article {pid}")
+        rkey = get_rkey(response.uri)
+        url_main_post = f"https://bsky.app/profile/{BLUESKY_JDH_ACCOUNT}/post/{rkey}"
+        logger.info(f"Bluesky post created at this url: {url_main_post}")
+
+        article_selected = Article.objects.get(abstract__pid=pid)
+
+        SocialMedia.objects.create(
+            article=article_selected,
+            platform="BLUESKY",
+            url=url_main_post,
+            scheduled_time=first_hour,
+            published_time=first_hour
+        )
+    else:
+        raise Exception("No 'uri' from Bluesky API")
+
+
 def launch_social_media_bluesky(
     repo_url: str = "",
     branch: str = "",
@@ -300,14 +344,14 @@ def launch_social_media_bluesky(
     if not repo_url or not article_link or not login or not password:
         raise Exception("repo_url, article_link, login and password are required")
 
-    owner, repo = parse_repo_url(repo_url)
-    branch = get_default_branch(owner, repo) or branch
+    owner, pid = parse_repo_url(repo_url)
+    branch = get_default_branch(owner, pid) or branch
     tweets_md = "tweets.md"
 
-    if not file_exists(owner, repo, branch, tweets_md):
+    if not file_exists(owner, pid, branch, tweets_md):
         raise Exception("'tweets.md' not found in repo root.")
 
-    content = fetch_file_bytes(owner, repo, branch, tweets_md).decode("utf-8")
+    content = fetch_file_bytes(owner, pid, branch, tweets_md).decode("utf-8")
     thread_texts, _ = parse_tweets_md(content)
 
     if not thread_texts:
@@ -326,34 +370,34 @@ def launch_social_media_bluesky(
     if schedule_main:
         times = parse_times(schedule_main, len(thread_texts))
         now = datetime.now(timezone.utc)
-        
-        # Handle CEST/CET timezone 
-        now = datetime.now(ZoneInfo("Europe/Luxembourg"))
-   
-        future = [(idx, dt) for idx, dt in enumerate(times) if dt > now]
-  
-        if future:
 
+        # Handle CEST/CET timezone
+        now = datetime.now(ZoneInfo("Europe/Luxembourg"))
+
+        future = [(idx, dt) for idx, dt in enumerate(times) if dt > now]
+
+        if future:
             scheduler.add_listener(
                 make_listener(len(future), scheduler),
                 EVENT_JOB_EXECUTED | EVENT_JOB_ERROR,
             )
         for idx, dt in enumerate(times):
             if dt <= now:
-               
                 logger.info(
                     f"Scheduled time {dt.isoformat()} for thread item {idx + 1} has passed; posting immediately"
                 )
                 post_item(
-                    client, thread_texts[idx], article_link, image_bytes, alt, idx
+                    pid, client, thread_texts[idx], article_link, image_bytes, alt, idx
                 )
+                # save_social_media_campaign_in_database(pid, response, schedule_main[0])
             else:
                 job = scheduler.add_job(
                     post_item_scheduled,
                     "date",
                     run_date=dt,
                     args=[
-                        login, 
+                        pid,
+                        login,
                         password,
                         thread_texts[idx],
                         article_link,
@@ -367,7 +411,8 @@ def launch_social_media_bluesky(
     else:
         for idx, txt in enumerate(thread_texts):
             logger.info(f"Posting thread item {idx + 1} now")
-            post_item(client, txt, article_link, image_bytes, alt, idx)
+            post_item(pid, client, txt, article_link, image_bytes, alt, idx)
+            # save_social_media_campaign_in_database(pid, response, schedule_main[0])
 
     return {
         "message": "Bluesky campaign completed",

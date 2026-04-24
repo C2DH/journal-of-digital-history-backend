@@ -1,9 +1,12 @@
-from jdhapi.serializers.abstract import AbstractSerializer
 from rest_framework import serializers
+
+from jdhapi.serializers.abstract import AbstractSerializer
+
 from ..models.article import Article
-from .tag import TagSerializer
-from .issue import IssueSerializer
 from .author import AuthorSlimSerializer
+from .issue import IssueSerializer
+from .socialmedia import SocialMediaSerializer
+from .tag import TagSerializer
 
 
 class ArticleSerializer(serializers.ModelSerializer):
@@ -11,6 +14,7 @@ class ArticleSerializer(serializers.ModelSerializer):
     issue = IssueSerializer()
     abstract = AbstractSerializer()
     authors = AuthorSlimSerializer(many=True)
+    campaigns = SocialMediaSerializer(many=True)
 
     kernel_language = serializers.SerializerMethodField()
 
@@ -39,5 +43,6 @@ class ArticleSerializer(serializers.ModelSerializer):
             "issue",
             "authors",
             "ojs_submission_id",
+            "campaigns",
             "fingerprint",
         ]
