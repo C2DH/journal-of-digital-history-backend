@@ -71,7 +71,7 @@ def fetch_image(url: str) -> bytes:
 
 def get_rkey(uri: str) -> str:
     """Take the key of a Bluesky post"""
-    did, collection, rkey = uri[len("at://") :].split("/")[:3]
+    did, collection, rkey = uri[len("at://"):].split("/")[:3]
     return rkey
 
 
@@ -108,8 +108,15 @@ def post_item(pid, client, text, link=None, image_bytes=None, alt=None, index=0)
         state["parent_cid"] = resp.cid
 
         logger.info(f"Main post URI: {resp.uri}")
+
+        rkey = get_rkey(resp.uri)
+        url_main_post = f"https://bsky.app/profile/{BLUESKY_JDH_ACCOUNT}/post/{rkey}"
         save_social_media_campaign_in_database(
-            pid, resp, scheduled_time=None, published_time=now.isoformat()
+            pid,
+            platform="BLUESKY",
+            url=url_main_post,
+            scheduled_time=None,
+            published_time=now.isoformat(),
         )
 
         time.sleep(BETWEEN_POST_DELAY)
@@ -138,8 +145,11 @@ def post_item(pid, client, text, link=None, image_bytes=None, alt=None, index=0)
     resp = client.post(text)
 
     logger.info(f"Simple post URI: {resp.uri}")
+
+    rkey = get_rkey(resp.uri)
+    url_main_post = f"https://bsky.app/profile/{BLUESKY_JDH_ACCOUNT}/post/{rkey}"
     save_social_media_campaign_in_database(
-        pid, resp, scheduled_time=None, published_time=now.isoformat()
+        pid, platform='BLUESKY', url=url_main_post, scheduled_time=None, published_time=now.isoformat()
     )
 
     time.sleep(BETWEEN_POST_DELAY)
@@ -161,8 +171,11 @@ def post_item_scheduled(
 
 
 def save_social_media_campaign_in_database(
-    pid: str, response, scheduled_time: str, published_time: str, platform="BLUESKY"
-   
+    pid: str,
+    platform: str,
+    url: str,
+    scheduled_time: str,
+    published_time: str,
 ):
     article_selected = Article.objects.get(abstract__pid=pid)
 
@@ -176,21 +189,12 @@ def save_social_media_campaign_in_database(
         )
 
     if published_time:
-        if response:
-            logger.info(
-                f"Bluesky give us back the response.uri:{response.uri} for this article {pid}"
-            )
-            rkey = get_rkey(response.uri)
-            url_main_post = (
-                f"https://bsky.app/profile/{BLUESKY_JDH_ACCOUNT}/post/{rkey}"
-            )
-            logger.info(f"Bluesky post created at this url: {url_main_post}")
-
+        if url:
             SocialMedia.objects.filter(
-                article=article_selected, platform="BLUESKY"
-            ).update(url=url_main_post, published_time=published_time)
+                article=article_selected, platform=platform
+            ).update(url=url, published_time=published_time)
         else:
-            raise Exception("No response given from Bluesky API")
+            raise Exception(f"No response given from {platform} API")
 
 
 def launch_social_media_bluesky(
@@ -235,7 +239,11 @@ def launch_social_media_bluesky(
         now = datetime.now(ZoneInfo("Europe/Luxembourg"))
 
         save_social_media_campaign_in_database(
-            pid=pid, response=None, scheduled_time=times[0].isoformat(), published_time=None
+            pid=pid,
+            platform='BLUESKY',
+            response=None,
+            scheduled_time=times[0].isoformat(),
+            published_time=None,
         )
 
         future_count = sum(1 for dt in times if dt > now)

@@ -5,6 +5,7 @@ from zoneinfo import ZoneInfo
 
 import requests
 
+from .bluesky import save_social_media_campaign_in_database
 from .github_repository import (
     fetch_file_bytes,
     get_default_branch,
@@ -105,13 +106,27 @@ def launch_social_media_facebook(
 
             min_time = now + timedelta(minutes=10)
             if dt < min_time:
-                raise ValueError(
-                    "scheduled must be at least 10 minutes in the future"
-                )
+                raise ValueError("scheduled must be at least 10 minutes in the future")
             scheduled_time = dt
 
     post_id = fb_post_feed(
         page_id, access_token, text, article_link, img_bytes, scheduled_time
     )
 
-    return {"post_id": post_id, "scheduled_time": scheduled_time}
+    url = f"https://www.facebook.com/{post_id}"
+    now = datetime.now(timezone.utc).isoformat()
+
+    if scheduled_time:
+        save_social_media_campaign_in_database(
+            pid, platform="FACEBOOK", scheduled_time=scheduled_time.isoformat()
+        )
+    else:
+        save_social_media_campaign_in_database(
+            pid, platform="FACEBOOK", url=url, published_time=now
+        )
+
+    return {
+        "message": "Facebook campaign completed",
+        "post_id": post_id,
+        "scheduled_time": scheduled_time,
+    }
