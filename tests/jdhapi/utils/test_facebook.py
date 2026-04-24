@@ -1,6 +1,7 @@
 import unittest
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta, timezone
 from unittest.mock import patch
+
 from jdhapi.utils import facebook
 
 
@@ -17,7 +18,7 @@ class TestFacebookLaunch(unittest.TestCase):
         self.repo_url = "https://github.com/owner/repo"
         self.article_link = "https://example.com/article"
 
-    @patch("jdhapi.utils.facebook.parse_repo_url", return_value=("owner", "repo"))
+    @patch("jdhapi.utils.facebook.parse_github_repo_url", return_value=("owner", "repo"))
     @patch("jdhapi.utils.facebook.get_default_branch", return_value="main")
     @patch("jdhapi.utils.facebook.fetch_file_bytes")
     @patch("jdhapi.utils.facebook.parse_tweets_md")
@@ -55,7 +56,7 @@ class TestFacebookLaunch(unittest.TestCase):
         self.assertIsNone(args[4])
         self.assertIsNone(args[5])
 
-    @patch("jdhapi.utils.facebook.parse_repo_url", return_value=("owner", "repo"))
+    @patch("jdhapi.utils.facebook.parse_github_repo_url", return_value=("owner", "repo"))
     @patch("jdhapi.utils.facebook.get_default_branch", return_value="main")
     @patch("jdhapi.utils.facebook.fetch_file_bytes")
     @patch("jdhapi.utils.facebook.parse_tweets_md")
