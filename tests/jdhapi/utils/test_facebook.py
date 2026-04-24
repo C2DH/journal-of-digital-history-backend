@@ -15,9 +15,10 @@ class TestFacebookLaunch(unittest.TestCase):
                 "3. Third post text",
             ]
         ).encode("utf-8")
-        self.repo_url = "https://github.com/owner/repo"
+        self.repo_url = "https://github.com/owner/repo/pidarticle"
         self.article_link = "https://example.com/article"
 
+    @patch("jdhapi.utils.facebook.save_social_media_campaign_in_database")
     @patch("jdhapi.utils.facebook.parse_github_repo_url", return_value=("owner", "repo"))
     @patch("jdhapi.utils.facebook.get_default_branch", return_value="main")
     @patch("jdhapi.utils.facebook.fetch_file_bytes")
@@ -32,6 +33,7 @@ class TestFacebookLaunch(unittest.TestCase):
         mock_fetch_bytes,
         mock_get_branch,
         mock_parse_repo,
+        mock_save_db
     ):
         mock_fetch_bytes.return_value = self.tweets_md
         mock_parse_md.return_value = (["First post text", "Second post text"], [])
@@ -56,6 +58,14 @@ class TestFacebookLaunch(unittest.TestCase):
         self.assertIsNone(args[4])
         self.assertIsNone(args[5])
 
+        mock_save_db.assert_called_once()
+        _, kwargs = mock_save_db.call_args
+        self.assertEqual(kwargs["platform"], "FACEBOOK")
+        self.assertIsNotNone(kwargs["url"])
+        self.assertIsNone(kwargs["scheduled_time"])
+        self.assertIsNotNone(kwargs["published_time"])
+
+    @patch("jdhapi.utils.facebook.save_social_media_campaign_in_database")
     @patch("jdhapi.utils.facebook.parse_github_repo_url", return_value=("owner", "repo"))
     @patch("jdhapi.utils.facebook.get_default_branch", return_value="main")
     @patch("jdhapi.utils.facebook.fetch_file_bytes")
@@ -70,6 +80,7 @@ class TestFacebookLaunch(unittest.TestCase):
         mock_fetch_bytes,
         mock_get_branch,
         mock_parse_repo,
+        mock_save_db
     ):
         mock_fetch_bytes.return_value = self.tweets_md
         mock_parse_md.return_value = (["First post text", "Second post text"], [])
@@ -96,3 +107,10 @@ class TestFacebookLaunch(unittest.TestCase):
         self.assertEqual(args[3], self.article_link)
         self.assertIsNone(args[4])
         self.assertEqual(args[5], schedule_main)
+
+        mock_save_db.assert_called_once()
+        _, kwargs = mock_save_db.call_args
+        self.assertEqual(kwargs["platform"], "FACEBOOK")
+        self.assertIsNone(kwargs["url"])
+        self.assertIsNotNone(kwargs["scheduled_time"])
+        self.assertIsNone(kwargs["published_time"])
