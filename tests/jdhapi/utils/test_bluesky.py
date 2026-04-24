@@ -1,7 +1,7 @@
 import json
 import unittest
+from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
-from datetime import datetime, timezone, timedelta
 from unittest.mock import Mock, patch
 
 from jdhapi.utils import bluesky
@@ -42,9 +42,9 @@ class TestBlueskyLaunch(unittest.TestCase):
 
         create_record_mock = Mock(
             side_effect=[
-                SimpleNamespace(uri="uri-main", cid="cid-main"),
-                SimpleNamespace(uri="uri-reply-1", cid="cid-reply-1"),
-                SimpleNamespace(uri="uri-reply-2", cid="cid-reply-2"),
+                SimpleNamespace(uri="at://did:plc:main/app.bsky.feed.post/main", cid="cid-main"),
+                SimpleNamespace(uri="at://did:plc:reply-1/app.bsky.feed.post/reply-1", cid="cid-reply-1"),
+                SimpleNamespace(uri="at://did:plc:reply-2/app.bsky.feed.post/reply-2", cid="cid-reply-2"),
             ]
         )
 
