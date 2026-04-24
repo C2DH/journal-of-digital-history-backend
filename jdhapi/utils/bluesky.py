@@ -241,7 +241,7 @@ def launch_social_media_bluesky(
         save_social_media_campaign_in_database(
             pid=pid,
             platform='BLUESKY',
-            response=None,
+            url=None,
             scheduled_time=times[0].isoformat(),
             published_time=None,
         )

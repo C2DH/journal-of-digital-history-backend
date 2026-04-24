@@ -118,11 +118,15 @@ def launch_social_media_facebook(
 
     if scheduled_time:
         save_social_media_campaign_in_database(
-            pid, platform="FACEBOOK", scheduled_time=scheduled_time.isoformat()
+            pid,
+            platform="FACEBOOK",
+            url=None,
+            scheduled_time=scheduled_time.isoformat(),
+            published_time=None,
         )
     else:
         save_social_media_campaign_in_database(
-            pid, platform="FACEBOOK", url=url, published_time=now
+            pid, platform="FACEBOOK", url=url, scheduled_time=None, published_time=now
         )
 
     return {
