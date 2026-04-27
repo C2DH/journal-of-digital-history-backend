@@ -51,6 +51,7 @@ def fb_post_feed(
     r = requests.post(
         f"{GRAPH}/{page_id}/feed", params={"access_token": token}, data=payload
     )
+    logger.info(f"FACEBOOK - Answer from post creation {r.text}")
     if r.status_code != 200:
         raise Exception(f"Post creation failed: {r.text}")
     return r.json()["id"]
@@ -120,9 +121,9 @@ def launch_social_media_facebook(
         save_social_media_campaign_in_database(
             pid,
             platform="FACEBOOK",
-            url=None,
+            url=url,
             scheduled_time=scheduled_time.isoformat(),
-            published_time=None,
+            published_time=scheduled_time.isoformat(),
         )
     else:
         save_social_media_campaign_in_database(
