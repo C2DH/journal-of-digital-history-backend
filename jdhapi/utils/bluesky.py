@@ -179,6 +179,16 @@ def save_social_media_campaign_in_database(
 ):
     article_selected = Article.objects.get(abstract__pid=pid)
 
+    if platform == 'FACEBOOK':
+        SocialMedia.objects.create(
+            article=article_selected,
+            platform=platform,
+            url=url,
+            scheduled_time=scheduled_time,
+            published_time=published_time,
+        )
+        return
+
     if scheduled_time:
         SocialMedia.objects.create(
             article=article_selected,
@@ -187,6 +197,7 @@ def save_social_media_campaign_in_database(
             scheduled_time=scheduled_time,
             published_time=None,
         )
+        return
 
     if published_time:
         if url:
