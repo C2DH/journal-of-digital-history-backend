@@ -1,20 +1,18 @@
 import base64
 import json
 import logging
-import marko
-import re
-import requests
 import os
+import re
 import subprocess
 
+import marko
+import requests
 from django.conf import settings
 from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404
 from django.utils.html import strip_tags
-
-from jdhapi.utils.doi import get_doi_url_formatted_jdh
 from jdhapi.models import Article, Author, Tag
-
+from jdhapi.utils.doi import get_doi_url_formatted_jdh
 from jdhseo.utils import getReferencesFromJupyterNotebook
 from requests.exceptions import HTTPError
 

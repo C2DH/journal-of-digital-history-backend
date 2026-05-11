@@ -1,18 +1,24 @@
-import json
 import logging
 import time
-from datetime import datetime, timedelta, timezone
-from urllib.parse import urlparse
+from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 
 import requests
 from apscheduler.events import EVENT_JOB_ERROR, EVENT_JOB_EXECUTED
-from apscheduler.executors.pool import ThreadPoolExecutor
-from apscheduler.schedulers.background import BackgroundScheduler
 from atproto import Client, models
 from bs4 import BeautifulSoup
+from django.conf import settings
+from jdhapi.models import Article, SocialMedia
 
-from .github_repository import get_github_headers
+from .github_repository import (
+    fetch_file_bytes,
+    file_exists,
+    get_default_branch,
+    parse_github_repo_url,
+    parse_times,
+    parse_tweets_md,
+)
+from .scheduler import get_background_scheduler, make_listener
 
 logger = logging.getLogger(__name__)
 
@@ -26,83 +32,11 @@ BROWSER_UA = (
     "+mailto:support@bsky.app) Chrome/W.X.Y.Z Safari/537.36"
 )
 
-_background_scheduler = None
+BLUESKY_JDH_ACCOUNT = settings.BLUESKY_JDH_ACCOUNT
 
 
-def _get_background_scheduler():
-    global _background_scheduler
-    if _background_scheduler is None or not getattr(_background_scheduler, "running", False):
-        _background_scheduler = BackgroundScheduler(
-            timezone=timezone.utc,
-            executors={"default": ThreadPoolExecutor(max_workers=3)},
-            job_defaults={"coalesce": False, "max_instances": 3},
-        )
-        _background_scheduler.start()
-        logger.info("Background scheduler started")
-    return _background_scheduler
-
-
-# Parse GitHub URL
-# Accepts https://github.com/owner/repo or .git suffix
-def parse_repo_url(repo_url: str):
-    p = urlparse(
-        repo_url,
-    )
-    path = p.path.lstrip("/").rstrip(".git")
-    parts = path.split("/")
-    if len(parts) < 2:
-        raise ValueError(f"Invalid GitHub repo URL: {repo_url!r}")
-    return parts[0], parts[1]
-
-
-# GitHub API helpers
-def get_default_branch(owner: str, repo: str) -> str:
-    api = f"https://api.github.com/repos/{owner}/{repo}"
-    r = requests.get(api, headers=get_github_headers())
-    if r.status_code != 200:
-        raise ValueError(f"GitHub API error: {r.status_code} {r.text}")
-    return r.json()["default_branch"]
-
-
-def file_exists(owner: str, repo: str, branch: str, path: str) -> bool:
-    url = f"https://api.github.com/repos/{owner}/{repo}/contents/{path}"
-    r = requests.head(url, params={"ref": branch}, headers=get_github_headers())
-    return r.status_code == 200
-
-
-def url_exists(url: str) -> bool:
-    r = requests.head(url)
-    return r.status_code == 200
-
-
-def fetch_file_bytes(owner: str, repo: str, branch: str, path: str) -> bytes:
-    raw = f"https://raw.githubusercontent.com/{owner}/{repo}/{branch}/{path}"
-    r = requests.get(raw, headers=get_github_headers())
-    if r.status_code != 200:
-        raise ValueError(f"Failed to fetch file from {raw}: {r.status_code}")
-    return r.content
-
-
-# Parse tweets.md for threads and independent posts
-def parse_tweets_md(content: str):
-    lines = content.splitlines()
-    mode = None
-    thread_texts, independent = [], []
-    for line in lines:
-        if line.strip().startswith("Post thread:"):
-            mode = "thread"
-            continue
-        if not line.strip() or mode is None:
-            continue
-        if mode == "thread" and line.lstrip()[0].isdigit() and "." in line:
-            thread_texts.append(line.split(".", 1)[1].strip())
-        elif mode == "independent" and line.lstrip().startswith("-"):
-            independent.append(line.lstrip("-").strip())
-    return thread_texts, independent
-
-
-# Fetch metadata from link (OG tags)
 def fetch_link_metadata(url: str):
+    """Fetch metadata from an url with OG tags"""
     headers = {"User-Agent": BROWSER_UA}
     r = requests.get(url, headers=headers, timeout=10)
     if r.status_code != 200:
@@ -126,8 +60,8 @@ def fetch_link_metadata(url: str):
     return title, description, image_url
 
 
-# Fetch image
 def fetch_image(url: str) -> bytes:
+    """Fetch image"""
     headers = {"User-Agent": BROWSER_UA}
     r = requests.get(url, headers=headers, timeout=10)
     if r.status_code != 200 or "image" not in r.headers.get("Content-Type", ""):
@@ -135,19 +69,14 @@ def fetch_image(url: str) -> bytes:
     return r.content
 
 
-# Get CID for replies
-def get_record_cid(client, uri: str) -> str:
-    did, collection, rkey = uri[len("at://") :].split("/")[:3]
-    resp = client.com.atproto.repo.get_record(
-        {"repo": did, "collection": collection, "rkey": rkey}
-    )
-    if not resp or not resp.cid:
-        raise ValueError(f"Failed to get record CID for {uri}")
-    return resp.cid
+def get_rkey(uri: str) -> str:
+    """Take the key of a Bluesky post"""
+    did, collection, rkey = uri[len("at://"):].split("/")[:3]
+    return rkey
 
 
-# Post an item (main or reply)
-def post_item(client, text, link=None, image_bytes=None, alt=None, index=0):
+def post_item(pid, client, text, link=None, image_bytes=None, alt=None, index=0):
+    """Post an item, main or thread reply"""
     now = datetime.now(timezone.utc)
     logger.info(f"Posting item index {index}")
 
@@ -180,6 +109,16 @@ def post_item(client, text, link=None, image_bytes=None, alt=None, index=0):
 
         logger.info(f"Main post URI: {resp.uri}")
 
+        rkey = get_rkey(resp.uri)
+        url_main_post = f"https://bsky.app/profile/{BLUESKY_JDH_ACCOUNT}/post/{rkey}"
+        save_social_media_campaign_in_database(
+            pid,
+            platform="BLUESKY",
+            url=url_main_post,
+            scheduled_time=None,
+            published_time=now.isoformat(),
+        )
+
         time.sleep(BETWEEN_POST_DELAY)
         return resp
 
@@ -199,93 +138,74 @@ def post_item(client, text, link=None, image_bytes=None, alt=None, index=0):
             }
         )
         logger.info(f"Reply {index} URI: {resp.uri}")
-
         time.sleep(BETWEEN_POST_DELAY)
         return resp
 
     # Fallback simple post
     resp = client.post(text)
+
     logger.info(f"Simple post URI: {resp.uri}")
+
+    rkey = get_rkey(resp.uri)
+    url_main_post = f"https://bsky.app/profile/{BLUESKY_JDH_ACCOUNT}/post/{rkey}"
+    save_social_media_campaign_in_database(
+        pid, platform='BLUESKY', url=url_main_post, scheduled_time=None, published_time=now.isoformat()
+    )
+
     time.sleep(BETWEEN_POST_DELAY)
 
     return resp
 
-def post_item_scheduled(login, password, text, link=None, image_bytes=None, alt=None, index=0):
-    logger.info("Scheduled job running — logging into Bluesky for index=%s", index)
+
+def post_item_scheduled(
+    pid, login, password, text, link=None, image_bytes=None, alt=None, index=0
+):
+    logger.info("Scheduled job — logging into Bluesky for index=%s", index)
     client = Client()
     try:
         client.login(login, password)
     except Exception:
-        logger.exception("Scheduled job: login failed for index=%s", index)
+        logger.exception("Scheduled job - login failed for index=%s", index)
         raise
-
-    try:
-        return post_item(client, text, link, image_bytes, alt, index)
-    except Exception:
-        logger.exception("Scheduled job failed for index=%s", index)
-        raise
+    return post_item(pid, client, text, link, image_bytes, alt, index)
 
 
-# Listener to shutdown scheduler when all jobs completed
-def make_listener(total_jobs, scheduler):
-    count = {"remaining": total_jobs}
+def save_social_media_campaign_in_database(
+    pid: str,
+    platform: str,
+    url: str,
+    scheduled_time: str,
+    published_time: str,
+):
+    article_selected = Article.objects.get(abstract__pid=pid)
 
-    def listener(event):
-        if event.code in (EVENT_JOB_EXECUTED, EVENT_JOB_ERROR):
-            count["remaining"] -= 1
-            if count["remaining"] <= 0:
-                logger.info("All scheduled jobs for this campaign finished.")
-                #leave global scheduler running
-    return listener
-
-
-# Parse schedule times
-def parse_times(arg, count):
-    if arg is None:
-        raise TypeError("Schedule times argument is required")
-
-    if isinstance(arg, (list, tuple)):
-        arr = list(arg)
-    elif isinstance(arg, (bytes, bytearray)):
-        arr = json.loads(arg.decode("utf-8"))
-    elif isinstance(arg, str):
-        arr = json.loads(arg)
-    else:
-        raise TypeError("Schedule must be a JSON string or a list of timestamps")
-
-    if not isinstance(arr, list):
-        raise ValueError(f"Schedule list must contain exactly {count} timestamps.")
-    if len(arr) != count:
-        if len(arr) == 1:
-            try:
-                base_dt = datetime.fromisoformat(arr[0])
-            except Exception:
-                raise TypeError(f"Invalid timestamp format: {arr[0]}")
-            arr = [(base_dt + timedelta(minutes=i)).isoformat() for i in range(count)]
-        elif len(arr) < count:
-            try:
-                last_dt = datetime.fromisoformat(arr[-1])
-            except Exception:
-                raise TypeError(f"Invalid timestamp format: {arr[-1]}")
-            while len(arr) < count:
-                last_dt = last_dt + timedelta(minutes=1)
-                arr.append(last_dt.isoformat())
-        else:
-            raise ValueError(f"Schedule list has {len(arr)} timestamps but expected {count}")
-    times = []
-    for s in arr:
-        try:
-            dt = datetime.fromisoformat(s)
-        except Exception:
-            raise TypeError(f"Invalid timestamp format: {s}")
-        if dt.tzinfo is None:
-            raise Exception(f"Timestamp '{s}' must include a timezone offset")
-        times.append(dt)
-    if any(times[i] > times[i + 1] for i in range(len(times) - 1)):
-        raise Exception(
-            "Schedule times must be in non-decreasing order (simultaneous posts allowed)."
+    if platform == 'FACEBOOK':
+        SocialMedia.objects.create(
+            article=article_selected,
+            platform=platform,
+            url=url,
+            scheduled_time=scheduled_time,
+            published_time=published_time,
         )
-    return times
+        return
+
+    if scheduled_time:
+        SocialMedia.objects.create(
+            article=article_selected,
+            platform=platform,
+            url=None,
+            scheduled_time=scheduled_time,
+            published_time=None,
+        )
+        return
+
+    if published_time:
+        if url:
+            SocialMedia.objects.filter(
+                article=article_selected, platform=platform
+            ).update(url=url, published_time=published_time)
+        else:
+            raise Exception(f"No response given from {platform} API")
 
 
 def launch_social_media_bluesky(
@@ -300,18 +220,19 @@ def launch_social_media_bluesky(
     if not repo_url or not article_link or not login or not password:
         raise Exception("repo_url, article_link, login and password are required")
 
-    owner, repo = parse_repo_url(repo_url)
-    branch = get_default_branch(owner, repo) or branch
-    tweets_md = "tweets.md"
+    owner, pid = parse_github_repo_url(repo_url)
+    branch = get_default_branch(owner, pid) or branch
 
-    if not file_exists(owner, repo, branch, tweets_md):
-        raise Exception("'tweets.md' not found in repo root.")
+    if not file_exists(owner, pid, branch, "tweets.md"):
+        raise Exception("'tweets.md' not found in repository.")
 
-    content = fetch_file_bytes(owner, repo, branch, tweets_md).decode("utf-8")
-    thread_texts, _ = parse_tweets_md(content)
+    content = fetch_file_bytes(owner, pid, branch, "tweets.md").decode("utf-8")
+    thread_texts, unique_text = parse_tweets_md(content)
 
-    if not thread_texts:
-        raise Exception("No thread items under 'Post thread:'")
+    if not thread_texts and not unique_text:
+        raise Exception(
+            "Tweets.md not formatted as'Post thread:' or with independent text."
+        )
 
     image_bytes = None
     alt = None
@@ -319,55 +240,64 @@ def launch_social_media_bluesky(
     client = Client()
     client.login(login, password)
 
-    scheduler = _get_background_scheduler()
+    scheduler = get_background_scheduler()
     jobs = []
 
     # Schedule or post thread
     if schedule_main:
-        times = parse_times(schedule_main, len(thread_texts))
-        now = datetime.now(timezone.utc)
-        
-        # Handle CEST/CET timezone 
+        all_posts = thread_texts + unique_text
+        times = parse_times(schedule_main, len(all_posts))
         now = datetime.now(ZoneInfo("Europe/Luxembourg"))
-   
-        future = [(idx, dt) for idx, dt in enumerate(times) if dt > now]
-  
-        if future:
 
+        save_social_media_campaign_in_database(
+            pid=pid,
+            platform='BLUESKY',
+            url=None,
+            scheduled_time=times[0].isoformat(),
+            published_time=None,
+        )
+
+        future_count = sum(1 for dt in times if dt > now)
+        if future_count:
             scheduler.add_listener(
-                make_listener(len(future), scheduler),
+                make_listener(future_count, scheduler),
                 EVENT_JOB_EXECUTED | EVENT_JOB_ERROR,
             )
-        for idx, dt in enumerate(times):
+
+        for idx, (text, dt) in enumerate(zip(all_posts, times)):
+            # Thread items chain as replies; independent posts are always standalone
+            post_index = idx if idx < len(thread_texts) else 0
+
             if dt <= now:
-               
                 logger.info(
-                    f"Scheduled time {dt.isoformat()} for thread item {idx + 1} has passed; posting immediately"
+                    f"Scheduled time {dt.isoformat()} has passed; posting immediately"
                 )
-                post_item(
-                    client, thread_texts[idx], article_link, image_bytes, alt, idx
-                )
+                post_item(pid, client, text, article_link, image_bytes, alt, post_index)
             else:
                 job = scheduler.add_job(
                     post_item_scheduled,
                     "date",
                     run_date=dt,
                     args=[
-                        login, 
+                        pid,
+                        login,
                         password,
-                        thread_texts[idx],
+                        text,
                         article_link,
                         image_bytes,
                         alt,
-                        idx,
+                        post_index,
                     ],
                 )
                 jobs.append(job)
-                logger.info(f"Scheduled thread item {idx + 1} at {dt.isoformat()}")
+                logger.info(f"Scheduled item {idx + 1} at {dt.isoformat()}")
     else:
         for idx, txt in enumerate(thread_texts):
             logger.info(f"Posting thread item {idx + 1} now")
-            post_item(client, txt, article_link, image_bytes, alt, idx)
+            post_item(pid, client, txt, article_link, image_bytes, alt, idx)
+        for txt in unique_text:
+            logger.info("Posting independent post now")
+            post_item(pid, client, txt, article_link, image_bytes, alt, 0)
 
     return {
         "message": "Bluesky campaign completed",

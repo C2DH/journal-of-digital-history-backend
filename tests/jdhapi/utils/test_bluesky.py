@@ -1,7 +1,7 @@
 import json
 import unittest
+from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
-from datetime import datetime, timezone, timedelta
 from unittest.mock import Mock, patch
 
 from jdhapi.utils import bluesky
@@ -18,8 +18,9 @@ class TestBlueskyLaunch(unittest.TestCase):
             ]
         ).encode("utf-8")
         self.repo_url = "https://github.com/owner/repo"
-        self.article_link = "https://example.com/article"
+        self.article_link = "https://example.com/article/pidarticle"
 
+    @patch("jdhapi.utils.bluesky.save_social_media_campaign_in_database")
     @patch("jdhapi.utils.bluesky.time.sleep", return_value=None)
     @patch("jdhapi.utils.bluesky.get_default_branch", return_value="main")
     @patch("jdhapi.utils.bluesky.file_exists", return_value=True)
@@ -32,6 +33,7 @@ class TestBlueskyLaunch(unittest.TestCase):
         mock_file_exists,
         mock_get_branch,
         mock_sleep,
+        mock_save_db
     ):
 
         mock_fetch_bytes.return_value = self.tweets_md
@@ -42,9 +44,9 @@ class TestBlueskyLaunch(unittest.TestCase):
 
         create_record_mock = Mock(
             side_effect=[
-                SimpleNamespace(uri="uri-main", cid="cid-main"),
-                SimpleNamespace(uri="uri-reply-1", cid="cid-reply-1"),
-                SimpleNamespace(uri="uri-reply-2", cid="cid-reply-2"),
+                SimpleNamespace(uri="at://did:plc:main/app.bsky.feed.post/main", cid="cid-main"),
+                SimpleNamespace(uri="at://did:plc:reply-1/app.bsky.feed.post/reply-1", cid="cid-reply-1"),
+                SimpleNamespace(uri="at://did:plc:reply-2/app.bsky.feed.post/reply-2", cid="cid-reply-2"),
             ]
         )
 
@@ -106,6 +108,15 @@ class TestBlueskyLaunch(unittest.TestCase):
         self.assertEqual(result["scheduled_jobs"], 0)
         self.assertEqual(create_record_mock.call_count, 3)
 
+        # Called once — only the root post (index=0) saves to DB
+        mock_save_db.assert_called_once()
+        _, kwargs = mock_save_db.call_args
+        self.assertEqual(kwargs["platform"], "BLUESKY")
+        self.assertIsNotNone(kwargs["url"])
+        self.assertIsNone(kwargs["scheduled_time"])
+        self.assertIsNotNone(kwargs["published_time"])
+
+    @patch("jdhapi.utils.bluesky.save_social_media_campaign_in_database")
     @patch("jdhapi.utils.bluesky.time.sleep", return_value=None)
     @patch("jdhapi.utils.bluesky.get_default_branch", return_value="main")
     @patch("jdhapi.utils.bluesky.file_exists", return_value=True)
@@ -118,6 +129,7 @@ class TestBlueskyLaunch(unittest.TestCase):
         mock_file_exists,
         mock_get_default_branch,
         mock_sleep,
+        mock_save_db
     ):
         mock_fetch_bytes.return_value = self.tweets_md
 
@@ -163,7 +175,7 @@ class TestBlueskyLaunch(unittest.TestCase):
         mock_scheduler.add_listener.return_value = None
 
         with patch(
-            "jdhapi.utils.bluesky._get_background_scheduler",
+            "jdhapi.utils.bluesky.get_background_scheduler",
             return_value=mock_scheduler,
         ):
             # Act
@@ -183,6 +195,14 @@ class TestBlueskyLaunch(unittest.TestCase):
         for job in added_jobs:
             self.assertTrue(hasattr(job, "run_date"))
             self.assertGreater(job.run_date, now)
+        
+        # Called once — only the root post (index=0) saves to DB
+        mock_save_db.assert_called_once()
+        _, kwargs = mock_save_db.call_args
+        self.assertEqual(kwargs["platform"], "BLUESKY")
+        self.assertIsNone(kwargs["url"])
+        self.assertIsNotNone(kwargs["scheduled_time"])
+        self.assertIsNone(kwargs["published_time"])
 
 
 if __name__ == "__main__":
