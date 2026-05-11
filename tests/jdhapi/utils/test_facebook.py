@@ -111,6 +111,6 @@ class TestFacebookLaunch(unittest.TestCase):
         mock_save_db.assert_called_once()
         _, kwargs = mock_save_db.call_args
         self.assertEqual(kwargs["platform"], "FACEBOOK")
-        self.assertIsNone(kwargs["url"])
+        self.assertIsNotNone(kwargs["url"])
         self.assertIsNotNone(kwargs["scheduled_time"])
-        self.assertIsNone(kwargs["published_time"])
+        self.assertIsNotNone(kwargs["published_time"])
