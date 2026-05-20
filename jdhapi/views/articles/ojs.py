@@ -20,6 +20,7 @@ from jdhapi.utils.ojs import (
     create_contributor_in_ojs,
     generate_pdf_for_submission,
     get_active_submission_with_timing,
+    get_active_submissions_by_stage,
     get_active_submissions_with_decision,
     upload_manuscript_to_ojs,
 )
@@ -92,6 +93,39 @@ def get_peer_review_article_with_timing(_):
         )
 
 
+@api_view(["GET"])
+@permission_classes([IsAdminUser])
+def get_peer_review_article_by_stage(_):
+    """
+    GET /api/articles/ojs/submissions/decisions/stage
+
+    Get the list of all articles counts in peer review by stage(see below) according to their round (R1, R1, R3+) from OJS.
+    Stages : 
+    - Assign reviewer (assign)
+    - Awaiting reviewer response (awaiting)
+    - Review in progress (review)
+    - Reviewer decision (reviewer)
+    - Author revising (revising)
+    Requires admin permissions.
+    """
+    logger.info("GET /api/articles/ojs/submissions/decisions/stage")
+
+    try:
+        submissions_with_decisions = get_active_submissions_by_stage()
+        return Response(
+            {"data": submissions_with_decisions},
+            status=status.HTTP_200_OK,
+        )
+    except Exception as e:
+        return Response(
+            {
+                "error": "InternalError",
+                "message": "An unexpected error occurred. Please try again later.",
+                "details": str(e),
+            },
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content_type="application/json",
+        )
 
 
 @api_view(["GET"])

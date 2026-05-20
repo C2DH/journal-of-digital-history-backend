@@ -243,6 +243,99 @@ def increase_round(submissions_in_round, date):
         else : 
             submissions_in_round['delay'] += 1
 
+def get_active_submissions_by_stage():
+    """
+    Get list of OJS peer review articles sorted by following stages :
+    - Assign reviewer (assign)
+    - Awaiting reviewer response (awaiting)
+    - Review in progress (review)
+    - Reviewer decision (reviewer)
+    - Author revising (revising)
+    Data will be returned this way : [assign:int, awaiting: int, review: int, reviewer: int, revising: int, order: 'R1']
+    It will be done for R1, R2 and R3+ rounds of peer review.
+    """
+    logger.info('Get submissions in peer review stage (stageId=3) from OJS formatted with id, link, title, author.')
+
+    submissions_in_R1 = {'assign':0, 'awaiting': 0, 'review': 0, 'reviewer': 0, 'revising': 0, 'order': 'R1'}
+    submissions_in_R2 = {'assign':0, 'awaiting': 0, 'review': 0, 'reviewer': 0, 'revising': 0, 'order': 'R2'}
+    submissions_in_R3 = {'assign':0, 'awaiting': 0, 'review': 0, 'reviewer': 0, 'revising': 0, 'order': 'R3+'}
+    submissions_by_stage = []
+
+    decision = 0
+    round = 0
+    status_id = 0
+
+    try: 
+        submission_ids = get_active_submissions_ids()
+        for id in submission_ids:
+            url_decision = f"{OJS_API_URL}/submissions/{id}/decisions"
+            response = requests.get(url_decision, headers=headers)
+
+            if response.status_code == 200:
+                decisions = response.json()
+                last_decision = decisions[-1] if decisions else {}
+                decision = last_decision.get('decision', 0)
+                round = last_decision.get('round', 0)
+
+            if decision == 4 : 
+                match round : 
+                    case 'R1':
+                        increase_round_per_stage(submissions_in_R1, 100)
+                    case 'R2':
+                        increase_round_per_stage(submissions_in_R2, 100)
+                    case 'R3+':
+                        increase_round_per_stage(submissions_in_R3, 100)
+                    case _:
+                        logger.error('No round is specified')
+      
+            url_submission = f"{OJS_API_URL}/submissions/{id}"
+
+            response = requests.get(url_submission, headers=headers)
+            if response.status_code == 200:
+                submission = response.json()
+                review_rounds = submission.get('reviewRounds') or []
+                last_round = review_rounds[-1] if review_rounds else {}
+                round = last_round.get('round', 0)
+                status_id = last_round.get('statusId', 0)
+
+            round_key = 'R1' if round == 1 else 'R2' if round == 2 else 'R3+'
+            match round_key : 
+                case 'R1':
+                    increase_round_per_stage(submissions_in_R1, status_id)
+                case 'R2':
+                    increase_round_per_stage(submissions_in_R2, status_id)
+                case 'R3+':
+                    increase_round_per_stage(submissions_in_R3, status_id)
+                case _:
+                    logger.error('No round is specified')
+      
+            submissions_by_stage = [submissions_in_R1, submissions_in_R2, submissions_in_R3]
+
+        logger.info(f"Active submissions in peer review stage with decisions : {submissions_by_stage}")
+        return submissions_by_stage
+    
+    except Exception as e:
+        logger.error(f"Error while retrieving submissions with decisions: {e}")
+        return Response(
+            {"error": "An error occurred while retrieving submissions with decisions.", "details": str(e)},
+            status=500
+        )
+    
+def increase_round_per_stage(submissions_in_round, status_id):
+    match status_id:
+        case 6 | 16:
+            submissions_in_round['assign'] += 1
+        case 7:
+            submissions_in_round['awaiting'] += 1
+        case 5:
+            submissions_in_round['review'] += 1
+        case 1 | 2 | 4 | 8 | 9:
+            submissions_in_round['reviewer'] += 1
+        case 100 :
+            submissions_in_round['revising'] += 1
+        case _:
+            logger.error('[increase_round_per_stage] - Status Id is not managed.')
+
 
 
 def get_active_submissions():
@@ -269,6 +362,7 @@ def get_active_submissions():
                     "ojs_workflow_url": f"{OJS_WEBSITE_URL}/workflow/index/{id}/{stage_id}",
                     "title": fulltitle,
                     "author": author,
+                
                 })
 
             # logger.info(f"Active submissions in peer review stage : {submissions}")
@@ -287,7 +381,39 @@ def get_active_submissions():
             {"error": "Failed to connect to OJS API.", "details": str(e)}, status=500
         )
     
+def get_active_submissions_ids():
+    """
+    Get list of OJS peer review articles ids.
+    """
+    logger.info('Get submissions in peer review stage (stageId=3) from OJS all the current article OJS IDs.')
 
+    url = f"{OJS_API_URL}/submissions?stageIds=3"
+    ids = []
+
+    try:
+        response = requests.get(url, headers=headers)
+        if response.status_code == 200:
+            for item in response.json().get('items', []):
+                id = item.get('id', 0)
+
+                ids.append(id)
+
+            # logger.info(f"Active submissions in peer review stage : {submissions}")
+            return ids
+        else:
+            return Response(
+                {
+                    "error": "Unexpected error occurred while contacting OJS API.",
+                    "status_code": response.status_code,
+                },
+                status=response.status_code
+            )
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Failed to connect to OJS API: {e}")
+        return Response(
+            {"error": "Failed to connect to OJS API.", "details": str(e)}, status=500
+        )
+    
 def get_decision_for_submission(id: str):
     """
     Get list of OJS decisions for an article in peer review stage.
