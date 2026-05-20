@@ -1,7 +1,10 @@
+import datetime as dt
+
 import marko
 import requests
 from django.conf import settings
 from django.template.loader import render_to_string
+from django.utils import timezone
 from jdh.validation import JSONSchema
 from jdhapi.models import Article
 from lxml import html
@@ -168,9 +171,9 @@ def generate_pdf_for_submission(article):
         return pdf_file
 
 
-def get_active_submission_with_decision():
+def get_active_submissions_with_decision():
     """
-    Get list of OJS peer review articles with oj_submission_id, ojs_workflow_url, title, author  and decision .
+    Get list of OJS peer review articles with oj_submission_id, ojs_workflow_url, title, author and decision .
     """
     logger.info('Get submissions in peer review stage (stageId=3) from OJS formatted with id, link, title, author.')
 
@@ -185,7 +188,7 @@ def get_active_submission_with_decision():
             submission["decision"] = decision
             submissions_with_decisions.append(submission)
 
-            logger.info(f"Active submissions in peer review stage with decisions : {submissions_with_decisions}")
+            # logger.info(f"Active submissions in peer review stage with decisions : {submissions_with_decisions}")
         return submissions_with_decisions
     except Exception as e:
         logger.error(f"Error while retrieving submissions with decisions: {e}")
@@ -193,6 +196,53 @@ def get_active_submission_with_decision():
             {"error": "An error occurred while retrieving submissions with decisions.", "details": str(e)},
             status=500
         )
+
+def get_active_submission_with_timing(): 
+    """
+    Get list of OJS peer review articles with oj_submission_id, ojs_workflow_url, title, author  and decision .
+    """
+    logger.info('Get submissions in peer review stage (stageId=3) from OJS formatted like with series like this [ontime, delay, order:"R1"]')
+    submissions_in_R1 = {'ontime': 0, 'delay': 0, 'order': 'R1'}
+    submissions_in_R2 = {'ontime': 0, 'delay': 0, 'order': 'R2'}
+    submissions_in_R3 = {'ontime': 0, 'delay': 0, 'order': 'R3+'}
+    submissions_with_timing = []
+
+    try: 
+        submissions = get_active_submissions_with_decision()
+        for submission in submissions:
+            round = submission.get("decision", [{}])[-1].get("round") or 1
+            raw_date = submission.get("decision", [{}])[-1].get("dateDecided")
+            date = dt.datetime.fromisoformat(raw_date) 
+            if raw_date :
+                parsed = dt.datetime.fromisoformat(raw_date)
+                date = parsed if parsed.tzinfo else parsed.replace(tzinfo=dt.timezone.utc)
+            else :
+                date = timezone.now()
+
+            if round == 1 : 
+                increase_round(submissions_in_R1, date)
+            elif round == 2 :
+                increase_round(submissions_in_R2, date)
+            elif round >= 3 :
+                increase_round(submissions_in_R3, date)
+            
+            submissions_with_timing = [submissions_in_R1, submissions_in_R2, submissions_in_R3]
+
+        logger.info(f"Active submissions in peer review stage with decisions : {submissions_with_timing}")
+        return submissions_with_timing
+    except Exception as e:
+        logger.error(f"Error while retrieving submissions with decisions: {e}")
+        return Response(
+            {"error": "An error occurred while retrieving submissions with decisions.", "details": str(e)},
+            status=500
+        )
+    
+def increase_round(submissions_in_round, date):
+        if (date + dt.timedelta(days=30)) > timezone.now() :
+            submissions_in_round['ontime'] += 1
+        else : 
+            submissions_in_round['delay'] += 1
+
 
 
 def get_active_submissions():
@@ -212,15 +262,16 @@ def get_active_submissions():
                 id = item.get('id', 0)
                 fulltitle = item.get('publications', [{}])[0].get("fullTitle", "No title")
                 author = item.get('publications', [{}])[0].get("authorsString", "No author")
+                
 
                 submissions.append({
                     "ojs_submission_id": id,
                     "ojs_workflow_url": f"{OJS_WEBSITE_URL}/workflow/index/{id}/{stage_id}",
                     "title": fulltitle,
-                    "author": author
+                    "author": author,
                 })
 
-            logger.info(f"Active submissions in peer review stage : {submissions}")
+            # logger.info(f"Active submissions in peer review stage : {submissions}")
             return submissions
         else:
             return Response(

@@ -19,7 +19,8 @@ from jdhapi.utils.ojs import (
     create_blank_submission,
     create_contributor_in_ojs,
     generate_pdf_for_submission,
-    get_active_submission_with_decision,
+    get_active_submission_with_timing,
+    get_active_submissions_with_decision,
     upload_manuscript_to_ojs,
 )
 
@@ -45,7 +46,7 @@ def get_peer_review_article_with_decision(_):
     logger.info("GET /api/articles/ojs/submissions/decision")
 
     try:
-        submissions_with_decisions = get_active_submission_with_decision()
+        submissions_with_decisions = get_active_submissions_with_decision()
         return Response(
             {"data": submissions_with_decisions},
             status=status.HTTP_200_OK,
@@ -60,6 +61,37 @@ def get_peer_review_article_with_decision(_):
             status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             content_type="application/json",
         )
+
+
+@api_view(["GET"])
+@permission_classes([IsAdminUser])
+def get_peer_review_article_with_timing(_):
+    """
+    GET /api/articles/ojs/submissions/decisions/timing
+
+    Get the list of all articles in peer review with the timing (on-time, overdue) according to their round (R1, R1, R3+) from OJS.
+    Requires admin permissions.
+    """
+    logger.info("GET /api/articles/ojs/submissions/decisions/timing")
+
+    try:
+        submissions_with_decisions = get_active_submission_with_timing()
+        return Response(
+            {"data": submissions_with_decisions},
+            status=status.HTTP_200_OK,
+        )
+    except Exception as e:
+        return Response(
+            {
+                "error": "InternalError",
+                "message": "An unexpected error occurred. Please try again later.",
+                "details": str(e),
+            },
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content_type="application/json",
+        )
+
+
 
 
 @api_view(["GET"])

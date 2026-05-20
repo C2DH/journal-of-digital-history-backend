@@ -50,6 +50,7 @@ urlpatterns = [
     ),
     path("api/articles/cover", views.get_social_cover_image, name="articles-social-media-cover"),
     path("api/articles/ojs/submissions/decisions", views.get_peer_review_article_with_decision, name="submissions-with-decisions-from-ojs"),
+    path("api/articles/ojs/submissions/decisions/timing", views.get_peer_review_article_with_timing, name="submissions-with-timing-from-ojs"),
     path("api/articles/ojs/submissions", views.get_count_submission_from_ojs, name="count-submission-from-ojs"),
     path("api/articles/ojs/submission", views.send_article_to_ojs, name="articles-send-to-ojs"),
     path("api/articles/tweet", views.get_tweet_md_file, name="articles-tweet"),
