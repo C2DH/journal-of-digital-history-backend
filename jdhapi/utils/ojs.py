@@ -494,7 +494,7 @@ def get_active_submissions_by_stage_with_details():
                     "authors": author,
                     "title": fulltitle,
                     "url": url_workflow,
-                    "substatus": review_assignements
+                    "substatus": assign_substatus(review_assignements)
                 }
                 find_right_stage_and_round(submissions_by_stage_round, round, status_id, article)
             except Exception as e:
@@ -538,6 +538,45 @@ def find_right_stage_and_round(submissions, round, status_id, article):
         entry["articles"].append(article)
     else:
         logger.error("[find_right_stage_and_round] - Key {key} not found.")
+
+
+def assign_substatus(review_assignments):
+    """
+    Create an array of substatus eg.['thanked', 'thanked', 'accepted'].
+    """
+    substatuses = []
+
+    for r in review_assignments:
+        status_id = r.get("statusId", 0)
+
+        match status_id:
+            case 0:
+                substatuses.append("pending")
+            case 1: 
+                substatuses.append("declined")
+            case 4 | 6:
+                substatuses.append("overdue")
+            case 5:
+                substatuses.append("accepted")
+            case 7:
+                substatuses.append("submitted")
+            case 8: 
+                substatuses.append("confirmed")
+            case 9:
+                substatuses.append("thanked")
+            case 10:
+                substatuses.append("cancelled")
+            case 11:
+                substatuses.append("resent")
+            case 12:
+                substatuses.append("viewed")
+            case _:
+                logger.error("[assign_substatus] - Status Id is not managed.")
+                return
+    
+    return substatuses
+
+
 
 
 
