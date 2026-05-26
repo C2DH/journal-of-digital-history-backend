@@ -175,11 +175,13 @@ def get_active_submissions_with_decision():
     """
     Get list of OJS peer review articles with oj_submission_id, ojs_workflow_url, title, author and decision .
     """
-    logger.info('Get submissions in peer review stage (stageId=3) from OJS formatted with id, link, title, author.')
+    logger.info(
+        "Get submissions in peer review stage (stageId=3) from OJS formatted with id, link, title, author."
+    )
 
     submissions_with_decisions = []
 
-    try: 
+    try:
         submissions = get_active_submissions()
         for submission in submissions:
             ojs_submission_id = submission.get("ojs_submission_id", 0)
@@ -193,55 +195,74 @@ def get_active_submissions_with_decision():
     except Exception as e:
         logger.error(f"Error while retrieving submissions with decisions: {e}")
         return Response(
-            {"error": "An error occurred while retrieving submissions with decisions.", "details": str(e)},
-            status=500
+            {
+                "error": "An error occurred while retrieving submissions with decisions.",
+                "details": str(e),
+            },
+            status=500,
         )
 
-def get_active_submission_with_timing(): 
+
+def get_active_submission_with_timing():
     """
     Get list of OJS peer review articles with oj_submission_id, ojs_workflow_url, title, author  and decision .
     """
-    logger.info('Get submissions in peer review stage (stageId=3) from OJS formatted like with series like this [ontime, delay, order:"R1"]')
-    submissions_in_R1 = {'ontime': 0, 'delay': 0, 'order': 'R1'}
-    submissions_in_R2 = {'ontime': 0, 'delay': 0, 'order': 'R2'}
-    submissions_in_R3 = {'ontime': 0, 'delay': 0, 'order': 'R3+'}
+    logger.info(
+        'Get submissions in peer review stage (stageId=3) from OJS formatted like with series like this [ontime, delay, order:"R1"]'
+    )
+    submissions_in_R1 = {"ontime": 0, "delay": 0, "order": "R1"}
+    submissions_in_R2 = {"ontime": 0, "delay": 0, "order": "R2"}
+    submissions_in_R3 = {"ontime": 0, "delay": 0, "order": "R3+"}
     submissions_with_timing = []
 
-    try: 
+    try:
         submissions = get_active_submissions_with_decision()
         for submission in submissions:
             round = submission.get("decision", [{}])[-1].get("round") or 1
             raw_date = submission.get("decision", [{}])[-1].get("dateDecided")
-            date = dt.datetime.fromisoformat(raw_date) 
-            if raw_date :
+            date = dt.datetime.fromisoformat(raw_date)
+            if raw_date:
                 parsed = dt.datetime.fromisoformat(raw_date)
-                date = parsed if parsed.tzinfo else parsed.replace(tzinfo=dt.timezone.utc)
-            else :
+                date = (
+                    parsed if parsed.tzinfo else parsed.replace(tzinfo=dt.timezone.utc)
+                )
+            else:
                 date = timezone.now()
 
-            if round == 1 : 
+            if round == 1:
                 increase_round(submissions_in_R1, date)
-            elif round == 2 :
+            elif round == 2:
                 increase_round(submissions_in_R2, date)
-            elif round >= 3 :
+            elif round >= 3:
                 increase_round(submissions_in_R3, date)
-            
-            submissions_with_timing = [submissions_in_R1, submissions_in_R2, submissions_in_R3]
 
-        logger.info(f"Active submissions in peer review stage with decisions : {submissions_with_timing}")
+            submissions_with_timing = [
+                submissions_in_R1,
+                submissions_in_R2,
+                submissions_in_R3,
+            ]
+
+        logger.info(
+            f"Active submissions in peer review stage with decisions : {submissions_with_timing}"
+        )
         return submissions_with_timing
     except Exception as e:
         logger.error(f"Error while retrieving submissions with decisions: {e}")
         return Response(
-            {"error": "An error occurred while retrieving submissions with decisions.", "details": str(e)},
-            status=500
+            {
+                "error": "An error occurred while retrieving submissions with decisions.",
+                "details": str(e),
+            },
+            status=500,
         )
-    
+
+
 def increase_round(submissions_in_round, date):
-        if (date + dt.timedelta(days=30)) > timezone.now() :
-            submissions_in_round['ontime'] += 1
-        else : 
-            submissions_in_round['delay'] += 1
+    if (date + dt.timedelta(days=30)) > timezone.now():
+        submissions_in_round["ontime"] += 1
+    else:
+        submissions_in_round["delay"] += 1
+
 
 def get_active_submissions_by_stage():
     """
@@ -254,18 +275,41 @@ def get_active_submissions_by_stage():
     Data will be returned this way : [assign:int, awaiting: int, review: int, reviewer: int, revising: int, order: 'R1']
     It will be done for R1, R2 and R3+ rounds of peer review.
     """
-    logger.info('Get submissions in peer review stage (stageId=3) from OJS formatted with id, link, title, author.')
+    logger.info(
+        "[get_active_submissions_by_stage] - Get submission sorted by peer review stage"
+    )
 
-    submissions_in_R1 = {'assign':0, 'awaiting': 0, 'review': 0, 'reviewer': 0, 'revising': 0, 'order': 'R1'}
-    submissions_in_R2 = {'assign':0, 'awaiting': 0, 'review': 0, 'reviewer': 0, 'revising': 0, 'order': 'R2'}
-    submissions_in_R3 = {'assign':0, 'awaiting': 0, 'review': 0, 'reviewer': 0, 'revising': 0, 'order': 'R3+'}
+    submissions_in_R1 = {
+        "assign": 0,
+        "awaiting": 0,
+        "review": 0,
+        "reviewer": 0,
+        "revising": 0,
+        "order": "R1",
+    }
+    submissions_in_R2 = {
+        "assign": 0,
+        "awaiting": 0,
+        "review": 0,
+        "reviewer": 0,
+        "revising": 0,
+        "order": "R2",
+    }
+    submissions_in_R3 = {
+        "assign": 0,
+        "awaiting": 0,
+        "review": 0,
+        "reviewer": 0,
+        "revising": 0,
+        "order": "R3+",
+    }
     submissions_by_stage = []
 
     decision = 0
     round = 0
     status_id = 0
 
-    try: 
+    try:
         submission_ids = get_active_submissions_ids()
         for id in submission_ids:
             url_decision = f"{OJS_API_URL}/submissions/{id}/decisions"
@@ -274,67 +318,226 @@ def get_active_submissions_by_stage():
             if response.status_code == 200:
                 decisions = response.json()
                 last_decision = decisions[-1] if decisions else {}
-                decision = last_decision.get('decision', 0)
-                round = last_decision.get('round', 0)
+                decision = last_decision.get("decision", 0)
+                round = last_decision.get("round", 0)
 
-            if decision == 4 : 
-                match round : 
-                    case 'R1':
+            if decision == 4:
+                match round:
+                    case "R1":
                         increase_round_per_stage(submissions_in_R1, 100)
-                    case 'R2':
+                    case "R2":
                         increase_round_per_stage(submissions_in_R2, 100)
-                    case 'R3+':
+                    case "R3+":
                         increase_round_per_stage(submissions_in_R3, 100)
                     case _:
-                        logger.error('No round is specified')
-      
+                        logger.error("No round is specified")
+
             url_submission = f"{OJS_API_URL}/submissions/{id}"
 
             response = requests.get(url_submission, headers=headers)
             if response.status_code == 200:
                 submission = response.json()
-                review_rounds = submission.get('reviewRounds') or []
+                review_rounds = submission.get("reviewRounds") or []
                 last_round = review_rounds[-1] if review_rounds else {}
-                round = last_round.get('round', 0)
-                status_id = last_round.get('statusId', 0)
+                round = last_round.get("round", 0)
+                status_id = last_round.get("statusId", 0)
 
-            round_key = 'R1' if round == 1 else 'R2' if round == 2 else 'R3+'
-            match round_key : 
-                case 'R1':
+            round_key = "R1" if round == 1 else "R2" if round == 2 else "R3+"
+            match round_key:
+                case "R1":
                     increase_round_per_stage(submissions_in_R1, status_id)
-                case 'R2':
+                case "R2":
                     increase_round_per_stage(submissions_in_R2, status_id)
-                case 'R3+':
+                case "R3+":
                     increase_round_per_stage(submissions_in_R3, status_id)
                 case _:
-                    logger.error('No round is specified')
-      
-            submissions_by_stage = [submissions_in_R1, submissions_in_R2, submissions_in_R3]
+                    logger.error("No round is specified")
 
-        logger.info(f"Active submissions in peer review stage with decisions : {submissions_by_stage}")
+            submissions_by_stage = [
+                submissions_in_R1,
+                submissions_in_R2,
+                submissions_in_R3,
+            ]
+
+        logger.info(
+            f"Active submissions in peer review stage with decisions : {submissions_by_stage}"
+        )
         return submissions_by_stage
-    
+
     except Exception as e:
         logger.error(f"Error while retrieving submissions with decisions: {e}")
         return Response(
-            {"error": "An error occurred while retrieving submissions with decisions.", "details": str(e)},
-            status=500
+            {
+                "error": "An error occurred while retrieving submissions with decisions.",
+                "details": str(e),
+            },
+            status=500,
         )
-    
+
+
 def increase_round_per_stage(submissions_in_round, status_id):
     match status_id:
         case 6 | 16:
-            submissions_in_round['assign'] += 1
+            submissions_in_round["assign"] += 1
         case 7:
-            submissions_in_round['awaiting'] += 1
+            submissions_in_round["awaiting"] += 1
         case 5:
-            submissions_in_round['review'] += 1
+            submissions_in_round["review"] += 1
         case 1 | 2 | 4 | 8 | 9:
-            submissions_in_round['reviewer'] += 1
-        case 100 :
-            submissions_in_round['revising'] += 1
+            submissions_in_round["reviewer"] += 1
+        case 100:
+            submissions_in_round["revising"] += 1
         case _:
-            logger.error('[increase_round_per_stage] - Status Id is not managed.')
+            logger.error("[increase_round_per_stage] - Status Id is not managed.")
+
+
+def get_active_submissions_by_stage_with_details():
+    """
+    Get list of OJS peer review articles details for each stages.
+    It will return an object type like this :
+    [
+        {
+            key: 'assign-R1',
+            articles: [
+            {
+                authors: string,
+                title: string,
+                url: string,
+                pid: string,
+                substatus: ['thanked', 'thanked', 'overdue'],
+            },
+            ...
+            ],
+        },
+        {
+            key: 'assign-R2',
+            articles: [...],
+        },
+        ...
+    ]
+
+    List of the stages for key :
+    - assign
+    - awaiting
+    - review
+    - reviewer
+    - revising
+    """
+    logger.info(
+        "[get_active_submissions_by_stage_with_details] - Get list of detail articles for each peer review stage"
+    )
+
+    submissions_by_stage_round = [
+        {"key": "assign-R1", "articles": []},
+        {"key": "awaiting-R1", "articles": []},
+        {"key": "review-R1", "articles": []},
+        {"key": "reviewer-R1", "articles": []},
+        {"key": "revising-R1", "articles": []},
+        {"key": "assign-R2", "articles": []},
+        {"key": "awaiting-R2", "articles": []},
+        {"key": "review-R2", "articles": []},
+        {"key": "reviewer-R2", "articles": []},
+        {"key": "revising-R2", "articles": []},
+        {"key": "assign-R3", "articles": []},
+        {"key": "awaiting-R3", "articles": []},
+        {"key": "review-R3", "articles": []},
+        {"key": "reviewer-R3", "articles": []},
+        {"key": "revising-R3", "articles": []},
+    ]
+
+    try:
+        submission_ids = get_active_submissions_ids()
+
+        for id in submission_ids:
+            try:
+                submission_url = f"{OJS_API_URL}/submissions/{id}"
+                response = requests.get(submission_url, headers=headers)
+                response.raise_for_status()
+
+            except requests.exceptions.RequestException as e:
+                logger.error(f"[get_active_submissions_by_stage_with_details] HTTP request failed for submission {id}: {e}")
+                continue
+        
+            try:
+                submission = response.json()
+
+                id = submission.get("id", 0)
+                fulltitle = submission.get("publications", [{}])[0].get(
+                    "fullTitle", "No title"
+                ).get("en")
+                author = submission.get("publications", [{}])[0].get(
+                    "authorsString", "No author"
+                )     
+                review_assignements = submission.get("reviewAssignments", [{}])
+                review_rounds = submission.get("reviewRounds") or []
+                last_round = review_rounds[-1] if review_rounds else {}
+                round = last_round.get("round", 0)
+                status_id = last_round.get("statusId", 0)
+                url_workflow = submission.get("urlWorkflow")
+                
+            except (KeyError, IndexError, ValueError) as e:
+                logger.error(f"[get_active_submissions_by_stage_with_details] Failed to parse submission data for id {id}: {e}")
+                continue
+                
+            try: 
+                article_db = Article.objects.filter(ojs_submission_id=id).first()
+                if article_db is None:
+                    article_db = Article.objects.filter(abstract__title=fulltitle).first()
+                pid = article_db.abstract.pid if article_db else None
+            except Exception as e:
+                logger.error(f"[get_active_submissions_by_stage_with_details] DB query failed for id {id}: {e}")
+                continue
+
+            try:
+                article = {
+                    "pid": pid,
+                    "authors": author,
+                    "title": fulltitle,
+                    "url": url_workflow,
+                    "substatus": review_assignements
+                }
+                find_right_stage_and_round(submissions_by_stage_round, round, status_id, article)
+            except Exception as e:
+                logger.error(f"[get_active_submissions_by_stage_with_details] Failed to categorize submission {id} (round={round}, status_id={status_id}): {e}")
+            continue
+
+        return submissions_by_stage_round
+
+    except Exception as e:
+        logger.error(f"Error while retrieving submissions with decisions: {e}")
+        return Response(
+            {
+                "error": "An error occurred while retrieving submissions with decisions.",
+                "details": str(e),
+            },
+            status=500,
+        )
+    
+    
+def find_right_stage_and_round(submissions, round, status_id, article):
+    round_label = "R1" if round == 1 else "R2" if round == 2 else "R3+"
+
+    match status_id:
+        case 6 | 16:
+            stage = "assign"
+        case 7:
+            stage = "awaiting"
+        case 5:
+            stage = "review"
+        case 1 | 2 | 4 | 8 | 9:
+            stage = "reviewer"
+        case 100:
+            stage = "revising"
+        case _:
+            logger.error("[find_right_stage_and_round] - Status Id is not managed.")
+            return
+    
+    key = f"{stage}-{round_label}"
+    entry = next((s for s in submissions if s["key"] == key), None)
+    if entry is not None:
+        entry["articles"].append(article)
+    else:
+        logger.error("[find_right_stage_and_round] - Key {key} not found.")
 
 
 
@@ -342,7 +545,9 @@ def get_active_submissions():
     """
     Get list of OJS peer review articles with oj_submission_id, ojs_workflow_url, title and author.
     """
-    logger.info('Get submissions in peer review stage (stageId=3) from OJS formatted with id, link, title, author.')
+    logger.info(
+        "Get submissions in peer review stage (stageId=3) from OJS formatted with id, link, title, author."
+    )
 
     url = f"{OJS_API_URL}/submissions?stageIds=3"
     submissions = []
@@ -350,20 +555,24 @@ def get_active_submissions():
     try:
         response = requests.get(url, headers=headers)
         if response.status_code == 200:
-            for item in response.json().get('items', []):
-                stage_id = item.get('stageId', 0)
-                id = item.get('id', 0)
-                fulltitle = item.get('publications', [{}])[0].get("fullTitle", "No title")
-                author = item.get('publications', [{}])[0].get("authorsString", "No author")
-                
+            for item in response.json().get("items", []):
+                stage_id = item.get("stageId", 0)
+                id = item.get("id", 0)
+                fulltitle = item.get("publications", [{}])[0].get(
+                    "fullTitle", "No title"
+                )
+                author = item.get("publications", [{}])[0].get(
+                    "authorsString", "No author"
+                )
 
-                submissions.append({
-                    "ojs_submission_id": id,
-                    "ojs_workflow_url": f"{OJS_WEBSITE_URL}/workflow/index/{id}/{stage_id}",
-                    "title": fulltitle,
-                    "author": author,
-                
-                })
+                submissions.append(
+                    {
+                        "ojs_submission_id": id,
+                        "ojs_workflow_url": f"{OJS_WEBSITE_URL}/workflow/index/{id}/{stage_id}",
+                        "title": fulltitle,
+                        "author": author,
+                    }
+                )
 
             # logger.info(f"Active submissions in peer review stage : {submissions}")
             return submissions
@@ -373,19 +582,22 @@ def get_active_submissions():
                     "error": "Unexpected error occurred while contacting OJS API.",
                     "status_code": response.status_code,
                 },
-                status=response.status_code
+                status=response.status_code,
             )
     except requests.exceptions.RequestException as e:
         logger.error(f"Failed to connect to OJS API: {e}")
         return Response(
             {"error": "Failed to connect to OJS API.", "details": str(e)}, status=500
         )
-    
+
+
 def get_active_submissions_ids():
     """
     Get list of OJS peer review articles ids.
     """
-    logger.info('Get submissions in peer review stage (stageId=3) from OJS all the current article OJS IDs.')
+    logger.info(
+        "Get submissions in peer review stage (stageId=3) from OJS all the current article OJS IDs."
+    )
 
     url = f"{OJS_API_URL}/submissions?stageIds=3"
     ids = []
@@ -393,8 +605,8 @@ def get_active_submissions_ids():
     try:
         response = requests.get(url, headers=headers)
         if response.status_code == 200:
-            for item in response.json().get('items', []):
-                id = item.get('id', 0)
+            for item in response.json().get("items", []):
+                id = item.get("id", 0)
 
                 ids.append(id)
 
@@ -406,24 +618,25 @@ def get_active_submissions_ids():
                     "error": "Unexpected error occurred while contacting OJS API.",
                     "status_code": response.status_code,
                 },
-                status=response.status_code
+                status=response.status_code,
             )
     except requests.exceptions.RequestException as e:
         logger.error(f"Failed to connect to OJS API: {e}")
         return Response(
             {"error": "Failed to connect to OJS API.", "details": str(e)}, status=500
         )
-    
+
+
 def get_decision_for_submission(id: str):
     """
     Get list of OJS decisions for an article in peer review stage.
     """
 
-    logger.info('Get decision for submission in OJS.')
+    logger.info("Get decision for submission in OJS.")
 
     url = f"{OJS_API_URL}/submissions/{id}/decisions"
 
-    try: 
+    try:
         response = requests.get(url, headers=headers)
 
         if response.status_code == 200:
