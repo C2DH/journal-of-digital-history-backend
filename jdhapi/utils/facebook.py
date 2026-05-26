@@ -1,12 +1,17 @@
 import json
 import logging
 from datetime import datetime, timedelta, timezone
-from urllib.parse import urlparse
 from zoneinfo import ZoneInfo
 
 import requests
 
-from .github_repository import get_github_headers
+from .bluesky import save_social_media_campaign_in_database
+from .github_repository import (
+    fetch_file_bytes,
+    get_default_branch,
+    parse_github_repo_url,
+    parse_tweets_md,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -14,54 +19,6 @@ logger = logging.getLogger(__name__)
 DELAY_BETWEEN_POSTS = 10  # 10 seconds
 
 GRAPH = "https://graph.facebook.com/v12.0"
-
-
-# GitHub-related functions
-def parse_repo_url(repo_url: str):
-    p = urlparse(repo_url)
-    parts = p.path.lstrip("/").rstrip(".git").split("/")
-    if len(parts) < 2:
-        raise ValueError(f"Invalid GitHub URL: {repo_url}")
-    return parts[0], parts[1]
-
-
-def get_default_branch(owner: str, repo: str) -> str:
-    r = requests.get(
-        "https://api.github.com/repos/{owner}/{repo}", headers=get_github_headers()
-    )
-    if r.status_code != 200:
-        raise ValueError(
-            f"GitHub repo not found: https://api.github.com/repos/{owner}/{repo}"
-        )
-    return r.json()["default_branch"]
-
-
-def fetch_file_bytes(owner: str, repo: str, branch: str, path: str) -> bytes:
-    url = f"https://raw.githubusercontent.com/{owner}/{repo}/{branch}/{path}"
-    r = requests.get(url, headers=get_github_headers())
-    if r.status_code != 200:
-        raise ValueError(f"File not found: {url}")
-    return r.content
-
-
-# MD parsing
-def parse_tweets_md(md: str):
-    thread, independent = [], []
-    mode = None
-    for line in md.splitlines():
-        if line.startswith("Post thread:"):
-            mode = "thread"
-            continue
-        if line.startswith("As independent posts:"):
-            mode = "independent"
-            continue
-        if not line.strip() or mode is None:
-            continue
-        if mode == "thread" and line.lstrip()[0].isdigit() and "." in line:
-            thread.append(line.split(".", 1)[1].strip())
-        elif mode == "independent" and line.lstrip().startswith("-"):
-            independent.append(line.lstrip("-").strip())
-    return thread, independent
 
 
 # Facebook API
@@ -94,29 +51,10 @@ def fb_post_feed(
     r = requests.post(
         f"{GRAPH}/{page_id}/feed", params={"access_token": token}, data=payload
     )
+    logger.info(f"FACEBOOK - Answer from post creation {r.text}")
     if r.status_code != 200:
         raise Exception(f"Post creation failed: {r.text}")
     return r.json()["id"]
-
-
-# posting
-state = {}
-
-
-# scheduling
-def parse_times(arg, count):
-    arr = json.loads(arg)
-    if not isinstance(arr, list) or len(arr) != count:
-        logger.info(f"Expected {count} timestamps, got {len(arr)}")
-    ts = []
-    for s in arr:
-        dt = datetime.fromisoformat(s)
-        if dt.tzinfo is None:
-            logger.info(f"Timestamp {s} missing offset")
-        ts.append(dt)
-    if any(ts[i] > ts[i + 1] for i in range(len(ts) - 1)):
-        logger.info("Timestamps must be non-decreasing")
-    return ts
 
 
 def launch_social_media_facebook(
@@ -132,9 +70,9 @@ def launch_social_media_facebook(
             "repo_url, article_link, page_id and access_token are mandatory"
         )
 
-    owner, repo = parse_repo_url(repo_url)
-    branch = branch or get_default_branch(owner, repo)
-    md = fetch_file_bytes(owner, repo, branch, "tweets.md").decode()
+    owner, pid = parse_github_repo_url(repo_url)
+    branch = branch or get_default_branch(owner, pid)
+    md = fetch_file_bytes(owner, pid, branch, "tweets.md").decode()
     text, _ = parse_tweets_md(md)
     if not text:
         raise Exception("No thread items")
@@ -169,13 +107,31 @@ def launch_social_media_facebook(
 
             min_time = now + timedelta(minutes=10)
             if dt < min_time:
-                raise ValueError(
-                    "scheduled must be at least 10 minutes in the future"
-                )
+                raise ValueError("scheduled must be at least 10 minutes in the future")
             scheduled_time = dt
 
     post_id = fb_post_feed(
         page_id, access_token, text, article_link, img_bytes, scheduled_time
     )
 
-    return {"post_id": post_id, "scheduled_time": scheduled_time}
+    url = f"https://www.facebook.com/{post_id}"
+    now = datetime.now(timezone.utc).isoformat()
+
+    if scheduled_time:
+        save_social_media_campaign_in_database(
+            pid,
+            platform="FACEBOOK",
+            url=url,
+            scheduled_time=scheduled_time.isoformat(),
+            published_time=scheduled_time.isoformat(),
+        )
+    else:
+        save_social_media_campaign_in_database(
+            pid, platform="FACEBOOK", url=url, scheduled_time=None, published_time=now
+        )
+
+    return {
+        "message": "Facebook campaign completed",
+        "post_id": post_id,
+        "scheduled_time": scheduled_time,
+    }
