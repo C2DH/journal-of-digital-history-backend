@@ -305,33 +305,12 @@ def get_active_submissions_by_stage():
     }
     submissions_by_stage = []
 
-    decision = 0
     round = 0
     status_id = 0
 
     try:
         submission_ids = get_active_submissions_ids()
         for id in submission_ids:
-            url_decision = f"{OJS_API_URL}/submissions/{id}/decisions"
-            response = requests.get(url_decision, headers=headers)
-
-            if response.status_code == 200:
-                decisions = response.json()
-                last_decision = decisions[-1] if decisions else {}
-                decision = last_decision.get("decision", 0)
-                round = last_decision.get("round", 0)
-
-            if decision == 4:
-                match round:
-                    case "R1":
-                        increase_round_per_stage(submissions_in_R1, 100)
-                    case "R2":
-                        increase_round_per_stage(submissions_in_R2, 100)
-                    case "R3+":
-                        increase_round_per_stage(submissions_in_R3, 100)
-                    case _:
-                        logger.error("No round is specified")
-
             url_submission = f"{OJS_API_URL}/submissions/{id}"
 
             response = requests.get(url_submission, headers=headers)
@@ -341,6 +320,8 @@ def get_active_submissions_by_stage():
                 last_round = review_rounds[-1] if review_rounds else {}
                 round = last_round.get("round", 0)
                 status_id = last_round.get("statusId", 0)
+
+            status_id = is_author_revising(id, status_id)
 
             round_key = "R1" if round == 1 else "R2" if round == 2 else "R3+"
             match round_key:
@@ -389,6 +370,23 @@ def increase_round_per_stage(submissions_in_round, status_id):
             submissions_in_round["revising"] += 1
         case _:
             logger.error("[increase_round_per_stage] - Status Id is not managed.")
+
+
+def is_author_revising(id, status_id):
+    try:
+        url_decision = f"{OJS_API_URL}/submissions/{id}/decisions"
+        response = requests.get(url_decision, headers=headers)
+
+        if response.status_code == 200:
+            decisions = response.json()
+            last_decision = decisions[-1] if decisions else {}
+            decision = last_decision.get("decision", 0)
+            if decision == 4:
+                return 100  # special code for author_revising
+    except requests.exceptions.RequestException as e:
+        logger.error(f"[is_author_revising] Failed to get decisions for {id}: {e}")
+
+    return status_id
 
 
 def get_active_submissions_by_stage_with_details():
@@ -455,37 +453,49 @@ def get_active_submissions_by_stage_with_details():
                 response.raise_for_status()
 
             except requests.exceptions.RequestException as e:
-                logger.error(f"[get_active_submissions_by_stage_with_details] HTTP request failed for submission {id}: {e}")
+                logger.error(
+                    f"[get_active_submissions_by_stage_with_details] HTTP request failed for submission {id}: {e}"
+                )
                 continue
-        
+
             try:
                 submission = response.json()
 
                 id = submission.get("id", 0)
-                fulltitle = submission.get("publications", [{}])[0].get(
-                    "fullTitle", "No title"
-                ).get("en")
+                fulltitle = (
+                    submission.get("publications", [{}])[0]
+                    .get("fullTitle", "No title")
+                    .get("en")
+                )
                 author = submission.get("publications", [{}])[0].get(
                     "authorsString", "No author"
-                )     
+                )
                 review_assignements = submission.get("reviewAssignments", [{}])
                 review_rounds = submission.get("reviewRounds") or []
                 last_round = review_rounds[-1] if review_rounds else {}
                 round = last_round.get("round", 0)
                 status_id = last_round.get("statusId", 0)
                 url_workflow = submission.get("urlWorkflow")
-                
+
+                status_id = is_author_revising(id, status_id)
+
             except (KeyError, IndexError, ValueError) as e:
-                logger.error(f"[get_active_submissions_by_stage_with_details] Failed to parse submission data for id {id}: {e}")
+                logger.error(
+                    f"[get_active_submissions_by_stage_with_details] Failed to parse submission data for id {id}: {e}"
+                )
                 continue
-                
-            try: 
+
+            try:
                 article_db = Article.objects.filter(ojs_submission_id=id).first()
                 if article_db is None:
-                    article_db = Article.objects.filter(abstract__title=fulltitle).first()
+                    article_db = Article.objects.filter(
+                        abstract__title=fulltitle
+                    ).first()
                 pid = article_db.abstract.pid if article_db else None
             except Exception as e:
-                logger.error(f"[get_active_submissions_by_stage_with_details] DB query failed for id {id}: {e}")
+                logger.error(
+                    f"[get_active_submissions_by_stage_with_details] DB query failed for id {id}: {e}"
+                )
                 continue
 
             try:
@@ -494,11 +504,16 @@ def get_active_submissions_by_stage_with_details():
                     "authors": author,
                     "title": fulltitle,
                     "url": url_workflow,
-                    "substatus": assign_substatus(review_assignements)
+                    "substatus": assign_substatus(review_assignements),
                 }
-                find_right_stage_and_round(submissions_by_stage_round, round, status_id, article)
+
+                find_right_stage_and_round(
+                    submissions_by_stage_round, round, status_id, article
+                )
             except Exception as e:
-                logger.error(f"[get_active_submissions_by_stage_with_details] Failed to categorize submission {id} (round={round}, status_id={status_id}): {e}")
+                logger.error(
+                    f"[get_active_submissions_by_stage_with_details] Failed to categorize submission {id} (round={round}, status_id={status_id}): {e}"
+                )
             continue
 
         return submissions_by_stage_round
@@ -512,8 +527,8 @@ def get_active_submissions_by_stage_with_details():
             },
             status=500,
         )
-    
-    
+
+
 def find_right_stage_and_round(submissions, round, status_id, article):
     round_label = "R1" if round == 1 else "R2" if round == 2 else "R3+"
 
@@ -531,7 +546,7 @@ def find_right_stage_and_round(submissions, round, status_id, article):
         case _:
             logger.error("[find_right_stage_and_round] - Status Id is not managed.")
             return
-    
+
     key = f"{stage}-{round_label}"
     entry = next((s for s in submissions if s["key"] == key), None)
     if entry is not None:
@@ -552,7 +567,7 @@ def assign_substatus(review_assignments):
         match status_id:
             case 0:
                 substatuses.append("pending")
-            case 1: 
+            case 1:
                 substatuses.append("declined")
             case 4 | 6:
                 substatuses.append("overdue")
@@ -560,7 +575,7 @@ def assign_substatus(review_assignments):
                 substatuses.append("accepted")
             case 7:
                 substatuses.append("submitted")
-            case 8: 
+            case 8:
                 substatuses.append("confirmed")
             case 9:
                 substatuses.append("thanked")
@@ -573,11 +588,8 @@ def assign_substatus(review_assignments):
             case _:
                 logger.error("[assign_substatus] - Status Id is not managed.")
                 return
-    
+
     return substatuses
-
-
-
 
 
 def get_active_submissions():
