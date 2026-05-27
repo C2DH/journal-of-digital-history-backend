@@ -173,10 +173,10 @@ def generate_pdf_for_submission(article):
 
 def get_active_submissions_with_decision():
     """
-    Get list of OJS peer review articles with oj_submission_id, ojs_workflow_url, title, author and decision .
+    Get active submissions with OJS decisions.
     """
     logger.info(
-        "Get submissions in peer review stage (stageId=3) from OJS formatted with id, link, title, author."
+        "Get active submissions in peer review stage (stageId=3) from OJS with decisions"
     )
 
     submissions_with_decisions = []
@@ -190,7 +190,6 @@ def get_active_submissions_with_decision():
             submission["decision"] = decision
             submissions_with_decisions.append(submission)
 
-            # logger.info(f"Active submissions in peer review stage with decisions : {submissions_with_decisions}")
         return submissions_with_decisions
     except Exception as e:
         logger.error(f"Error while retrieving submissions with decisions: {e}")
@@ -356,22 +355,6 @@ def get_active_submissions_by_stage():
         )
 
 
-def increase_round_per_stage(submissions_in_round, status_id):
-    match status_id:
-        case 6 | 16:
-            submissions_in_round["assign"] += 1
-        case 7:
-            submissions_in_round["awaiting"] += 1
-        case 5:
-            submissions_in_round["review"] += 1
-        case 1 | 2 | 4 | 8 | 9:
-            submissions_in_round["reviewer"] += 1
-        case 100:
-            submissions_in_round["revising"] += 1
-        case _:
-            logger.error("[increase_round_per_stage] - Status Id is not managed.")
-
-
 def is_author_revising(id, status_id):
     try:
         url_decision = f"{OJS_API_URL}/submissions/{id}/decisions"
@@ -529,15 +512,31 @@ def get_active_submissions_by_stage_with_details():
         )
 
 
+def increase_round_per_stage(submissions_in_round, status_id):
+    match status_id:
+        case 6 | 15:
+            submissions_in_round["assign"] += 1
+        case 7:
+            submissions_in_round["awaiting"] += 1
+        case 10:
+            submissions_in_round["review"] += 1
+        case 1 | 2 | 4 | 8 | 9:
+            submissions_in_round["reviewer"] += 1
+        case 100:
+            submissions_in_round["revising"] += 1
+        case _:
+            logger.error("[increase_round_per_stage] - Status Id is not managed.")
+
+
 def find_right_stage_and_round(submissions, round, status_id, article):
     round_label = "R1" if round == 1 else "R2" if round == 2 else "R3+"
 
     match status_id:
-        case 6 | 16:
+        case 6 | 15:
             stage = "assign"
         case 7:
             stage = "awaiting"
-        case 5:
+        case 10:
             stage = "review"
         case 1 | 2 | 4 | 8 | 9:
             stage = "reviewer"
