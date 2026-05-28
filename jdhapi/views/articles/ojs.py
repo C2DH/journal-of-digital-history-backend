@@ -1,5 +1,6 @@
 import requests
 from django.conf import settings
+from django.core.cache import cache
 from django.db import transaction
 from jdh.validation import JSONSchema
 from jdhseo.utils import get_country_with_ROR
@@ -119,11 +120,14 @@ def get_peer_review_article_details(_):
     logger.info("GET /api/articles/ojs/submissions/peer-review/details")
 
     try:
+        cache_key = "ojs:peer-review:details:v1"
+        cached = cache.get(cache_key)
+        if cached is not None:
+            return Response({"data": cached}, status=status.HTTP_200_OK)
+
         articles_per_stage = get_active_submissions_by_stage_with_details()
-        return Response(
-            {"data": articles_per_stage},
-            status=status.HTTP_200_OK,
-        )
+        cache.set(cache_key, articles_per_stage, 45)  # seconds
+        return Response({"data": articles_per_stage}, status=status.HTTP_200_OK)
     except Exception as e:
         return Response(
             {

@@ -1,4 +1,5 @@
 import datetime as dt
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import marko
 import requests
@@ -21,6 +22,9 @@ headers = {
 }
 OJS_API_URL = settings.OJS_API_URL
 OJS_WEBSITE_URL = settings.OJS_WEBSITE_URL
+
+REQUEST_TIMEOUT_SECONDS = 8
+OJS_FETCH_WORKERS = 12
 
 
 def create_blank_submission():
@@ -372,6 +376,43 @@ def is_author_revising(id, status_id):
     return status_id
 
 
+def _fetch_submission_and_status(submission_id):
+    submission_url = f"{OJS_API_URL}/submissions/{submission_id}"
+    decision_url = f"{OJS_API_URL}/submissions/{submission_id}/decisions"
+
+    submission = None
+    status_id_override = None
+
+    try:
+        res_submission = requests.get(
+            submission_url, headers=headers, timeout=REQUEST_TIMEOUT_SECONDS
+        )
+        res_submission.raise_for_status()
+        submission = res_submission.json()
+    except requests.exceptions.RequestException as e:
+        logger.error(
+            f"[get_active_submissions_by_stage_with_details] HTTP request failed for submission {submission_id}: {e}"
+        )
+        return submission_id, None, None
+
+    # Keep current author-revising logic, but fetch in parallel worker
+    try:
+        res_decision = requests.get(
+            decision_url, headers=headers, timeout=REQUEST_TIMEOUT_SECONDS
+        )
+        if res_decision.status_code == 200:
+            decisions = res_decision.json()
+            last_decision = decisions[-1] if decisions else {}
+            if last_decision.get("decision", 0) == 4:
+                status_id_override = 100
+    except requests.exceptions.RequestException as e:
+        logger.error(
+            f"[get_active_submissions_by_stage_with_details] Decision request failed for submission {submission_id}: {e}"
+        )
+
+    return submission_id, submission, status_id_override
+
+
 def get_active_submissions_by_stage_with_details():
     """
     Get list of OJS peer review articles details for each stages.
@@ -428,76 +469,88 @@ def get_active_submissions_by_stage_with_details():
 
     try:
         submission_ids = get_active_submissions_ids()
+        if not isinstance(submission_ids, list):
+            return submission_ids
 
-        for id in submission_ids:
+        # Parallel HTTP fetch (submission + decision)
+        fetched = []
+        with ThreadPoolExecutor(max_workers=OJS_FETCH_WORKERS) as pool:
+            futures = {
+                pool.submit(_fetch_submission_and_status, sid): sid
+                for sid in submission_ids
+            }
+            for f in as_completed(futures):
+                sid, submission, status_override = f.result()
+                if submission:
+                    fetched.append((sid, submission, status_override))
+
+        # Build title set for one-shot fallback lookup
+        titles = set()
+        parsed_rows = []
+        for sid, submission, status_override in fetched:
             try:
-                submission_url = f"{OJS_API_URL}/submissions/{id}"
-                response = requests.get(submission_url, headers=headers)
-                response.raise_for_status()
-
-            except requests.exceptions.RequestException as e:
-                logger.error(
-                    f"[get_active_submissions_by_stage_with_details] HTTP request failed for submission {id}: {e}"
-                )
-                continue
-
-            try:
-                submission = response.json()
-
-                id = submission.get("id", 0)
-                fulltitle = (
-                    submission.get("publications", [{}])[0]
-                    .get("fullTitle", "No title")
-                    .get("en")
-                )
-                author = submission.get("publications", [{}])[0].get(
-                    "authorsString", "No author"
-                )
-                review_assignements = submission.get("reviewAssignments", [{}])
+                publication = (submission.get("publications") or [{}])[0]
+                fulltitle = (publication.get("fullTitle") or {}).get("en", "No title")
+                author = publication.get("authorsString", "No author")
+                review_assignments = submission.get("reviewAssignments") or []
                 review_rounds = submission.get("reviewRounds") or []
                 last_round = review_rounds[-1] if review_rounds else {}
-                round = last_round.get("round", 0)
-                status_id = last_round.get("statusId", 0)
+                round_value = last_round.get("round", 0)
+                status_id = status_override or last_round.get("statusId", 0)
                 url_workflow = submission.get("urlWorkflow")
 
-                status_id = is_author_revising(id, status_id)
-
-            except (KeyError, IndexError, ValueError) as e:
-                logger.error(
-                    f"[get_active_submissions_by_stage_with_details] Failed to parse submission data for id {id}: {e}"
+                parsed_rows.append(
+                    {
+                        "id": submission.get("id", sid),
+                        "title": fulltitle,
+                        "author": author,
+                        "review_assignments": review_assignments,
+                        "round": round_value,
+                        "status_id": status_id,
+                        "url_workflow": url_workflow,
+                    }
                 )
-                continue
-
-            try:
-                article_db = Article.objects.filter(ojs_submission_id=id).first()
-                if article_db is None:
-                    article_db = Article.objects.filter(
-                        abstract__title=fulltitle
-                    ).first()
-                pid = article_db.abstract.pid if article_db else None
+                titles.add(fulltitle)
             except Exception as e:
                 logger.error(
-                    f"[get_active_submissions_by_stage_with_details] DB query failed for id {id}: {e}"
+                    f"[get_active_submissions_by_stage_with_details] Failed to parse submission data for id {sid}: {e}"
                 )
-                continue
 
-            try:
-                article = {
-                    "pid": pid,
-                    "authors": author,
-                    "title": fulltitle,
-                    "url": url_workflow,
-                    "substatus": assign_substatus(review_assignements),
-                }
+        # One-shot DB fetch by OJS id
+        articles_by_sid = {
+            a.ojs_submission_id: a
+            for a in Article.objects.filter(
+                ojs_submission_id__in=[row["id"] for row in parsed_rows]
+            ).select_related("abstract")
+        }
 
-                find_right_stage_and_round(
-                    submissions_by_stage_round, round, status_id, article
-                )
-            except Exception as e:
-                logger.error(
-                    f"[get_active_submissions_by_stage_with_details] Failed to categorize submission {id} (round={round}, status_id={status_id}): {e}"
-                )
-            continue
+        # One-shot fallback by title
+        missing_titles = [
+            row["title"] for row in parsed_rows if row["id"] not in articles_by_sid
+        ]
+        fallback_by_title = {}
+        if missing_titles:
+            for a in (
+                Article.objects.filter(abstract__title__in=missing_titles)
+                .select_related("abstract")
+            ):
+                fallback_by_title.setdefault(a.abstract.title, a)
+
+        # Build response
+        for row in parsed_rows:
+            article_db = articles_by_sid.get(row["id"]) or fallback_by_title.get(row["title"])
+            pid = article_db.abstract.pid if article_db else None
+
+            article = {
+                "pid": pid,
+                "authors": row["author"],
+                "title": row["title"],
+                "url": row["url_workflow"],
+                "substatus": assign_substatus(row["review_assignments"]),
+            }
+            find_right_stage_and_round(
+                submissions_by_stage_round, row["round"], row["status_id"], article
+            )
 
         return submissions_by_stage_round
 
@@ -512,24 +565,9 @@ def get_active_submissions_by_stage_with_details():
         )
 
 
-def increase_round_per_stage(submissions_in_round, status_id):
-    match status_id:
-        case 6 | 15:
-            submissions_in_round["assign"] += 1
-        case 7:
-            submissions_in_round["awaiting"] += 1
-        case 10:
-            submissions_in_round["review"] += 1
-        case 1 | 2 | 4 | 8 | 9:
-            submissions_in_round["reviewer"] += 1
-        case 100:
-            submissions_in_round["revising"] += 1
-        case _:
-            logger.error("[increase_round_per_stage] - Status Id is not managed.")
-
-
 def find_right_stage_and_round(submissions, round, status_id, article):
-    round_label = "R1" if round == 1 else "R2" if round == 2 else "R3+"
+    # Keep R3 label to match initialized keys assign-R3, etc.
+    round_label = "R1" if round == 1 else "R2" if round == 2 else "R3"
 
     match status_id:
         case 6 | 15:
@@ -551,8 +589,24 @@ def find_right_stage_and_round(submissions, round, status_id, article):
     if entry is not None:
         entry["articles"].append(article)
     else:
-        logger.error("[find_right_stage_and_round] - Key {key} not found.")
+        logger.error(f"[find_right_stage_and_round] - Key {key} not found.")
 
+
+def increase_round_per_stage(submissions_in_round, status_id):
+    match status_id:
+        case 6 | 15:
+            submissions_in_round["assign"] += 1
+        case 7:
+            submissions_in_round["awaiting"] += 1
+        case 10:
+            submissions_in_round["review"] += 1
+        case 1 | 2 | 4 | 8 | 9:
+            submissions_in_round["reviewer"] += 1
+        case 100:
+            submissions_in_round["revising"] += 1
+        case _:
+            logger.error("[increase_round_per_stage] - Status Id is not managed.")
+            
 
 def assign_substatus(review_assignments):
     """
