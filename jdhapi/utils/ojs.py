@@ -1,11 +1,9 @@
-import datetime as dt
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import marko
 import requests
 from django.conf import settings
 from django.template.loader import render_to_string
-from django.utils import timezone
 from jdh.validation import JSONSchema
 from jdhapi.models import Article
 from lxml import html
@@ -219,25 +217,25 @@ def get_active_submission_with_timing():
     submissions_with_timing = []
 
     try:
-        submissions = get_active_submissions_with_decision()
-        for submission in submissions:
-            round = submission.get("decision", [{}])[-1].get("round") or 1
-            raw_date = submission.get("decision", [{}])[-1].get("dateDecided")
-            date = dt.datetime.fromisoformat(raw_date)
-            if raw_date:
-                parsed = dt.datetime.fromisoformat(raw_date)
-                date = (
-                    parsed if parsed.tzinfo else parsed.replace(tzinfo=dt.timezone.utc)
-                )
-            else:
-                date = timezone.now()
+        # submissions = get_active_submissions_with_decision()
+        submission_ids = get_active_submissions_ids()
+        for id in submission_ids:
+            url_submission = f"{OJS_API_URL}/submissions/{id}"
+
+            response = requests.get(url_submission, headers=headers)
+            if response.status_code == 200:
+                submission = response.json()
+                review_rounds = submission.get("reviewRounds") or []
+                last_round = review_rounds[-1] if review_rounds else {}
+                round = last_round.get("round", 0)
+                status_id = last_round.get("statusId", 0)
 
             if round == 1:
-                increase_round(submissions_in_R1, date)
+                increase_round(submissions_in_R1, status_id)
             elif round == 2:
-                increase_round(submissions_in_R2, date)
+                increase_round(submissions_in_R2, status_id)
             elif round >= 3:
-                increase_round(submissions_in_R3, date)
+                increase_round(submissions_in_R3, status_id)
 
             submissions_with_timing = [
                 submissions_in_R1,
@@ -260,8 +258,8 @@ def get_active_submission_with_timing():
         )
 
 
-def increase_round(submissions_in_round, date):
-    if (date + dt.timedelta(days=30)) > timezone.now():
+def increase_round(submissions_in_round: [], status_id: int):
+    if status_id == 10:
         submissions_in_round["ontime"] += 1
     else:
         submissions_in_round["delay"] += 1
