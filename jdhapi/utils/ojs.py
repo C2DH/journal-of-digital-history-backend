@@ -217,18 +217,27 @@ def get_active_submission_with_timing():
     submissions_with_timing = []
 
     try:
-        # submissions = get_active_submissions_with_decision()
         submission_ids = get_active_submissions_ids()
-        for id in submission_ids:
-            url_submission = f"{OJS_API_URL}/submissions/{id}"
+        if not isinstance(submission_ids, list):
+            return submission_ids
 
-            response = requests.get(url_submission, headers=headers)
-            if response.status_code == 200:
-                submission = response.json()
-                review_rounds = submission.get("reviewRounds") or []
-                last_round = review_rounds[-1] if review_rounds else {}
-                round = last_round.get("round", 0)
-                status_id = last_round.get("statusId", 0)
+        for sid in submission_ids:
+            url_submission = f"{OJS_API_URL}/submissions/{sid}"
+            try:
+                response = requests.get(
+                    url_submission, headers=headers, timeout=REQUEST_TIMEOUT_SECONDS
+                )
+                response.raise_for_status()
+            except requests.exceptions.RequestException as e:
+                logger.error(
+                    f"[get_active_submission_with_timing] Failed to fetch submission {sid}: {e}"
+                )
+                continue  
+            submission = response.json()
+            review_rounds = submission.get("reviewRounds") or []
+            last_round = review_rounds[-1] if review_rounds else {}
+            round = last_round.get("round", 0)
+            status_id = last_round.get("statusId", 0)
 
             if round == 1:
                 increase_round(submissions_in_R1, status_id)
@@ -249,13 +258,7 @@ def get_active_submission_with_timing():
         return submissions_with_timing
     except Exception as e:
         logger.error(f"Error while retrieving submissions with decisions: {e}")
-        return Response(
-            {
-                "error": "An error occurred while retrieving submissions with decisions.",
-                "details": str(e),
-            },
-            status=500,
-        )
+        raise
 
 
 def increase_round(submissions_in_round: [], status_id: int):
@@ -311,18 +314,30 @@ def get_active_submissions_by_stage():
 
     try:
         submission_ids = get_active_submissions_ids()
-        for id in submission_ids:
-            url_submission = f"{OJS_API_URL}/submissions/{id}"
+        if not isinstance(submission_ids, list):
+            return submission_ids
+        for sid in submission_ids:
+            url_submission = f"{OJS_API_URL}/submissions/{sid}"
+            try:
+                response = requests.get(
+                    url_submission, headers=headers, timeout=REQUEST_TIMEOUT_SECONDS
+                )
+                response.raise_for_status()
+            except requests.exceptions.RequestException as e:
+                logger.error(
+                    f"[get_active_submissions_by_stage] Failed to fetch submission {sid}: {e}"
+                )
+                continue
+            submission = response.json()
+            review_rounds = submission.get("reviewRounds") or []
+            last_round = review_rounds[-1] if review_rounds else {}
+            round = last_round.get("round", 0)
+            status_id = last_round.get("statusId", 0)
 
-            response = requests.get(url_submission, headers=headers)
-            if response.status_code == 200:
-                submission = response.json()
-                review_rounds = submission.get("reviewRounds") or []
-                last_round = review_rounds[-1] if review_rounds else {}
-                round = last_round.get("round", 0)
-                status_id = last_round.get("statusId", 0)
-
-            status_id = is_author_revising(id, status_id)
+            if round < 1:
+                continue
+      
+            status_id = is_author_revising(sid, status_id)
 
             round_key = "R1" if round == 1 else "R2" if round == 2 else "R3+"
             match round_key:
@@ -348,13 +363,7 @@ def get_active_submissions_by_stage():
 
     except Exception as e:
         logger.error(f"Error while retrieving submissions with decisions: {e}")
-        return Response(
-            {
-                "error": "An error occurred while retrieving submissions with decisions.",
-                "details": str(e),
-            },
-            status=500,
-        )
+        raise
 
 
 def is_author_revising(id, status_id):
@@ -554,13 +563,7 @@ def get_active_submissions_by_stage_with_details():
 
     except Exception as e:
         logger.error(f"Error while retrieving submissions with decisions: {e}")
-        return Response(
-            {
-                "error": "An error occurred while retrieving submissions with decisions.",
-                "details": str(e),
-            },
-            status=500,
-        )
+        raise
 
 
 def find_right_stage_and_round(submissions, round, status_id, article):
@@ -579,7 +582,8 @@ def find_right_stage_and_round(submissions, round, status_id, article):
         case 100:
             stage = "revising"
         case _:
-            logger.error("[find_right_stage_and_round] - Status Id is not managed.")
+            logger.error(f"[find_right_stage_and_round] - Status Id : {status_id} is not managed.")
+            # status_id = 5 is for 'declined' which is not display in KPI
             return
 
     key = f"{stage}-{round_label}"
@@ -603,7 +607,7 @@ def increase_round_per_stage(submissions_in_round, status_id):
         case 100:
             submissions_in_round["revising"] += 1
         case _:
-            logger.error("[increase_round_per_stage] - Status Id is not managed.")
+            logger.error(f"[increase_round_per_stage] - Status Id : {status_id}  is not managed.")
             
 
 def assign_substatus(review_assignments):
@@ -637,7 +641,7 @@ def assign_substatus(review_assignments):
             case 12:
                 substatuses.append("viewed")
             case _:
-                logger.error("[assign_substatus] - Status Id is not managed.")
+                logger.error(f"[assign_substatus] - Status Id {status_id} is not managed.")
                 return
 
     return substatuses
@@ -686,11 +690,9 @@ def get_active_submissions():
                 },
                 status=response.status_code,
             )
-    except requests.exceptions.RequestException as e:
+    except Exception as e:
         logger.error(f"Failed to connect to OJS API: {e}")
-        return Response(
-            {"error": "Failed to connect to OJS API.", "details": str(e)}, status=500
-        )
+        raise
 
 
 def get_active_submissions_ids():
@@ -722,11 +724,9 @@ def get_active_submissions_ids():
                 },
                 status=response.status_code,
             )
-    except requests.exceptions.RequestException as e:
+    except Exception as e:
         logger.error(f"Failed to connect to OJS API: {e}")
-        return Response(
-            {"error": "Failed to connect to OJS API.", "details": str(e)}, status=500
-        )
+        raise
 
 
 def get_decision_for_submission(id: str):
@@ -746,8 +746,6 @@ def get_decision_for_submission(id: str):
             logger.info(f"Decisions retrieved for submission {id}")
             return decisions
 
-    except requests.exceptions.RequestException as e:
+    except Exception as e:
         logger.error(f"Failed to connect to OJS API: {e}")
-        return Response(
-            {"error": "Failed to connect to OJS API.", "details": str(e)}, status=500
-        )
+        raise
