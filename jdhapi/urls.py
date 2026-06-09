@@ -1,6 +1,7 @@
-from django.urls import path, include
-from jdhapi import views
+from django.urls import include, path
 from rest_framework.urlpatterns import format_suffix_patterns
+
+from jdhapi import views
 
 urlpatterns = [
     path("api/", views.api_root),
@@ -48,6 +49,9 @@ urlpatterns = [
         name="articles-facebook",
     ),
     path("api/articles/cover", views.get_social_cover_image, name="articles-social-media-cover"),
+    path("api/articles/ojs/submissions/peer-review/timing", views.get_peer_review_article_with_timing, name="submissions-with-timing-from-ojs"),
+    path("api/articles/ojs/submissions/peer-review/stage", views.get_peer_review_article_by_stage, name="submissions-peer-review-stage-from-ojs"),
+    path("api/articles/ojs/submissions/peer-review/details", views.get_peer_review_article_details, name="submissions-peer-review-details-from-ojs"),
     path("api/articles/ojs/submissions", views.get_count_submission_from_ojs, name="count-submission-from-ojs"),
     path("api/articles/ojs/submission", views.send_article_to_ojs, name="articles-send-to-ojs"),
     path("api/articles/tweet", views.get_tweet_md_file, name="articles-tweet"),
