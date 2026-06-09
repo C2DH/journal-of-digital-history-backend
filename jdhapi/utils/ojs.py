@@ -211,9 +211,9 @@ def get_active_submission_with_timing():
     logger.info(
         'Get submissions in peer review stage (stageId=3) from OJS formatted like with series like this [ontime, delay, order:"R1"]'
     )
-    submissions_in_R1 = {"ontime": 0, "delay": 0, "order": "R1"}
-    submissions_in_R2 = {"ontime": 0, "delay": 0, "order": "R2"}
-    submissions_in_R3 = {"ontime": 0, "delay": 0, "order": "R3+"}
+    submissions_in_R1 = {"ontime": 0, "delay": 0, "declined": 0, "order": "R1"}
+    submissions_in_R2 = {"ontime": 0, "delay": 0, "declined": 0, "order": "R2"}
+    submissions_in_R3 = {"ontime": 0, "delay": 0, "declined": 0, "order": "R3+"}
     submissions_with_timing = []
 
     try:
@@ -264,6 +264,8 @@ def get_active_submission_with_timing():
 def increase_round(submissions_in_round: [], status_id: int):
     if status_id == 10:
         submissions_in_round["delay"] += 1
+    if status_id == 5:
+        submissions_in_round["declined"] += 1
     else:
         submissions_in_round["ontime"] += 1
 
