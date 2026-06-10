@@ -264,7 +264,7 @@ def get_active_submission_with_timing():
 def increase_round(submissions_in_round: [], status_id: int):
     if status_id == 10:
         submissions_in_round["delay"] += 1
-    if status_id == 5:
+    elif status_id == 5:
         submissions_in_round["declined"] += 1
     else:
         submissions_in_round["ontime"] += 1

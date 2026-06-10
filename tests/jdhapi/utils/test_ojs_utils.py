@@ -39,13 +39,14 @@ class OJSUtilsTestCase(TestCase):
         )
 
     def test_increase_round_counts_delay_only_for_status_10(self):
-        bucket = {"ontime": 0, "delay": 0, "order": "R1"}
+        bucket = {"ontime": 0, "delay": 0, "declined": 0, "order": "R1"}
 
         increase_round(bucket, 10)
         increase_round(bucket, 8)
 
         self.assertEqual(bucket["delay"], 1)
         self.assertEqual(bucket["ontime"], 1)
+        self.assertEqual(bucket["declined"], 0)
 
     def test_increase_round_per_stage_maps_statuses(self):
         bucket = {
@@ -136,9 +137,9 @@ class OJSUtilsTestCase(TestCase):
 
         result = get_active_submission_with_timing()
 
-        self.assertEqual(result[0], {"ontime": 1, "delay": 0, "order": "R1"})
-        self.assertEqual(result[1], {"ontime": 0, "delay": 1, "order": "R2"})
-        self.assertEqual(result[2], {"ontime": 1, "delay": 0, "order": "R3+"})
+        self.assertEqual(result[0], {"ontime": 1, "delay": 0, "declined": 0, "order": "R1"})
+        self.assertEqual(result[1], {"ontime": 0, "delay": 1, "declined": 0, "order": "R2"})
+        self.assertEqual(result[2], {"ontime": 1, "delay": 0, "declined": 0, "order": "R3+"})
 
     @patch("jdhapi.utils.ojs.is_author_revising")
     @patch("jdhapi.utils.ojs.requests.get")
