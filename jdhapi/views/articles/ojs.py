@@ -1,4 +1,3 @@
-import requests
 from django.conf import settings
 from django.core.cache import cache
 from django.db import transaction
@@ -140,37 +139,6 @@ def get_peer_review_article_details(_):
         )
 
 
-@api_view(["GET"])
-@permission_classes([IsAdminUser])
-def get_count_submission_from_ojs(_):
-    """
-    GET /api/articles/ojs/submissions
-
-    Get the list of all abstracts submitted to OJS ans being either in 'Incomplete' submission stage or 'Submission'
-    stage.
-    Requires admin permissions.
-    """
-
-    logger.info("GET /api/articles/ojs/submissions")
-
-    url = f"{OJS_API_URL}/submissions?stageIds=1"
-
-    try:
-        response = requests.get(url, headers=headers)
-        if response.status_code == 200:
-            return Response({"count": response.json().get("itemsMax", 0)}, status=200)
-        else:
-            return Response(
-                {
-                    "error": "Unexpected error occurred while contacting OJS API.",
-                    "status_code": response.status_code,
-                },
-                status=response.status_code,
-            )
-    except requests.exceptions.RequestException as e:
-        return Response(
-            {"error": "Failed to connect to OJS API.", "details": str(e)}, status=500
-        )
 
 
 @api_view(["POST"])

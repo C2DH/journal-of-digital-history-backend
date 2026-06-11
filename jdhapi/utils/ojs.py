@@ -204,16 +204,36 @@ def get_active_submissions_with_decision():
         )
 
 
+def get_count_submission_from_ojs():
+    """
+    Get the list of all abstracts submitted to OJS and being either in 'Incomplete' submission stage or 'Submission'
+    stage.
+    """
+    url = f"{OJS_API_URL}/submissions?stageIds=1"
+
+    try:
+        response = requests.get(url, headers=headers)
+        if response.status_code == 200:
+            counter = response.json().get("itemsMax", 0)
+            return counter
+        else:
+            logger.error("[get_count_submission_from_ojs] Error occured while retrieving articles on OJS Submission stage.")
+            raise
+    except Exception as e:
+        logger.error(f"[get_count_submission_from_ojs]Failed to connect to OJS API. Details : {e}")
+        raise
+
+
 def get_active_submission_with_timing():
     """
     Get list of OJS peer review articles with oj_submission_id, ojs_workflow_url, title, author  and decision .
     """
     logger.info(
-        'Get submissions in peer review stage (stageId=3) from OJS formatted like with series like this [ontime, delay, order:"R1"]'
+        'Get submissions in peer review stage (stageId=3) from OJS formatted like with series like this [submitted, ontime, delay, declined, order:"R1"]'
     )
-    submissions_in_R1 = {"ontime": 0, "delay": 0, "declined": 0, "order": "R1"}
-    submissions_in_R2 = {"ontime": 0, "delay": 0, "declined": 0, "order": "R2"}
-    submissions_in_R3 = {"ontime": 0, "delay": 0, "declined": 0, "order": "R3+"}
+    submissions_in_R1 = {"submitted": 0, "ontime": 0, "delay": 0, "declined": 0, "order": "R1"}
+    submissions_in_R2 = {"submitted": 0, "ontime": 0, "delay": 0, "declined": 0, "order": "R2"}
+    submissions_in_R3 = {"submitted": 0, "ontime": 0, "delay": 0, "declined": 0, "order": "R3+"}
     submissions_with_timing = []
 
     try:
@@ -232,15 +252,17 @@ def get_active_submission_with_timing():
                 logger.error(
                     f"[get_active_submission_with_timing] Failed to fetch submission {sid}: {e}"
                 )
-                continue  
+                continue 
             submission = response.json()
             review_rounds = submission.get("reviewRounds") or []
             last_round = review_rounds[-1] if review_rounds else {}
             round = last_round.get("round", 0)
             status_id = last_round.get("statusId", 0)
 
+            counter_submitted = get_count_submission_from_ojs() or 0
+
             if round == 1:
-                increase_round(submissions_in_R1, status_id)
+                increase_round(submissions_in_R1, status_id, counter_submitted)
             elif round == 2:
                 increase_round(submissions_in_R2, status_id)
             elif round >= 3:
@@ -261,7 +283,10 @@ def get_active_submission_with_timing():
         raise
 
 
-def increase_round(submissions_in_round: [], status_id: int):
+def increase_round(submissions_in_round: [], status_id: int, counter: int = 0):
+    if counter != 0:
+        submissions_in_round["submitted"] = counter
+
     if status_id == 10:
         submissions_in_round["delay"] += 1
     elif status_id == 5:
