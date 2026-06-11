@@ -52,7 +52,6 @@ urlpatterns = [
     path("api/articles/ojs/submissions/peer-review/timing", views.get_peer_review_article_with_timing, name="submissions-with-timing-from-ojs"),
     path("api/articles/ojs/submissions/peer-review/stage", views.get_peer_review_article_by_stage, name="submissions-peer-review-stage-from-ojs"),
     path("api/articles/ojs/submissions/peer-review/details", views.get_peer_review_article_details, name="submissions-peer-review-details-from-ojs"),
-    path("api/articles/ojs/submissions", views.get_count_submission_from_ojs, name="count-submission-from-ojs"),
     path("api/articles/ojs/submission", views.send_article_to_ojs, name="articles-send-to-ojs"),
     path("api/articles/tweet", views.get_tweet_md_file, name="articles-tweet"),
     path("api/articles/docx", views.get_docx, name="article-docx"),

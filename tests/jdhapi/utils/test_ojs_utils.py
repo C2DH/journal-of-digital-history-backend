@@ -39,11 +39,12 @@ class OJSUtilsTestCase(TestCase):
         )
 
     def test_increase_round_counts_delay_only_for_status_10(self):
-        bucket = {"ontime": 0, "delay": 0, "declined": 0, "order": "R1"}
+        bucket = {"submitted": 0, "ontime": 0, "delay": 0, "declined": 0, "order": "R1"}
 
-        increase_round(bucket, 10)
-        increase_round(bucket, 8)
+        increase_round(bucket, 10, 1)
+        increase_round(bucket, 8, 0)
 
+        self.assertEqual(bucket["submitted"], 1)
         self.assertEqual(bucket["delay"], 1)
         self.assertEqual(bucket["ontime"], 1)
         self.assertEqual(bucket["declined"], 0)
@@ -118,7 +119,8 @@ class OJSUtilsTestCase(TestCase):
 
     @patch("jdhapi.utils.ojs.requests.get")
     @patch("jdhapi.utils.ojs.get_active_submissions_ids")
-    def test_get_active_submission_with_timing_aggregates_rounds(self, mock_ids, mock_get):
+    @patch("jdhapi.utils.ojs.get_count_submission_from_ojs")
+    def test_get_active_submission_with_timing_aggregates_rounds(self, mock_count, mock_ids, mock_requests_get):
         mock_ids.return_value = [1, 2, 3]
 
         def make_response(round_value, status_id):
@@ -128,18 +130,20 @@ class OJSUtilsTestCase(TestCase):
                 "reviewRounds": [{"round": round_value, "statusId": status_id}]
             }
             return response
-
-        mock_get.side_effect = [
-            make_response(1, 8),
+        
+        mock_requests_get.side_effect = [
+            make_response(1, 8,),
             make_response(2, 10),
             make_response(3, 8),
         ]
 
+        mock_count.return_value = 0
+ 
         result = get_active_submission_with_timing()
 
-        self.assertEqual(result[0], {"ontime": 1, "delay": 0, "declined": 0, "order": "R1"})
-        self.assertEqual(result[1], {"ontime": 0, "delay": 1, "declined": 0, "order": "R2"})
-        self.assertEqual(result[2], {"ontime": 1, "delay": 0, "declined": 0, "order": "R3+"})
+        self.assertEqual(result[0], {"submitted": 0, "ontime": 1, "delay": 0, "declined": 0, "order": "R1"})
+        self.assertEqual(result[1], {"submitted": 0, "ontime": 0, "delay": 1, "declined": 0, "order": "R2"})
+        self.assertEqual(result[2], {"submitted": 0, "ontime": 1, "delay": 0, "declined": 0, "order": "R3+"})
 
     @patch("jdhapi.utils.ojs.is_author_revising")
     @patch("jdhapi.utils.ojs.requests.get")
