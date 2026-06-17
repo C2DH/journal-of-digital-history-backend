@@ -62,6 +62,10 @@ class Article(models.Model):
             "PUBLISHED", 
             "Published",
         )
+        REJECTED = (
+            "REJECTED", 
+            "Rejected",
+        )
 
     class CopyrightType(models.TextChoices):
         DRAFT = (
