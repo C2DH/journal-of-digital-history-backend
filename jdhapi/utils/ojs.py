@@ -316,6 +316,7 @@ def get_active_submissions_by_stage():
         "review": 0,
         "reviewer": 0,
         "revising": 0,
+        "resubmit": 0,
         "order": "R1",
     }
     submissions_in_R2 = {
@@ -324,6 +325,7 @@ def get_active_submissions_by_stage():
         "review": 0,
         "reviewer": 0,
         "revising": 0,
+        "resubmit": 0,
         "order": "R2",
     }
     submissions_in_R3 = {
@@ -332,6 +334,7 @@ def get_active_submissions_by_stage():
         "review": 0,
         "reviewer": 0,
         "revising": 0,
+        "resubmit": 0,
         "order": "R3+",
     }
     submissions_by_stage = []
@@ -489,16 +492,19 @@ def get_active_submissions_by_stage_with_details():
         {"key": "review-R1", "articles": []},
         {"key": "reviewer-R1", "articles": []},
         {"key": "revising-R1", "articles": []},
+        {"key": "resubmit-R1", "articles": []},
         {"key": "assign-R2", "articles": []},
         {"key": "awaiting-R2", "articles": []},
         {"key": "review-R2", "articles": []},
         {"key": "reviewer-R2", "articles": []},
         {"key": "revising-R2", "articles": []},
+        {"key": "resubmit-R2", "articles": []},
         {"key": "assign-R3", "articles": []},
         {"key": "awaiting-R3", "articles": []},
         {"key": "review-R3", "articles": []},
         {"key": "reviewer-R3", "articles": []},
         {"key": "revising-R3", "articles": []},
+        {"key": "resubmit-R3", "articles": []},
     ]
 
     try:
@@ -598,16 +604,18 @@ def find_right_stage_and_round(submissions, round, status_id, article):
     round_label = "R1" if round == 1 else "R2" if round == 2 else "R3"
 
     match status_id:
-        case 6 | 15:
+        case 6:
             stage = "assign"
         case 7:
             stage = "awaiting"
         case 10:
             stage = "review"
-        case 1 | 2 | 4 | 8 | 9:
+        case 1 | 4 | 8 | 9:
             stage = "reviewer"
         case 100:
             stage = "revising"
+        case 2 | 15:
+            stage = "resubmit"
         case _:
             logger.error(f"[find_right_stage_and_round] - Status Id : {status_id} is not managed.")
             # status_id = 5 is for 'declined' which is not display in KPI
@@ -623,19 +631,20 @@ def find_right_stage_and_round(submissions, round, status_id, article):
 
 def increase_round_per_stage(submissions_in_round, status_id):
     match status_id:
-        case 6 | 15:
+        case 6:
             submissions_in_round["assign"] += 1
         case 7:
             submissions_in_round["awaiting"] += 1
         case 10:
             submissions_in_round["review"] += 1
-        case 1 | 2 | 4 | 8 | 9:
+        case 1 | 4 | 8 | 9:
             submissions_in_round["reviewer"] += 1
         case 100:
             submissions_in_round["revising"] += 1
+        case 2 | 15:
+            submissions_in_round["resubmit"] += 1
         case _:
             logger.error(f"[increase_round_per_stage] - Status Id : {status_id}  is not managed.")
-            
 
 def assign_substatus(review_assignments):
     """
