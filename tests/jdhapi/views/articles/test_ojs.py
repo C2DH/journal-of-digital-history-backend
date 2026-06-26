@@ -295,9 +295,9 @@ class PeerReviewOJSViewTestCase(TestCase):
         self.admin_user = User.objects.create_superuser(
             username="admin2", email="admin2@test.com", password="testpass123"
         )
-        self.timing_url = "/api/articles/ojs/submissions/peer-review/timing"
-        self.stage_url = "/api/articles/ojs/submissions/peer-review/stage"
-        self.details_url = "/api/articles/ojs/submissions/peer-review/details"
+        self.timing_url = "/api/articles/ojs/peer-review/timing"
+        self.stage_url = "/api/articles/ojs/peer-review/stage"
+        self.details_url = "/api/articles/ojs/peer-review/details"
 
     def test_peer_review_endpoints_require_admin(self):
         urls = [self.timing_url, self.stage_url, self.details_url]
