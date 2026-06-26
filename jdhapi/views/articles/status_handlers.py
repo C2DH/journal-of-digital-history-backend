@@ -69,4 +69,12 @@ class PublishedHandler(StatusHandler):
         article.status = article.Status.PUBLISHED
         article.save()
         return Response({"status": "PUBLISHED set", "article pid": article.abstract.pid})
+
+
+class RejectedHandler(StatusHandler):
+    def handle(self, article, request):
+        logger.info("Setting status REJECTED pid=%s", article.abstract.pid)
+        article.status = article.Status.REJECTED
+        article.save()
+        return Response({"status": "REJECTED set", "article pid": article.abstract.pid})
     

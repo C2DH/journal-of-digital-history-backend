@@ -750,7 +750,7 @@ def get_active_submissions_ids():
 
                 ids.append(id)
 
-            # logger.info(f"Active submissions in peer review stage : {submissions}")
+            # logger.info(f"Active submissions in peer review stage : {ids}")
             return ids
         else:
             return Response(
