@@ -76,9 +76,18 @@ class SendArticleToOJSTestCase(TestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     @patch("jdhapi.views.articles.ojs.generate_pdf_for_submission")
-    @patch("jdhapi.views.articles.ojs.requests.post")
-    @patch("jdhapi.views.articles.ojs.requests.put")
-    def test_send_article_to_ojs_success(self, mock_put, mock_post, mock_pdf):
+    @patch("jdhapi.views.articles.ojs.create_blank_submission")
+    @patch("jdhapi.views.articles.ojs.upload_manuscript_to_ojs")
+    @patch("jdhapi.views.articles.ojs.create_contributor_in_ojs")
+    @patch("jdhapi.views.articles.ojs.assign_primary_contact_and_metadata")
+    def test_send_article_to_ojs_success(
+        self,
+        mock_assign_primary_contact_and_metadata,
+        mock_create_contributor_in_ojs,
+        mock_upload_manuscript_to_ojs,
+        mock_create_blank_submission,
+        mock_pdf,
+    ):
         """Test successful article submission to OJS"""
         self.client.force_authenticate(user=self.admin_user)
 
@@ -108,14 +117,10 @@ class SendArticleToOJSTestCase(TestCase):
         mock_metadata_response.status_code = 200
         mock_metadata_response.json.return_value = {"success": True}
 
-        # Set up mock post to return different responses based on call order
-        mock_post.side_effect = [
-            mock_blank_submission_response,  # create_blank_submission
-            mock_upload_response,  # upload_manuscript_to_ojs
-            mock_contributor_response,  # create_contributor_in_ojs
-        ]
-
-        mock_put.return_value = mock_metadata_response
+        mock_create_blank_submission.return_value = mock_blank_submission_response
+        mock_upload_manuscript_to_ojs.return_value = mock_upload_response
+        mock_create_contributor_in_ojs.return_value = 999
+        mock_assign_primary_contact_and_metadata.return_value = mock_metadata_response
 
         response = self.client.post(self.url, self.valid_payload, format="json")
 
@@ -126,8 +131,10 @@ class SendArticleToOJSTestCase(TestCase):
         )
 
         # Verify that the mocks were called
-        self.assertEqual(mock_post.call_count, 3)
-        self.assertEqual(mock_put.call_count, 1)
+        mock_create_blank_submission.assert_called_once()
+        mock_upload_manuscript_to_ojs.assert_called_once()
+        mock_create_contributor_in_ojs.assert_called_once()
+        mock_assign_primary_contact_and_metadata.assert_called_once()
         mock_pdf.assert_called_once()
 
     @patch("jdhapi.views.articles.ojs.article_to_ojs_schema")
@@ -157,29 +164,15 @@ class SendArticleToOJSTestCase(TestCase):
         self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @patch("jdhapi.views.articles.ojs.generate_pdf_for_submission")
-    @patch("jdhapi.views.articles.ojs.requests.post")
     @patch("jdhapi.views.articles.ojs.article_to_ojs_schema")
     def test_send_article_to_ojs_missing_author_fields(
-        self, mock_schema, mock_post, mock_pdf
+        self, mock_schema, mock_pdf
     ):
         """Test that missing required author fields returns validation error"""
         self.client.force_authenticate(user=self.admin_user)
 
         # Mock PDF generation
         mock_pdf.return_value = b"fake_pdf_content"
-
-        # Mock blank submission creation response
-        mock_blank_submission_response = Mock()
-        mock_blank_submission_response.status_code = 200
-        mock_blank_submission_response.json.return_value = {
-            "id": 123,
-            "currentPublicationId": 456,
-        }
-
-        # Mock file upload response
-        mock_upload_response = Mock()
-        mock_upload_response.status_code = 200
-        mock_upload_response.json.return_value = {"id": 789}
 
         # Mock schema validation to pass
         mock_schema.validate.return_value = None
@@ -209,19 +202,17 @@ class SendArticleToOJSTestCase(TestCase):
             issue=self.issue,
         )
 
-        mock_post.side_effect = [
-            mock_blank_submission_response,  # create_blank_submission
-            mock_upload_response,  # upload_manuscript_to_ojs
-        ]
-
         payload = {"pid": "test-article-002"}
         response = self.client.post(self.url, payload, format="json")
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     @patch("jdhapi.views.articles.ojs.generate_pdf_for_submission")
-    @patch("jdhapi.views.articles.ojs.requests.post")
-    def test_send_article_to_ojs_upload_fails(self, mock_post, mock_pdf):
+    @patch("jdhapi.views.articles.ojs.create_blank_submission")
+    @patch("jdhapi.views.articles.ojs.upload_manuscript_to_ojs")
+    def test_send_article_to_ojs_upload_fails(
+        self, mock_upload_manuscript_to_ojs, mock_create_blank_submission, mock_pdf
+    ):
         """Test that failed manuscript upload returns error"""
         self.client.force_authenticate(user=self.admin_user)
 
@@ -240,7 +231,8 @@ class SendArticleToOJSTestCase(TestCase):
         mock_upload_fail.status_code = 400
         mock_upload_fail.text = "Upload failed"
 
-        mock_post.side_effect = [mock_blank_submission, mock_upload_fail]
+        mock_create_blank_submission.return_value = mock_blank_submission
+        mock_upload_manuscript_to_ojs.return_value = mock_upload_fail
 
         response = self.client.post(self.url, self.valid_payload, format="json")
 
@@ -248,10 +240,17 @@ class SendArticleToOJSTestCase(TestCase):
         self.assertIn("error", response.data)
 
     @patch("jdhapi.views.articles.ojs.generate_pdf_for_submission")
-    @patch("jdhapi.views.articles.ojs.requests.post")
-    @patch("jdhapi.views.articles.ojs.requests.put")
+    @patch("jdhapi.views.articles.ojs.create_blank_submission")
+    @patch("jdhapi.views.articles.ojs.upload_manuscript_to_ojs")
+    @patch("jdhapi.views.articles.ojs.create_contributor_in_ojs")
+    @patch("jdhapi.views.articles.ojs.assign_primary_contact_and_metadata")
     def test_send_article_to_ojs_metadata_assignment_fails(
-        self, mock_put, mock_post, mock_pdf
+        self,
+        mock_assign_primary_contact_and_metadata,
+        mock_create_contributor_in_ojs,
+        mock_upload_manuscript_to_ojs,
+        mock_create_blank_submission,
+        mock_pdf,
     ):
         """Test that failed metadata assignment returns error"""
         self.client.force_authenticate(user=self.admin_user)
@@ -274,15 +273,142 @@ class SendArticleToOJSTestCase(TestCase):
         mock_contributor.status_code = 201
         mock_contributor.json.return_value = {"id": 999}
 
-        mock_post.side_effect = [mock_blank_submission, mock_upload, mock_contributor]
+        mock_create_blank_submission.return_value = mock_blank_submission
+        mock_upload_manuscript_to_ojs.return_value = mock_upload
+        mock_create_contributor_in_ojs.return_value = 999
 
         # Mock failed metadata assignment
         mock_metadata_fail = Mock()
         mock_metadata_fail.status_code = 400
         mock_metadata_fail.text = "Metadata assignment failed"
 
-        mock_put.return_value = mock_metadata_fail
+        mock_assign_primary_contact_and_metadata.return_value = mock_metadata_fail
 
         response = self.client.post(self.url, self.valid_payload, format="json")
 
         self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class PeerReviewOJSViewTestCase(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.admin_user = User.objects.create_superuser(
+            username="admin2", email="admin2@test.com", password="testpass123"
+        )
+        self.timing_url = "/api/articles/ojs/peer-review/timing"
+        self.stage_url = "/api/articles/ojs/peer-review/stage"
+        self.details_url = "/api/articles/ojs/peer-review/details"
+
+    def test_peer_review_endpoints_require_admin(self):
+        urls = [self.timing_url, self.stage_url, self.details_url]
+
+        for url in urls:
+            response = self.client.get(url, format="json")
+            self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    @patch("jdhapi.views.articles.ojs.get_active_submission_with_timing")
+    def test_get_peer_review_article_with_timing_success(self, mock_helper):
+        self.client.force_authenticate(user=self.admin_user)
+        mock_helper.return_value = [
+            {"ontime": 1, "delay": 0, "order": "R1"},
+            {"ontime": 0, "delay": 1, "order": "R2"},
+            {"ontime": 2, "delay": 0, "order": "R3+"},
+        ]
+
+        response = self.client.get(self.timing_url, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["data"][0]["order"], "R1")
+        self.assertEqual(response.data["data"][1]["delay"], 1)
+        mock_helper.assert_called_once_with()
+
+    @patch("jdhapi.views.articles.ojs.get_active_submission_with_timing")
+    def test_get_peer_review_article_with_timing_error(self, mock_helper):
+        self.client.force_authenticate(user=self.admin_user)
+        mock_helper.side_effect = RuntimeError("timing failed")
+
+        response = self.client.get(self.timing_url, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
+        self.assertEqual(response.data["error"], "InternalError")
+        self.assertIn("timing failed", response.data["details"])
+
+    @patch("jdhapi.views.articles.ojs.get_active_submissions_by_stage")
+    def test_get_peer_review_article_by_stage_success(self, mock_helper):
+        self.client.force_authenticate(user=self.admin_user)
+        mock_helper.return_value = [
+            {"assign": 1, "awaiting": 0, "review": 0, "reviewer": 0, "revising": 0, "order": "R1"},
+            {"assign": 0, "awaiting": 1, "review": 0, "reviewer": 0, "revising": 0, "order": "R2"},
+            {"assign": 0, "awaiting": 0, "review": 1, "reviewer": 0, "revising": 0, "order": "R3+"},
+        ]
+
+        response = self.client.get(self.stage_url, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data["data"]), 3)
+        self.assertEqual(response.data["data"][1]["awaiting"], 1)
+        mock_helper.assert_called_once_with()
+
+    @patch("jdhapi.views.articles.ojs.get_active_submissions_by_stage")
+    def test_get_peer_review_article_by_stage_error(self, mock_helper):
+        self.client.force_authenticate(user=self.admin_user)
+        mock_helper.side_effect = RuntimeError("stage failed")
+
+        response = self.client.get(self.stage_url, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
+        self.assertEqual(response.data["error"], "InternalError")
+        self.assertIn("stage failed", response.data["details"])
+
+    @patch("jdhapi.views.articles.ojs.cache")
+    @patch("jdhapi.views.articles.ojs.get_active_submissions_by_stage_with_details")
+    def test_get_peer_review_article_details_success_and_cache_set(self, mock_helper, mock_cache):
+        self.client.force_authenticate(user=self.admin_user)
+        mock_cache.get.return_value = None
+        mock_helper.return_value = [
+            {
+                "key": "assign-R1",
+                "articles": [
+                    {
+                        "pid": "abc",
+                        "authors": "Jane Doe",
+                        "title": "My Article",
+                        "url": "https://ojs/workflow/1",
+                        "substatus": ["pending"],
+                    }
+                ],
+            }
+        ]
+
+        response = self.client.get(self.details_url, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["data"][0]["key"], "assign-R1")
+        mock_helper.assert_called_once_with()
+        mock_cache.set.assert_called_once()
+
+    @patch("jdhapi.views.articles.ojs.cache")
+    @patch("jdhapi.views.articles.ojs.get_active_submissions_by_stage_with_details")
+    def test_get_peer_review_article_details_uses_cache(self, mock_helper, mock_cache):
+        self.client.force_authenticate(user=self.admin_user)
+        mock_cache.get.return_value = [{"key": "assign-R1", "articles": []}]
+
+        response = self.client.get(self.details_url, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["data"], [{"key": "assign-R1", "articles": []}])
+        mock_helper.assert_not_called()
+        mock_cache.set.assert_not_called()
+
+    @patch("jdhapi.views.articles.ojs.cache")
+    @patch("jdhapi.views.articles.ojs.get_active_submissions_by_stage_with_details")
+    def test_get_peer_review_article_details_error(self, mock_helper, mock_cache):
+        self.client.force_authenticate(user=self.admin_user)
+        mock_cache.get.return_value = None
+        mock_helper.side_effect = RuntimeError("details failed")
+
+        response = self.client.get(self.details_url, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
+        self.assertEqual(response.data["error"], "InternalError")
+        self.assertIn("details failed", response.data["details"])

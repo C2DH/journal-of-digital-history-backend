@@ -1,6 +1,7 @@
-from django.urls import path, include
-from jdhapi import views
+from django.urls import include, path
 from rest_framework.urlpatterns import format_suffix_patterns
+
+from jdhapi import views
 
 urlpatterns = [
     path("api/", views.api_root),
@@ -48,7 +49,9 @@ urlpatterns = [
         name="articles-facebook",
     ),
     path("api/articles/cover", views.get_social_cover_image, name="articles-social-media-cover"),
-    path("api/articles/ojs/submissions", views.get_count_submission_from_ojs, name="count-submission-from-ojs"),
+    path("api/articles/ojs/peer-review/timing", views.get_peer_review_article_with_timing, name="peer-review-with-timing-from-ojs"),
+    path("api/articles/ojs/peer-review/stage", views.get_peer_review_article_by_stage, name="peer-review-stage-from-ojs"),
+    path("api/articles/ojs/peer-review/details", views.get_peer_review_article_details, name="peer-review-details-from-ojs"),
     path("api/articles/ojs/submission", views.send_article_to_ojs, name="articles-send-to-ojs"),
     path("api/articles/tweet", views.get_tweet_md_file, name="articles-tweet"),
     path("api/articles/docx", views.get_docx, name="article-docx"),
@@ -69,6 +72,11 @@ urlpatterns = [
         name="callforpaper-detail",
     ),
     path(
+        "api/callforpaper/chart",
+        views.BarChartDataView.as_view(),
+        name="callforpaper-chart",
+    ),
+    path(
         "api/check-github-id/<str:username>",
         views.check_github_id,
         name="check-github-id",
@@ -81,8 +89,8 @@ urlpatterns = [
     path("api/generate-notebook/<str:pid>", views.generate_notebook),
     path("api/issues/", views.IssueList.as_view(), name="issue-list"),
     path("api/issues/<str:pid>/", views.IssueDetail.as_view(), name="issue-detail"),
-    path("api/issues/<str:pid>/articles/",views.IssueArticlesList.as_view(),name="issue-articles-list"),
-    path("api/issues/<str:pid>/abstracts", views.IssueAbstractsList.as_view(), name="issue-abstracts-list"),
+    path("api/issues/<str:pid>/articles/", views.IssueArticlesList.as_view(), name="issue-articles-list"),
+    path("api/issues/<str:pid>/abstracts/", views.IssueAbstractsList.as_view(), name="issue-abstracts-list"),
     path("api/login/", views.CustomLoginView.as_view(), name="custom-login"),
     path("api/logout/", views.custom_logout, name="custom_logout"),
     path("api/tags/", views.TagList.as_view(), name="tag-list"),
