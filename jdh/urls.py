@@ -15,7 +15,7 @@ Including another URLconf
 """
 
 from django.contrib import admin
-from django.contrib.sitemaps.views import sitemap
+from django.contrib.sitemaps import views
 from django.urls import include, path
 
 from .sitemaps import ArticlesSitemap, StaticSitemap
@@ -34,9 +34,15 @@ urlpatterns = [
     path("", include("jdhseo.urls")),
     path(
         "sitemap.xml",
-        sitemap,
+        views.index,
+        {"sitemaps": sitemaps},
+        name="django.contrib.sitemaps.views.index",
+    ),
+    path(
+        "sitemap-<section>.xml",
+        views.sitemap,
         {"sitemaps": sitemaps},
         name="django.contrib.sitemaps.views.sitemap",
-    )
+    ),
 ]
 
