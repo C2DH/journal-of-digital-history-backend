@@ -81,7 +81,7 @@ urlpatterns = [
         views.check_github_id,
         name="check-github-id",
     ),
-    path("api/csrf/", views.get_csrf, name="get_csrf"),
+    path("api/csrf/", views.get_csrf, name="get-csrf"),
     path("api/datasets/", views.DatasetList.as_view(), name="dataset-list"),
     path(
         "api/datasets/<int:pk>/", views.DatasetDetail.as_view(), name="dataset-detail"

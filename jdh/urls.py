@@ -15,7 +15,16 @@ Including another URLconf
 """
 
 from django.contrib import admin
-from django.urls import path, include
+from django.contrib.sitemaps import views
+from django.urls import include, path
+
+from .sitemaps import ArticlesSitemap, StaticSitemap
+
+sitemaps = {
+    "static": StaticSitemap,
+    "articles": ArticlesSitemap
+}
+
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -23,4 +32,17 @@ urlpatterns = [
     path("", include("jdhapi.urls")),
     # add seo urls and views
     path("", include("jdhseo.urls")),
+    path(
+        "sitemap.xml",
+        views.index,
+        {"sitemaps": sitemaps},
+        name="django.contrib.sitemaps.views.index",
+    ),
+    path(
+        "sitemap-<section>.xml",
+        views.sitemap,
+        {"sitemaps": sitemaps},
+        name="django.contrib.sitemaps.views.sitemap",
+    ),
 ]
+

@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django.contrib.sitemaps",
     "dashboard.apps.DashboardConfig",
     "import_export",
     "jdhapi.apps.JdhapiConfig",
