@@ -1,3 +1,5 @@
+from typing import ClassVar
+
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, generics
@@ -42,13 +44,13 @@ class IsAuthenticatedForNonPublished(BasePermission):
 class ArticleList(generics.ListCreateAPIView):
     queryset = Article.objects.all()
     serializer_class = ArticleSerializer
-    filter_backends = [
+    filter_backends: ClassVar[list[object]] = [
         IsOwnerFilterBackend,
         DjangoFilterBackend,
         filters.OrderingFilter,
         filters.SearchFilter,
     ]
-    filterset_fields = [
+    filterset_fields: ClassVar[list[str]] = [
         "issue",
         "abstract",
         "status",
@@ -57,18 +59,20 @@ class ArticleList(generics.ListCreateAPIView):
         "copyright_type",
         "abstract__callpaper",
     ]
-    ordering_fields = [
+    ordering_fields: ClassVar[list[str]] = [
         "issue__publication_date",
         "publication_date",
         "abstract__title",
         "abstract__pid",
     ]
-    ordering = ["-issue__publication_date", "-publication_date"]
-    search_fields = [
+    ordering: ClassVar[list[str]] = ["-issue__publication_date", "-publication_date"]
+    search_fields: ClassVar[list[str]] = [
         "abstract__title",
         "abstract__pid",
         "abstract__contact_lastname",
         "abstract__contact_firstname",
+        "abstract__authors__lastname",
+        "abstract__authors__firstname",
     ]
 
     def get_queryset(self):
@@ -89,27 +93,26 @@ class ArticleList(generics.ListCreateAPIView):
 
 
 class ArticleDetail(generics.RetrieveUpdateDestroyAPIView):
-    permission_classes = [IsAuthenticatedForNonPublished]
+    permission_classes: ClassVar[list[object]] = [IsAuthenticatedForNonPublished]
     queryset = Article.objects.all()
     serializer_class = ArticleSerializer
     lookup_field = "abstract__pid"
 
 
-
 class ArticleStatus(APIView):
-    permission_classes = [IsAdminUser]
-    STATUS_HANDLERS = {
-        'TECHNICAL_REVIEW': TechnicalReviewHandler(),
-        'COPY_EDITING': CopyEditingHandler(),
-        'PEER_REVIEW': PeerReviewHandler(),
-        'PUBLISHED' : PublishedHandler(),
-        'REJECTED': RejectedHandler()
+    permission_classes: ClassVar[list[object]] = [IsAdminUser]
+    STATUS_HANDLERS: ClassVar[dict[str, object]] = {
+        "TECHNICAL_REVIEW": TechnicalReviewHandler(),
+        "COPY_EDITING": CopyEditingHandler(),
+        "PEER_REVIEW": PeerReviewHandler(),
+        "PUBLISHED": PublishedHandler(),
+        "REJECTED": RejectedHandler(),
     }
-    
+
     def patch(self, request, abstract__pid):
         article = get_object_or_404(Article, abstract__pid=abstract__pid)
-        new_status = request.data.get('status')
-        
+        new_status = request.data.get("status")
+
         handler = self.STATUS_HANDLERS.get(new_status)
         if handler:
             return handler.handle(article, request)
