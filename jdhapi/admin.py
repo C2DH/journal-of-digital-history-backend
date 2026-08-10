@@ -5,9 +5,8 @@ from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 from import_export.admin import ExportActionMixin
 
-from jdhapi.filter.issuenamepidfilter import IssueNamePIDFilter
-
 from .filter.dataverse import EmptyDataverseURLFilter
+from .filter.issue import IssueNamePIDFilter
 from .filter.language import LanguageTagFilter
 from .forms import articleForm
 from .models import Abstract, Article, Author, CallForPaper, Dataset, Issue, Role, Tag
