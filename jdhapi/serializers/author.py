@@ -13,9 +13,19 @@ class CountrySerializer(serializers.Serializer):
 
 class AuthorAbstractsSerializer(serializers.ModelSerializer):
     abstracts = serializers.SerializerMethodField()
+    accepted = serializers.SerializerMethodField()
+    published = serializers.SerializerMethodField()
 
     def get_abstracts(self, obj):
         return Abstract.objects.filter(authors__id=obj.id).count()
+
+    def get_accepted(self, obj):
+        author_abstracts = Abstract.objects.filter(authors__id=obj.id)
+        return author_abstracts.filter(status="ACCEPTED").count()
+    
+    def get_published(self, obj):
+        author_abstracts = Abstract.objects.filter(authors__id=obj.id)
+        return author_abstracts.filter(status="PUBLISHED").count()
 
     class Meta:
         model = Author
@@ -31,6 +41,8 @@ class AuthorAbstractsSerializer(serializers.ModelSerializer):
             "facebook_id",
             "linkedin_id",
             "abstracts",
+            "accepted",
+            "published"
         ]
 
 

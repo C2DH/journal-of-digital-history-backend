@@ -16,6 +16,8 @@ class Author(models.Model):
     facebook_id = models.CharField(max_length=50, null=True, blank=True)
     linkedin_id = models.CharField(max_length=100, null=True, blank=True)
     abstract = models.IntegerField(blank=False, null=False, default=0)
+    accepted = models.IntegerField(blank=False, null=False, default=0)
+    published = models.IntegerField(blank=False, null=False, default=0)
 
     class Meta:
         ordering = ["lastname"]
