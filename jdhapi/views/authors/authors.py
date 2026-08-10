@@ -1,5 +1,3 @@
-from typing import ClassVar
-
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, generics
 
@@ -10,9 +8,9 @@ from jdhapi.serializers.author import AuthorAbstractsSerializer, AuthorSlimSeria
 class AuthorList(generics.ListCreateAPIView):
     queryset = Author.objects.all()
     serializer_class = AuthorAbstractsSerializer
-    filter_backends: ClassVar[list[object]] = [DjangoFilterBackend, filters.OrderingFilter]
-    filterset_fields: ClassVar[list[str]] = ["id", "lastname", "firstname", "affiliation", "orcid"]
-    ordering_fields: ClassVar[list[str]] = [
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    filterset_fields = ["id", "lastname", "firstname", "affiliation", "orcid"]
+    ordering_fields = [
         "id",
         "lastname",
         "firstname",
