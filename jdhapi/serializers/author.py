@@ -12,9 +12,13 @@ class CountrySerializer(serializers.Serializer):
 
 
 class AuthorAbstractsSerializer(serializers.ModelSerializer):
+    country = serializers.SerializerMethodField()
     abstracts = serializers.SerializerMethodField()
     accepted = serializers.SerializerMethodField()
     published = serializers.SerializerMethodField()
+
+    def get_country(self, obj):
+        return str(obj.country)
 
     def get_abstracts(self, obj):
         return Abstract.objects.filter(authors__id=obj.id).count()
@@ -36,6 +40,8 @@ class AuthorAbstractsSerializer(serializers.ModelSerializer):
             "affiliation",
             "email",
             "orcid",
+            "city",
+            "country",
             "github_id",
             "bluesky_id",
             "facebook_id",
