@@ -1,8 +1,9 @@
+from typing import ClassVar
+
 from django_countries.serializer_fields import CountryField
 from rest_framework import serializers
 
-from jdhapi.serializers.abstract import AbstractSlimSerializer
-
+from ..models.abstract import Abstract
 from ..models.author import Author
 
 
@@ -11,11 +12,14 @@ class CountrySerializer(serializers.Serializer):
 
 
 class AuthorAbstractsSerializer(serializers.ModelSerializer):
-    abstracts = AbstractSlimSerializer(many=True, read_only=True)
+    abstracts = serializers.SerializerMethodField()
+
+    def get_abstracts(self, obj):
+        return Abstract.objects.filter(authors__id=obj.id).count()
 
     class Meta:
         model = Author
-        fields = [
+        fields: ClassVar[list[str]] = [
             "id",
             "lastname",
             "firstname",
@@ -26,7 +30,7 @@ class AuthorAbstractsSerializer(serializers.ModelSerializer):
             "bluesky_id",
             "facebook_id",
             "linkedin_id",
-            "abstracts"
+            "abstracts",
         ]
 
 
@@ -38,7 +42,7 @@ class AuthorSlimSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Author
-        fields = [
+        fields: ClassVar[list[str]] = [
             "id",
             "lastname",
             "firstname",
