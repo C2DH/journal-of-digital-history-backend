@@ -27,7 +27,7 @@ def get_authors_stats(request):
         coauthorship = stats_co_authorship()
         return Response(
             {
-                "message": "Statistics for first-time vs returning author received.",
+                "message": "Statistics for author dashboard page.",
                 "first-time_vs_returning": returning,
                 "coauthorship": coauthorship
             },

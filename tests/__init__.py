@@ -11,4 +11,5 @@ from .jdhapi.views.articles.test_ojs import *
 from .jdhapi.views.articles.test_social_media import *
 from .jdhapi.views.articles.test_update_article import *
 from .jdhapi.views.authors.test_author import *
+from .jdhapi.views.authors.test_stats import *
 from .jdhapi.views.test_check_github_id import *
