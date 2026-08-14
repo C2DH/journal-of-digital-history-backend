@@ -23,11 +23,13 @@ def get_authors_stats(request):
     """
 
     try:
+        total = stats_total_author()
         returning = stats_author_returning()
         coauthorship = stats_co_authorship()
         return Response(
             {
                 "message": "Statistics for author dashboard page.",
+                "total": total,
                 "first-time_vs_returning": returning,
                 "coauthorship": coauthorship
             },
@@ -44,6 +46,16 @@ def get_authors_stats(request):
             status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             content_type="application/json",
         )
+
+
+def stats_total_author():
+    """
+    Return the number of authors available in database.
+    """
+
+    total_authors = Author.objects.count()
+
+    return total_authors
 
 
 def stats_author_returning():
