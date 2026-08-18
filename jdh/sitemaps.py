@@ -8,7 +8,7 @@ class ArticlesSitemap(Sitemap):
     priority = 0.8
 
     def items(self):
-        return Article.objects.all()
+        return Article.objects.filter(status="PUBLISHED").order_by("publication_date", "abstract_pid")
 
     def location(self, obj):
         # Return URL path for each article
