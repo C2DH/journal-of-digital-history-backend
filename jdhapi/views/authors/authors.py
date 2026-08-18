@@ -14,6 +14,7 @@ class AuthorList(generics.ListCreateAPIView):
     filter_backends: ClassVar[list[object]] = [
         DjangoFilterBackend,
         filters.OrderingFilter,
+        filters.SearchFilter
     ]
     filterset_fields: ClassVar[list[str]] = [
         "id",
@@ -24,6 +25,11 @@ class AuthorList(generics.ListCreateAPIView):
     ]
     ordering_fields: ClassVar[list[str]] = [
         "id",
+        "lastname",
+        "firstname",
+        "affiliation",
+    ]
+    search_fields: ClassVar[list[str]] = [
         "lastname",
         "firstname",
         "affiliation",
