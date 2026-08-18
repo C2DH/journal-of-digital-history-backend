@@ -12,7 +12,7 @@ class ArticlesSitemap(Sitemap):
 
     def location(self, obj):
         # Return URL path for each article
-        return f"/article/{obj.abstract.pid}"   
+        return f"/en/article/{obj.abstract.pid}"   
     
     def lastmod(self, obj):
         return obj.publication_date
@@ -28,23 +28,23 @@ class StaticSitemap(Sitemap):
 
     def location(self, item):
         if item == "home":
-            return "/"
+            return "/en"
         elif item == "articles":
-            return "/articles"
+            return "/en/articles"
         elif item == "submit":
-            return "/submit"
+            return "/en/submit"
         elif item == "guidelines":
-            return "/guidelines"
+            return "/en/guidelines"
         elif item == "preview":
-            return "/notebook-viewer-form"
+            return "/en/notebook-viewer-form"
         elif item == "about":
-            return "/about"
+            return "/en/about"
         elif item == "review":
-            return "/review-policy"
+            return "/en/review-policy"
         elif item == "faq":
-            return "/faq"
+            return "/en/faq"
         elif item == "releases":
-            return "/release-notes"
+            return "/en/release-notes"
         elif "terms":
-            return "/terms"
+            return "/en/terms"
             
