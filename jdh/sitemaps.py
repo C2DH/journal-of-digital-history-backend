@@ -19,7 +19,7 @@ class ArticlesSitemap(Sitemap):
 
 
 # Each Callforpaper page
-class CallforpaperSitemap(Sitemap):
+class CallForPaperSitemap(Sitemap):
     changefreq = "weekly"
     priority = 0.8
 
@@ -72,5 +72,5 @@ class StaticSitemap(Sitemap):
             return "/en/faq"
         elif item == "releases":
             return "/en/release-notes"
-        elif "terms":
+        elif item == "terms":
             return "/en/terms"

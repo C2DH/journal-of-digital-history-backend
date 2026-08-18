@@ -18,12 +18,12 @@ from django.contrib import admin
 from django.contrib.sitemaps import views
 from django.urls import include, path
 
-from .sitemaps import ArticlesSitemap, CallforpaperSitemap, StaticSitemap
+from .sitemaps import ArticlesSitemap, CallForPaperSitemap, StaticSitemap
 
 sitemaps = {
     "static": StaticSitemap,
     "articles": ArticlesSitemap,
-    "cfps": CallforpaperSitemap
+    "cfps": CallForPaperSitemap
 }
 
 
