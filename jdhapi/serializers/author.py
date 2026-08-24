@@ -35,12 +35,12 @@ class AuthorSerializer(serializers.ModelSerializer):
     def get_contributions(self, obj):
         abstracts = (
             Abstract.objects.filter(authors__id=obj.id, article__isnull=True)
-            .annotate(type=Value("abstract"))
+            .annotate(type=Value("abstracts"))
             .values("pid", "title", "status", "type")
         )
         articles = (
             Article.objects.filter(abstract__authors__id=obj.id)
-            .annotate(type=Value("article"))
+            .annotate(type=Value("articles"))
             .values("abstract__pid", "abstract__title", "status", "type")
         )
 
