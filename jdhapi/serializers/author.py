@@ -11,7 +11,7 @@ class CountrySerializer(serializers.Serializer):
     country = CountryField()
 
 
-class AuthorAbstractsSerializer(serializers.ModelSerializer):
+class AuthorSerializer(serializers.ModelSerializer):
     country = serializers.SerializerMethodField()
     abstracts = serializers.SerializerMethodField()
     accepted = serializers.SerializerMethodField()
@@ -36,12 +36,12 @@ class AuthorAbstractsSerializer(serializers.ModelSerializer):
         abstracts = (
             Abstract.objects.filter(authors__id=obj.id, article__isnull=True)
             .annotate(type=Value("abstract"))
-            .values("title", "status", "type")
+            .values("pid", "title", "status", "type")
         )
         articles = (
             Article.objects.filter(abstract__authors__id=obj.id)
             .annotate(type=Value("article"))
-            .values("abstract__title", "status", "type")
+            .values("abstract__pid", "abstract__title", "status", "type")
         )
 
         symmetric_difference = abstracts.union(articles)

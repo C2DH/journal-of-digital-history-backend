@@ -4,12 +4,12 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, generics, permissions
 
 from jdhapi.models import Author
-from jdhapi.serializers.author import AuthorAbstractsSerializer, AuthorSlimSerializer
+from jdhapi.serializers.author import AuthorSerializer
 
 
 class AuthorList(generics.ListCreateAPIView):
     queryset = Author.objects.all()
-    serializer_class = AuthorAbstractsSerializer
+    serializer_class = AuthorSerializer
     permission_classes: ClassVar[list[object]] = [permissions.IsAdminUser]
     filter_backends: ClassVar[list[object]] = [
         DjangoFilterBackend,
@@ -38,5 +38,5 @@ class AuthorList(generics.ListCreateAPIView):
 
 class AuthorDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Author.objects.all()
-    serializer_class = AuthorSlimSerializer
+    serializer_class = AuthorSerializer
     permission_classes: ClassVar[list[object]] = [permissions.IsAdminUser]
