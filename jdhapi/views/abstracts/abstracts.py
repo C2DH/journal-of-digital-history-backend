@@ -1,11 +1,14 @@
-from django_filters.rest_framework import DjangoFilterBackend
+from typing import ClassVar
+
 from django.views.decorators.csrf import csrf_exempt
+from django_filters.rest_framework import DjangoFilterBackend
 from drf_recaptcha.fields import ReCaptchaV2Field
-from jdhapi.models import Abstract
-from jdhapi.serializers.abstract import CreateAbstractSerializer, AbstractSerializer
-from rest_framework import permissions, generics, filters
+from rest_framework import filters, generics, permissions
 from rest_framework.response import Response
 from rest_framework.serializers import Serializer
+
+from jdhapi.models import Abstract
+from jdhapi.serializers.abstract import AbstractSerializer, CreateAbstractSerializer
 
 
 class V2Serializer(Serializer):
@@ -14,14 +17,14 @@ class V2Serializer(Serializer):
 
 class AbstractList(generics.ListCreateAPIView):
     queryset = Abstract.objects.all()
-    permission_classes = [permissions.IsAdminUser]
+    permission_classes: ClassVar[list[object]] = [permissions.IsAdminUser]
     serializer_class = AbstractSerializer
-    filter_backends = [
+    filter_backends: ClassVar[list[object]] = [
         DjangoFilterBackend,
         filters.OrderingFilter,
         filters.SearchFilter,
     ]
-    filterset_fields = [
+    filterset_fields: ClassVar[list[str]] = [
         "id",
         "pid",
         "title",
@@ -37,7 +40,7 @@ class AbstractList(generics.ListCreateAPIView):
         "authors",
         "article__issue",
     ]
-    ordering_fields = [
+    ordering_fields: ClassVar[list[str]] = [
         "id",
         "title",
         "callpaper",
@@ -49,11 +52,13 @@ class AbstractList(generics.ListCreateAPIView):
         "contact_firstname",
         "contact_affiliation",
     ]
-    search_fields = [
+    search_fields: ClassVar[list[str]] = [
         "title",
         "pid",
         "contact_lastname",
         "contact_firstname",
+        "authors__lastname",
+        "authors__firstname",
     ]
 
     def get_queryset(self):
