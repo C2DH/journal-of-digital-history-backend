@@ -1,6 +1,6 @@
 from typing import ClassVar
 
-from django.db.models import Value
+from django.db.models import F, Value
 from django_countries.serializer_fields import CountryField
 from rest_framework import serializers
 
@@ -35,13 +35,22 @@ class AuthorSerializer(serializers.ModelSerializer):
     def get_contributions(self, obj):
         abstracts = (
             Abstract.objects.filter(authors__id=obj.id, article__isnull=True)
-            .annotate(type=Value("abstracts"))
-            .values("pid", "title", "status", "type")
+            .annotate(type=Value("abstracts"), callpaper_title=F("callpaper__title"))
+            .values("pid", "title", "status", "type", "callpaper_title")
         )
         articles = (
             Article.objects.filter(abstract__authors__id=obj.id)
-            .annotate(type=Value("articles"))
-            .values("abstract__pid", "abstract__title", "status", "type")
+            .annotate(
+                type=Value("articles"),
+                abstract__callpaper_title=F("abstract__callpaper__title"),
+            )
+            .values(
+                "abstract__pid",
+                "abstract__title",
+                "status",
+                "type",
+                "abstract__callpaper_title",
+            )
         )
 
         symmetric_difference = abstracts.union(articles)
