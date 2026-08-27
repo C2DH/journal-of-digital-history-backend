@@ -1,6 +1,7 @@
 from django.contrib.admin import SimpleListFilter
 from django.utils.translation import gettext_lazy as _
 
+
 class IssueNamePIDFilter(SimpleListFilter):
     title = _('Issue by name and PID')
     parameter_name = 'issue_by_name_and_pid'

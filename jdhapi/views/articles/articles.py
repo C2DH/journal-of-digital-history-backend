@@ -3,10 +3,14 @@ from typing import ClassVar
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, generics
-from rest_framework.permissions import BasePermission, IsAdminUser
+from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from jdhapi.filter.article import (
+    IsAuthenticatedPermission,
+    IsStaffFilter,
+)
 from jdhapi.models import Article
 from jdhapi.serializers.article import ArticleSerializer
 from jdhapi.views.articles.status_handlers import (
@@ -18,34 +22,11 @@ from jdhapi.views.articles.status_handlers import (
 )
 
 
-class IsOwnerFilterBackend(filters.BaseFilterBackend):
-    """
-    Filter that only allows users to see their own objects.
-    """
-
-    def filter_queryset(self, request, queryset, view):
-        if request.user.is_staff:
-            return queryset  # Staff members can see all articles
-        else:
-            return queryset.filter(status=Article.Status.PUBLISHED)
-
-
-class IsAuthenticatedForNonPublished(BasePermission):
-    """
-    Custom permission to allow only authenticated users to access non-published articles.
-    """
-
-    def has_object_permission(self, request, view, obj):
-        if obj.status == Article.Status.PUBLISHED:
-            return True
-        return request.user.is_authenticated
-
-
 class ArticleList(generics.ListCreateAPIView):
     queryset = Article.objects.all()
     serializer_class = ArticleSerializer
     filter_backends: ClassVar[list[object]] = [
-        IsOwnerFilterBackend,
+        IsStaffFilter,
         DjangoFilterBackend,
         filters.OrderingFilter,
         filters.SearchFilter,
@@ -93,7 +74,7 @@ class ArticleList(generics.ListCreateAPIView):
 
 
 class ArticleDetail(generics.RetrieveUpdateDestroyAPIView):
-    permission_classes: ClassVar[list[object]] = [IsAuthenticatedForNonPublished]
+    permission_classes: ClassVar[list[object]] = [IsAuthenticatedPermission]
     queryset = Article.objects.all()
     serializer_class = ArticleSerializer
     lookup_field = "abstract__pid"

@@ -1,16 +1,35 @@
-from rest_framework import generics, filters
-from jdhapi.models import Author
-from jdhapi.serializers.author import AuthorSlimSerializer
+from typing import ClassVar
+
 from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters, generics, permissions
+
+from jdhapi.models import Author
+from jdhapi.serializers.author import AuthorSerializer
 
 
 class AuthorList(generics.ListCreateAPIView):
     queryset = Author.objects.all()
-    serializer_class = AuthorSlimSerializer
-    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
-    filterset_fields = ["id", "lastname", "firstname", "affiliation", "orcid"]
-    ordering_fields = [
+    serializer_class = AuthorSerializer
+    permission_classes: ClassVar[list[object]] = [permissions.IsAdminUser]
+    filter_backends: ClassVar[list[object]] = [
+        DjangoFilterBackend,
+        filters.OrderingFilter,
+        filters.SearchFilter
+    ]
+    filterset_fields: ClassVar[list[str]] = [
         "id",
+        "lastname",
+        "firstname",
+        "affiliation",
+        "orcid",
+    ]
+    ordering_fields: ClassVar[list[str]] = [
+        "id",
+        "lastname",
+        "firstname",
+        "affiliation",
+    ]
+    search_fields: ClassVar[list[str]] = [
         "lastname",
         "firstname",
         "affiliation",
@@ -19,4 +38,5 @@ class AuthorList(generics.ListCreateAPIView):
 
 class AuthorDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Author.objects.all()
-    serializer_class = AuthorSlimSerializer
+    serializer_class = AuthorSerializer
+    permission_classes: ClassVar[list[object]] = [permissions.IsAdminUser]

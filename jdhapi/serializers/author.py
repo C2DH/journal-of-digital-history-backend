@@ -1,32 +1,83 @@
+from typing import ClassVar
+
+from django.db.models import F, Value
 from django_countries.serializer_fields import CountryField
 from rest_framework import serializers
 
-from jdhapi.serializers.abstract import AbstractSlimSerializer
-
-from ..models.author import Author
+from ..models import Abstract, Article, Author
 
 
 class CountrySerializer(serializers.Serializer):
     country = CountryField()
 
 
-class AuthorAbstractsSerializer(serializers.ModelSerializer):
-    abstracts = AbstractSlimSerializer(many=True, read_only=True)
+class AuthorSerializer(serializers.ModelSerializer):
+    country = serializers.SerializerMethodField()
+    abstracts = serializers.SerializerMethodField()
+    accepted = serializers.SerializerMethodField()
+    published = serializers.SerializerMethodField()
+    contributions = serializers.SerializerMethodField()
+
+    def get_country(self, obj):
+        return str(obj.country)
+
+    def get_abstracts(self, obj):
+        return Abstract.objects.filter(authors__id=obj.id).count()
+
+    def get_accepted(self, obj):
+        author_abstracts = Abstract.objects.filter(authors__id=obj.id)
+        return author_abstracts.filter(status="ACCEPTED").count()
+
+    def get_published(self, obj):
+        author_abstracts = Abstract.objects.filter(authors__id=obj.id)
+        return author_abstracts.filter(status="PUBLISHED").count()
+
+    def get_contributions(self, obj):
+        abstracts = (
+            Abstract.objects.filter(authors__id=obj.id, article__isnull=True)
+            .annotate(type=Value("abstracts"), callpaper_title=F("callpaper__title"))
+            .values("pid", "title", "status", "type", "callpaper_title")
+            .order_by()
+        )
+        articles = (
+            Article.objects.filter(abstract__authors__id=obj.id)
+            .annotate(
+                type=Value("articles"),
+                abstract__callpaper_title=F("abstract__callpaper__title"),
+            )
+            .values(
+                "abstract__pid",
+                "abstract__title",
+                "status",
+                "type",
+                "abstract__callpaper_title",
+            )
+            .order_by()
+        )
+
+        symmetric_difference = abstracts.union(articles)
+
+        return symmetric_difference
 
     class Meta:
         model = Author
-        fields = [
+        fields: ClassVar[list[str]] = [
             "id",
             "lastname",
             "firstname",
             "affiliation",
             "email",
             "orcid",
+            "city",
+            "country",
             "github_id",
             "bluesky_id",
             "facebook_id",
             "linkedin_id",
-            "abstracts"
+            "abstracts",
+            "accepted",
+            "published",
+            "contributions",
         ]
 
 
@@ -38,7 +89,7 @@ class AuthorSlimSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Author
-        fields = [
+        fields: ClassVar[list[str]] = [
             "id",
             "lastname",
             "firstname",

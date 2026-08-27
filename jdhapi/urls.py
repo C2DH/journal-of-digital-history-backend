@@ -58,6 +58,7 @@ urlpatterns = [
     path("api/articles/docx/email", views.send_docx_email, name="article-docx-email"),
     path("api/authors/", views.AuthorList.as_view(), name="author-list"),
     path("api/authors/<int:pk>/", views.AuthorDetail.as_view(), name="author-detail"),
+    path("api/authors/stats", views.get_authors_stats, name="author-stats"),
     path(
         "api/callforpaper/", views.CallForPaperList.as_view(), name="callforpaper-list"
     ),
