@@ -37,6 +37,7 @@ class AuthorSerializer(serializers.ModelSerializer):
             Abstract.objects.filter(authors__id=obj.id, article__isnull=True)
             .annotate(type=Value("abstracts"), callpaper_title=F("callpaper__title"))
             .values("pid", "title", "status", "type", "callpaper_title")
+            .order_by()
         )
         articles = (
             Article.objects.filter(abstract__authors__id=obj.id)
@@ -51,6 +52,7 @@ class AuthorSerializer(serializers.ModelSerializer):
                 "type",
                 "abstract__callpaper_title",
             )
+            .order_by()
         )
 
         symmetric_difference = abstracts.union(articles)
