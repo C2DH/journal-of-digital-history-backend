@@ -1,10 +1,15 @@
 import requests
 from django.core.exceptions import ValidationError
-from django.db.models.signals import pre_save
+from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 
 from jdhapi.models import Article
 from jdhapi.utils.articles import convert_string_to_base64
+from jdhapi.utils.logger import logger as get_logger
+
+from .tasks import get_github_issue_url_for_article
+
+logger = get_logger()
 
 
 @receiver(pre_save, sender=Article)
@@ -37,3 +42,12 @@ def validate_urls_for_article_submission(sender, instance, **kwargs):
         instance.notebook_url, instance.repository_url
     ):
         raise ValidationError("Notebook url is not correct")
+
+
+@receiver(post_save, sender=Article)
+def trigger_github_issue_sync(sender, instance, **kwargs):
+    if instance.github_issue is not None:
+        return
+    if instance.abstract.pid is None:
+        return
+    get_github_issue_url_for_article.delay(instance.pk)

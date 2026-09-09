@@ -1,20 +1,22 @@
 # Create your tasks here
 
+import requests
 from celery import shared_task
-from jdhapi.models import Abstract
-from django.core.mail import send_mail
 from celery.utils.log import get_task_logger
-from .models import Article
+from django.core.mail import send_mail
+
+from jdhapi.models import Abstract
 from jdhapi.utils.articles import (
-    get_notebook_stats,
-    get_notebook_specifics_tags,
-    generate_tags,
     generate_narrative_tags,
+    generate_tags,
     get_notebook_references_fulltext,
+    get_notebook_specifics_tags,
+    get_notebook_stats,
 )
 
-logger = get_task_logger(__name__)
+from .models import Article
 
+logger = get_task_logger(__name__)
 
 @shared_task
 def add(x, y):
@@ -99,4 +101,37 @@ def save_references(article_id):
         article.abstract.pid, raw_url=article.notebook_ipython_url
     )
     # logger.info(f'References {references}')
-    logger.info(f"ok finish")
+    logger.info("ok finish")
+
+
+@shared_task
+def get_github_issue_url_for_article(article_id):
+    article = Article.objects.get(pk=article_id)
+
+    logger.info(f"get_github_issue_url_for_article:{article.abstract.pid}")
+
+    pid = article.abstract.pid
+    url_jdh_notebook = "https://api.github.com/repos/C2DH/jdh-notebook/issues"
+
+    try:
+        response = requests.get(url=url_jdh_notebook)
+        if response.status_code == 200:
+            for issue in response.json():
+                body = issue.get("body", "")
+
+                if pid in body:
+                    issue_url = issue.get("html_url", "")
+                    Article.objects.filter(
+                        pk=article_id, github_issue__isnull=True
+                    ).update(github_issue=issue_url)
+                    break
+        else:
+            logger.error(
+                f"Failed to process the GitHub Issues. API status code : {response.status_code}"
+            )
+
+    except Exception as e:
+        logger.error(
+            f"Failed to connect to GitHub API to retrieve jdh-notebook issues : {e}"
+        )
+        raise
