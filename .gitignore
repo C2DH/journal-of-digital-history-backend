@@ -12,3 +12,6 @@ jdhapi/test/test-httpie.py
 !.env.example
 outputs/
 .vscode
+
+#celery file
+celerybeat-schedule.db
