@@ -21,6 +21,6 @@ app.conf.timezone = "UTC"
 app.conf.beat_schedule = {
     "get-github-issue-url-for-existing-article": {
         "task": "jdhapi.tasks.get_github_issue_url_for_article",
-        "schedule": crontab(hour=7, minute=30, day_of_week=1),
+        "schedule": crontab(hour=7, minute=30, day_of_week='mon-fri'),
     }
 }
