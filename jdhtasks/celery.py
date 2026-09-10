@@ -4,6 +4,11 @@ import sys
 from celery import Celery
 from celery.schedules import crontab
 
+# Deactivate Redis worker during test
+if "test" in sys.argv:
+    CELERY_TASK_ALWAYS_EAGER = True
+    CELERY_TASK_EAGER_PROPAGATES = True
+
 # set the default Django settings module for the 'celery' program.
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "jdh.settings")
 app = Celery("jdhtasks")
@@ -26,7 +31,3 @@ app.conf.beat_schedule = {
     }
 }
 
-# Deactivate Redis worker during test
-if "test" in sys.argv:
-    CELERY_TASK_ALWAYS_EAGER = True
-    CELERY_TASK_EAGER_PROPAGATES = True
