@@ -4,11 +4,6 @@ import sys
 from celery import Celery
 from celery.schedules import crontab
 
-# Deactivate Redis worker during test
-if "test" in sys.argv:
-    CELERY_TASK_ALWAYS_EAGER = True
-    CELERY_TASK_EAGER_PROPAGATES = True
-
 # set the default Django settings module for the 'celery' program.
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "jdh.settings")
 app = Celery("jdhtasks")
@@ -18,6 +13,11 @@ app = Celery("jdhtasks")
 # - namespace='CELERY' means all celery-related configuration keys
 #   should have a `CELERY_` prefix.
 app.config_from_object("django.conf:settings", namespace="CELERY")
+
+# Skip real broker/backend connections when running Django tests
+if "test" in sys.argv:
+    app.conf.task_always_eager = True
+    app.conf.task_eager_propagates = True
 
 # Load task modules from all registered Django app configs.
 app.autodiscover_tasks()
