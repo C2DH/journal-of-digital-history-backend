@@ -1,15 +1,18 @@
+from unittest.mock import Mock, patch
+
 from django.core.exceptions import ValidationError
 from django.test import TestCase
-from jdhapi.models import Article, Abstract, Issue
+
+from jdhapi.models import Abstract, Article, Issue
+
 from .fixtures.fixture_signals import (
     date,
-    repository_url,
+    false_notebook_url,
+    false_repository_url,
     notebook_url,
     notebook_url_skim,
-    false_repository_url,
-    false_notebook_url,
+    repository_url,
 )
-from unittest.mock import patch, Mock
 
 
 class TestSignal(TestCase):
@@ -39,7 +42,8 @@ class TestSignal(TestCase):
             issue=self.issue,
         )
 
-    def test_validate_urls_for_article_submission(self):
+    @patch("jdhapi.signals.get_github_issue_url_for_article.delay")
+    def test_validate_urls_for_article_submission(self, mock_delay):
 
         with patch("jdhapi.signals.requests.get") as mock_get:
             mock_response = Mock()
@@ -56,7 +60,8 @@ class TestSignal(TestCase):
             self.assertEqual(article.notebook_url, notebook_url)
             self.assertEqual(article.repository_url, repository_url)
 
-    def test_validate_urls_for_skim_article_submission(self):
+    @patch("jdhapi.signals.get_github_issue_url_for_article.delay")
+    def test_validate_urls_for_skim_article_submission(self, delay):
 
         with patch("jdhapi.signals.requests.get") as mock_get:
             mock_response = Mock()

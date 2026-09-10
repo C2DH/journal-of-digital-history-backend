@@ -14,7 +14,7 @@ app = Celery("jdhtasks")
 #   should have a `CELERY_` prefix.
 app.config_from_object("django.conf:settings", namespace="CELERY")
 
-# Skip real broker/backend connections when running Django tests
+# Make Celery delay run inline
 if "test" in sys.argv:
     app.conf.task_always_eager = True
     app.conf.task_eager_propagates = True
