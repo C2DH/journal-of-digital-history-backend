@@ -42,8 +42,7 @@ class TestSignal(TestCase):
             issue=self.issue,
         )
 
-    @patch("jdhapi.signals.get_github_issue_url_for_article.delay")
-    def test_validate_urls_for_article_submission(self, mock_delay):
+    def test_validate_urls_for_article_submission(self):
 
         with patch("jdhapi.signals.requests.get") as mock_get:
             mock_response = Mock()
@@ -60,8 +59,7 @@ class TestSignal(TestCase):
             self.assertEqual(article.notebook_url, notebook_url)
             self.assertEqual(article.repository_url, repository_url)
 
-    @patch("jdhapi.signals.get_github_issue_url_for_article.delay")
-    def test_validate_urls_for_skim_article_submission(self, delay):
+    def test_validate_urls_for_skim_article_submission(self):
 
         with patch("jdhapi.signals.requests.get") as mock_get:
             mock_response = Mock()

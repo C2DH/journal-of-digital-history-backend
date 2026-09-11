@@ -18,6 +18,7 @@ from .models import Article
 
 logger = get_task_logger(__name__)
 
+
 @shared_task
 def add(x, y):
     return x + y
@@ -105,26 +106,56 @@ def save_references(article_id):
 
 
 @shared_task
-def get_github_issue_url_for_article(article_id):
-    article = Article.objects.get(pk=article_id)
+def get_github_issue_url_for_all_articles():
+    logger.info("get_github_issue_url_for_all_articles")
 
-    logger.info(f"get_github_issue_url_for_article:{article.abstract.pid}")
+    articles = Article.objects.filter(github_issue__isnull=True)
 
-    pid = article.abstract.pid
-    url_jdh_notebook = "https://api.github.com/repos/C2DH/jdh-notebook/issues"
+    if not articles.exists():
+        return
+
+    url_jdh_notebook = "https://api.github.com/repos/C2DH/jdh-notebook/issues?state=all"
 
     try:
-        response = requests.get(url=url_jdh_notebook)
-        if response.status_code == 200:
-            for issue in response.json():
-                body = issue.get("body", "")
+        issues = []
+        page = 1
+        status_code = 0
+        while True:
+            response = requests.get(
+                url_jdh_notebook,
+                params={
+                    "state": "all",
+                    "per_page": 100,
+                    "page": page,
+                    "sort": "created",
+                    "direction": "desc",
+                },
+                timeout=10
+            )
+            status_code = response.status_code
+            batch = response.json()
+            if not batch:
+                break
+            issues.extend(batch)
+            page += 1
 
-                if pid in body:
-                    issue_url = issue.get("html_url", "")
-                    Article.objects.filter(
-                        pk=article_id, github_issue__isnull=True
-                    ).update(github_issue=issue_url)
-                    break
+        if status_code == 200:
+            for article in articles:
+                article_pid = article.abstract.pid
+                article_id = article.abstract.id
+                for issue in issues:
+                    body = issue.get("body", "")
+
+                    if body is None:
+                        # avoid to iterrate later on a None body
+                        continue
+
+                    if article_pid in body:
+                        issue_url = issue.get("html_url", "")
+                        Article.objects.filter(
+                            pk=article_id, github_issue__isnull=True
+                        ).update(github_issue=issue_url)
+                        break
         else:
             logger.error(
                 f"Failed to process the GitHub Issues. API status code : {response.status_code}"
