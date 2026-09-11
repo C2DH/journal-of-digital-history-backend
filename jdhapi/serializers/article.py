@@ -26,6 +26,7 @@ class ArticleSerializer(serializers.ModelSerializer):
         fields = [
             "abstract",
             "repository_url",
+            "github_issue",
             "status",
             "publication_date",
             "repository_type",

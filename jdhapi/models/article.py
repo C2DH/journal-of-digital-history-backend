@@ -165,6 +165,9 @@ class Article(models.Model):
     tags = models.ManyToManyField("jdhapi.Tag", blank=True)
     authors = models.ManyToManyField("jdhapi.Author", through="Role")
     ojs_submission_id = models.IntegerField(null=True, blank=True, default=None)
+    github_issue = models.URLField(
+        max_length=254, null=True, blank=True, help_text="GitHub's issue URL on C2DH/jdh-notebook repository"
+    )
 
     def get_kernel_language(self):
         tool_tags = self.tags.filter(category="tool")
