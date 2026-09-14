@@ -1,8 +1,6 @@
 from django.conf import settings
 from django.core.cache import cache
 from django.db import transaction
-from jdh.validation import JSONSchema
-from jdhseo.utils import get_country_with_ROR
 from jsonschema.exceptions import ValidationError
 from rest_framework import status
 from rest_framework.decorators import (
@@ -12,6 +10,7 @@ from rest_framework.decorators import (
 from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
 
+from jdh.validation import JSONSchema
 from jdhapi.models import Article
 from jdhapi.utils.logger import logger as get_logger
 from jdhapi.utils.ojs import (
@@ -20,10 +19,10 @@ from jdhapi.utils.ojs import (
     create_contributor_in_ojs,
     generate_pdf_for_submission,
     get_active_submission_with_timing,
-    get_active_submissions_by_stage,
     get_active_submissions_by_stage_with_details,
     upload_manuscript_to_ojs,
 )
+from jdhseo.utils import get_country_with_ROR
 
 logger = get_logger()
 article_to_ojs_schema = JSONSchema(filepath="article_to_ojs.json")
@@ -50,42 +49,6 @@ def get_peer_review_article_with_timing(_):
         submissions_with_decisions = get_active_submission_with_timing()
         return Response(
             {"data": submissions_with_decisions},
-            status=status.HTTP_200_OK,
-        )
-    except Exception as e:
-        return Response(
-            {
-                "error": "InternalError",
-                "message": "An unexpected error occurred. Please try again later.",
-                "details": str(e),
-            },
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content_type="application/json",
-        )
-
-
-@api_view(["GET"])
-@permission_classes([IsAdminUser])
-def get_peer_review_article_by_stage(_):
-    """
-    GET /api/articles/ojs/submissions/peer-review/stage
-
-    Get the list of all articles counts in peer review by stage(see below) according to their round (R1, R1, R3+) from OJS.
-    Stages :
-    - Assign reviewer (assign)
-    - Awaiting reviewer response (awaiting)
-    - Review in progress (review)
-    - Reviewer decision (reviewer)
-    - Author revising (revising)
-
-    Requires admin permissions.
-    """
-    logger.info("GET /api/articles/ojs/submissions/peer-review/stage")
-
-    try:
-        articles_per_stage = get_active_submissions_by_stage()
-        return Response(
-            {"data": articles_per_stage},
             status=status.HTTP_200_OK,
         )
     except Exception as e:
@@ -160,7 +123,7 @@ def send_article_to_ojs(request):
             status=status.HTTP_200_OK,
         )
     except ValidationError as e:
-        logger.error(f"JSON schema validation failed: {str(e)}")
+        logger.error(f"JSON schema validation failed: {e!s}")
         return Response(
             {"error": "Invalid data format", "details": str(e)},
             status=status.HTTP_400_BAD_REQUEST,
