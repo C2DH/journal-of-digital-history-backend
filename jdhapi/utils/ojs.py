@@ -295,9 +295,10 @@ def find_right_stage_and_round(submissions, round, status_id, article):
             stage = "delay"
         case 5:
             stage = "declined"
-        case _:
+        case 1 | 2 | 3 | 4 | 6 | 7 | 8 | 9 | 11 | 12 | 13 | 14 | 15:
             stage = "ontime"
-            return
+        case _:
+            logger.error(f"[find_right_stage_and_round] - Status Id : {status_id}  is not managed.")
 
     key = f"{stage}-{round_label}"
     entry = next((s for s in submissions if s["key"] == key), None)
@@ -334,7 +335,7 @@ def get_active_submissions_by_stage_with_details():
     List of the stages for key :
     - submitted
     - ontime
-    - delayed
+    - delay
     - declined
     """
     logger.info(
@@ -344,15 +345,15 @@ def get_active_submissions_by_stage_with_details():
     submissions_by_stage_round = [
         {"key": "submitted-R1", "articles": []},
         {"key": "ontime-R1", "articles": []},
-        {"key": "delayed-R1", "articles": []},
+        {"key": "delay-R1", "articles": []},
         {"key": "declined-R1", "articles": []},
         {"key": "submitted-R2", "articles": []},
         {"key": "ontime-R2", "articles": []},
-        {"key": "delayed-R2", "articles": []},
+        {"key": "delay-R2", "articles": []},
         {"key": "declined-R2", "articles": []},
         {"key": "submitted-R3", "articles": []},
         {"key": "ontime-R3", "articles": []},
-        {"key": "delayed-R3", "articles": []},
+        {"key": "delay-R3", "articles": []},
         {"key": "declined-R3", "articles": []},
     ]
 
@@ -375,6 +376,7 @@ def get_active_submissions_by_stage_with_details():
 
         # Build title set for one-shot fallback lookup
         titles = set()
+        
         parsed_rows = []
 
         for sid, submission in fetched:
@@ -383,8 +385,8 @@ def get_active_submissions_by_stage_with_details():
                 fulltitle = (publication.get("fullTitle") or {}).get("en", "No title")
                 author = publication.get("authorsString", "No author")
                 review_rounds = submission.get("reviewRounds") or []
-                ojs_status = review_rounds.get("status") or ""
                 last_round = review_rounds[-1] if review_rounds else {}
+                ojs_status = last_round.get("status", "")
                 round_value = last_round.get("round", 0)
                 status_id = last_round.get("statusId", 0)
                 url_workflow = submission.get("urlWorkflow")
@@ -405,7 +407,6 @@ def get_active_submissions_by_stage_with_details():
                 logger.error(
                     f"[get_active_submissions_by_stage_with_details] Failed to parse submission data for id {sid}: {e}"
                 )
-
         # One-shot DB fetch by OJS id
         articles_by_sid = {
             a.ojs_submission_id: a
