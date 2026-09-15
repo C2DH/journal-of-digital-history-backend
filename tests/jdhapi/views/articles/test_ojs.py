@@ -2,9 +2,10 @@ from unittest.mock import Mock, patch
 
 from django.contrib.auth import get_user_model
 from django.test import TestCase
-from jdhapi.models import Abstract, Article, Author, Issue
 from rest_framework import status
 from rest_framework.test import APIClient
+
+from jdhapi.models import Abstract, Article, Author, Issue
 
 User = get_user_model()
 
@@ -296,11 +297,10 @@ class PeerReviewOJSViewTestCase(TestCase):
             username="admin2", email="admin2@test.com", password="testpass123"
         )
         self.timing_url = "/api/articles/ojs/peer-review/timing"
-        self.stage_url = "/api/articles/ojs/peer-review/stage"
         self.details_url = "/api/articles/ojs/peer-review/details"
 
     def test_peer_review_endpoints_require_admin(self):
-        urls = [self.timing_url, self.stage_url, self.details_url]
+        urls = [self.timing_url, self.details_url]
 
         for url in urls:
             response = self.client.get(url, format="json")
@@ -333,33 +333,6 @@ class PeerReviewOJSViewTestCase(TestCase):
         self.assertEqual(response.data["error"], "InternalError")
         self.assertIn("timing failed", response.data["details"])
 
-    @patch("jdhapi.views.articles.ojs.get_active_submissions_by_stage")
-    def test_get_peer_review_article_by_stage_success(self, mock_helper):
-        self.client.force_authenticate(user=self.admin_user)
-        mock_helper.return_value = [
-            {"assign": 1, "awaiting": 0, "review": 0, "reviewer": 0, "revising": 0, "order": "R1"},
-            {"assign": 0, "awaiting": 1, "review": 0, "reviewer": 0, "revising": 0, "order": "R2"},
-            {"assign": 0, "awaiting": 0, "review": 1, "reviewer": 0, "revising": 0, "order": "R3+"},
-        ]
-
-        response = self.client.get(self.stage_url, format="json")
-
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data["data"]), 3)
-        self.assertEqual(response.data["data"][1]["awaiting"], 1)
-        mock_helper.assert_called_once_with()
-
-    @patch("jdhapi.views.articles.ojs.get_active_submissions_by_stage")
-    def test_get_peer_review_article_by_stage_error(self, mock_helper):
-        self.client.force_authenticate(user=self.admin_user)
-        mock_helper.side_effect = RuntimeError("stage failed")
-
-        response = self.client.get(self.stage_url, format="json")
-
-        self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
-        self.assertEqual(response.data["error"], "InternalError")
-        self.assertIn("stage failed", response.data["details"])
-
     @patch("jdhapi.views.articles.ojs.cache")
     @patch("jdhapi.views.articles.ojs.get_active_submissions_by_stage_with_details")
     def test_get_peer_review_article_details_success_and_cache_set(self, mock_helper, mock_cache):
@@ -367,7 +340,7 @@ class PeerReviewOJSViewTestCase(TestCase):
         mock_cache.get.return_value = None
         mock_helper.return_value = [
             {
-                "key": "assign-R1",
+                "key": "ontime-R1",
                 "articles": [
                     {
                         "pid": "abc",
@@ -383,7 +356,7 @@ class PeerReviewOJSViewTestCase(TestCase):
         response = self.client.get(self.details_url, format="json")
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["data"][0]["key"], "assign-R1")
+        self.assertEqual(response.data["data"][0]["key"], "ontime-R1")
         mock_helper.assert_called_once_with()
         mock_cache.set.assert_called_once()
 
@@ -391,12 +364,12 @@ class PeerReviewOJSViewTestCase(TestCase):
     @patch("jdhapi.views.articles.ojs.get_active_submissions_by_stage_with_details")
     def test_get_peer_review_article_details_uses_cache(self, mock_helper, mock_cache):
         self.client.force_authenticate(user=self.admin_user)
-        mock_cache.get.return_value = [{"key": "assign-R1", "articles": []}]
+        mock_cache.get.return_value = [{"key": "ontime-R1", "articles": []}]
 
         response = self.client.get(self.details_url, format="json")
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["data"], [{"key": "assign-R1", "articles": []}])
+        self.assertEqual(response.data["data"], [{"key": "ontime-R1", "articles": []}])
         mock_helper.assert_not_called()
         mock_cache.set.assert_not_called()
 
