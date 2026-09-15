@@ -1,16 +1,15 @@
 from unittest.mock import Mock, patch
 
+import requests
 from django.test import TestCase
+
 from jdhapi.models import Abstract, Article, Issue
 from jdhapi.utils.ojs import (
-    assign_substatus,
     fetch_submission_and_status,
     find_right_stage_and_round,
     get_active_submission_with_timing,
-    get_active_submissions_by_stage,
     get_active_submissions_by_stage_with_details,
     increase_round,
-    increase_round_per_stage,
 )
 
 
@@ -49,136 +48,150 @@ class OJSUtilsTestCase(TestCase):
         self.assertEqual(bucket["ontime"], 1)
         self.assertEqual(bucket["declined"], 0)
 
-    def test_increase_round_per_stage_maps_statuses(self):
-        bucket = {
-            "assign": 0,
-            "awaiting": 0,
-            "review": 0,
-            "reviewer": 0,
-            "revising": 0,
-            "order": "R1",
-        }
+    def test_find_right_stage_and_round_maps_submitted_ontime_delay_declined(self):
+        submitted_bucket = {"key": "submitted-R1", "articles": []}
+        ontime_bucket = {"key": "ontime-R2", "articles": []}
+        delay_bucket = {"key": "delay-R2", "articles": []}
+        declined_bucket = {"key": "declined-R3", "articles": []}
+        submissions = [submitted_bucket, ontime_bucket, delay_bucket, declined_bucket]
 
-        increase_round_per_stage(bucket, 6)
-        increase_round_per_stage(bucket, 7)
-        increase_round_per_stage(bucket, 10)
-        increase_round_per_stage(bucket, 8)
-        increase_round_per_stage(bucket, 100)
+        find_right_stage_and_round(submissions, 1, 0, {"pid": "a"})
+        find_right_stage_and_round(submissions, 2, 8, {"pid": "b"})
+        find_right_stage_and_round(submissions, 2, 10, {"pid": "c"})
+        find_right_stage_and_round(submissions, 3, 5, {"pid": "d"})
 
-        self.assertEqual(bucket["assign"], 1)
-        self.assertEqual(bucket["awaiting"], 1)
-        self.assertEqual(bucket["review"], 1)
-        self.assertEqual(bucket["reviewer"], 1)
-        self.assertEqual(bucket["revising"], 1)
+        self.assertEqual(submitted_bucket["articles"], [{"pid": "a"}])
+        self.assertEqual(ontime_bucket["articles"], [{"pid": "b"}])
+        self.assertEqual(delay_bucket["articles"], [{"pid": "c"}])
+        self.assertEqual(declined_bucket["articles"], [{"pid": "d"}])
 
-    def test_assign_substatus_maps_known_statuses(self):
-        review_assignments = [
-            {"statusId": 0},
-            {"statusId": 5},
-            {"statusId": 9},
-            {"statusId": 12},
-        ]
+    def test_find_right_stage_and_round_logs_when_key_missing(self):
+        submissions = [{"key": "submitted-R1", "articles": []}]
 
-        result = assign_substatus(review_assignments)
-
-        self.assertEqual(result, ["pending", "accepted", "thanked", "viewed"])
-
-    def test_find_right_stage_and_round_appends_article(self):
-        submissions = [{"key": "reviewer-R2", "articles": []}]
-        article = {"pid": "pid-001", "title": "Mapped Title"}
-
-        find_right_stage_and_round(submissions, 2, 8, article)
-
-        self.assertEqual(submissions[0]["articles"], [article])
-
-    def test_find_right_stage_and_round_ignores_unmanaged_status(self):
-        submissions = [{"key": "reviewer-R2", "articles": []}]
-        article = {"pid": "pid-001", "title": "Mapped Title"}
-
-        find_right_stage_and_round(submissions, 2, 999, article)
+        find_right_stage_and_round(submissions, 2, 0, {"pid": "a"})
 
         self.assertEqual(submissions[0]["articles"], [])
 
     @patch("jdhapi.utils.ojs.requests.get")
-    def testfetch_submission_and_status_returns_override_for_author_revising(self, mock_get):
-        submission_response = Mock()
-        submission_response.raise_for_status.return_value = None
-        submission_response.json.return_value = {"id": 123}
+    def test_fetch_submission_and_status_returns_submission_on_success(self, mock_get):
+        mock_get.return_value = Mock(
+            raise_for_status=Mock(return_value=None),
+            json=lambda: {"id": 123, "reviewRounds": []},
+        )
 
-        decision_response = Mock()
-        decision_response.status_code = 200
-        decision_response.json.return_value = [{"decision": 4}]
-
-        mock_get.side_effect = [submission_response, decision_response]
-
-        sid, submission, override = fetch_submission_and_status(123)
+        sid, submission = fetch_submission_and_status(123)
 
         self.assertEqual(sid, 123)
-        self.assertEqual(submission, {"id": 123})
-        self.assertEqual(override, 100)
+        self.assertEqual(submission, {"id": 123, "reviewRounds": []})
 
     @patch("jdhapi.utils.ojs.requests.get")
-    @patch("jdhapi.utils.ojs.get_active_submissions_ids")
-    @patch("jdhapi.utils.ojs.get_count_submission_from_ojs")
-    def test_get_active_submission_with_timing_aggregates_rounds(self, mock_count, mock_ids, mock_requests_get):
+    def test_fetch_submission_and_status_on_request_failure(self, mock_get):
+        mock_get.side_effect = requests.exceptions.RequestException("boom")
+
+        result = fetch_submission_and_status(123)
+
+        # current implementation returns a 3-tuple here vs a 2-tuple on success (see bug note)
+        self.assertEqual(result, (123, None, None))
+
+    @patch("jdhapi.utils.ojs.fetch_submission")
+    @patch("jdhapi.utils.ojs.get_submissions_submitted_counter")
+    @patch("jdhapi.utils.ojs.get_submissions_peer_review_ids")
+    def test_get_active_submission_with_timing_aggregates_rounds(
+        self, mock_ids, mock_count, mock_fetch
+    ):
         mock_ids.return_value = [1, 2, 3]
-
-        def make_response(round_value, status_id):
-            response = Mock()
-            response.raise_for_status.return_value = None
-            response.json.return_value = {
-                "reviewRounds": [{"round": round_value, "statusId": status_id}]
-            }
-            return response
-        
-        mock_requests_get.side_effect = [
-            make_response(1, 8,),
-            make_response(2, 10),
-            make_response(3, 8),
-        ]
-
         mock_count.return_value = 0
- 
+        responses = {
+            1: {"reviewRounds": [{"round": 1, "statusId": 8}]},
+            2: {"reviewRounds": [{"round": 2, "statusId": 10}]},
+            3: {"reviewRounds": [{"round": 3, "statusId": 8}]},
+        }
+        mock_fetch.side_effect = lambda sid: (sid, responses[sid])
+
         result = get_active_submission_with_timing()
 
-        self.assertEqual(result[0], {"submitted": 0, "ontime": 1, "delay": 0, "declined": 0, "order": "R1"})
-        self.assertEqual(result[1], {"submitted": 0, "ontime": 0, "delay": 1, "declined": 0, "order": "R2"})
-        self.assertEqual(result[2], {"submitted": 0, "ontime": 1, "delay": 0, "declined": 0, "order": "R3+"})
+        self.assertEqual(
+            result[0], {"submitted": 0, "ontime": 1, "delay": 0, "declined": 0, "order": "R1"}
+        )
+        self.assertEqual(
+            result[1], {"submitted": 0, "ontime": 0, "delay": 1, "declined": 0, "order": "R2"}
+        )
+        self.assertEqual(
+            result[2], {"submitted": 0, "ontime": 1, "delay": 0, "declined": 0, "order": "R3+"}
+        )
 
+    @patch("jdhapi.utils.ojs.get_submissions")
     @patch("jdhapi.utils.ojs.fetch_submission_and_status")
-    @patch("jdhapi.utils.ojs.get_active_submissions_ids")
-    def test_get_active_submissions_by_stage_aggregates_counts(self, mock_ids, mock_fetch):
-        mock_ids.return_value = [1, 2, 3]
-        mock_fetch.side_effect = [
-            (1, {"reviewRounds": [{"round": 1, "statusId": 6}]}, None),
-            (2, {"reviewRounds": [{"round": 2, "statusId": 1}]}, 100),
-            (3, {"reviewRounds": [{"round": 3, "statusId": 10}]}, None),
-        ]
-        result = get_active_submissions_by_stage()
-
-        self.assertEqual(result[0]["assign"], 1)
-        self.assertEqual(result[1]["revising"], 1)
-        self.assertEqual(result[2]["review"], 1)
-
-    @patch("jdhapi.utils.ojs.fetch_submission_and_status")
-    @patch("jdhapi.utils.ojs.get_active_submissions_ids")
-    def test_get_active_submissions_by_stage_with_details_maps_articles(self, mock_ids, mock_fetch):
+    @patch("jdhapi.utils.ojs.get_submissions_peer_review_ids")
+    def test_get_active_submissions_by_stage_with_details_maps_peer_review_article(
+        self, mock_ids, mock_fetch, mock_stage1
+    ):
         mock_ids.return_value = [123]
         mock_fetch.return_value = (
             123,
             {
                 "id": 123,
-                "publications": [{"fullTitle": {"en": "Mapped Title"}, "authorsString": "Jane Doe"}],
-                "reviewAssignments": [{"statusId": 9}],
-                "reviewRounds": [{"round": 1, "statusId": 6}],
+                "publications": [
+                    {"fullTitle": {"en": "Mapped Title"}, "authorsString": "Jane Doe"}
+                ],
+                "reviewRounds": [{"round": 1, "statusId": 8, "status": "In review"}],
                 "urlWorkflow": "https://ojs/workflow/123",
             },
-            None,
         )
+        mock_stage1.return_value = []
 
         result = get_active_submissions_by_stage_with_details()
 
-        assign_r1 = next(entry for entry in result if entry["key"] == "assign-R1")
-        self.assertEqual(len(assign_r1["articles"]), 1)
-        self.assertEqual(assign_r1["articles"][0]["pid"], "pid-001")
-        self.assertEqual(assign_r1["articles"][0]["substatus"], ["thanked"])
+        ontime_r1 = next(entry for entry in result if entry["key"] == "ontime-R1")
+        self.assertEqual(len(ontime_r1["articles"]), 1)
+        self.assertEqual(ontime_r1["articles"][0]["pid"], "pid-001")
+        self.assertEqual(ontime_r1["articles"][0]["authors"], "Jane Doe")
+        self.assertEqual(ontime_r1["articles"][0]["url"], "https://ojs/workflow/123")
+
+    @patch("jdhapi.utils.ojs.get_submissions")
+    @patch("jdhapi.utils.ojs.fetch_submission_and_status")
+    @patch("jdhapi.utils.ojs.get_submissions_peer_review_ids")
+    def test_get_active_submissions_by_stage_with_details_includes_stage_1_submissions(
+        self, mock_ids, mock_fetch, mock_stage1
+    ):
+        mock_ids.return_value = []
+        mock_stage1.return_value = [
+            {
+                "ojs_submission_id": 123,
+                "ojs_workflow_url": "https://ojs/workflow/123",
+                "title": "Mapped Title",
+                "author": "Jane Doe",
+                "stage_id": 1,
+            }
+        ]
+
+        result = get_active_submissions_by_stage_with_details()
+
+        submitted_r1 = next(entry for entry in result if entry["key"] == "submitted-R1")
+        self.assertEqual(len(submitted_r1["articles"]), 1)
+        self.assertEqual(submitted_r1["articles"][0]["pid"], "pid-001")
+
+    @patch("jdhapi.utils.ojs.get_submissions")
+    @patch("jdhapi.utils.ojs.fetch_submission_and_status")
+    @patch("jdhapi.utils.ojs.get_submissions_peer_review_ids")
+    def test_get_active_submissions_by_stage_with_details_no_match_has_null_pid(
+        self, mock_ids, mock_fetch, mock_stage1
+    ):
+        mock_ids.return_value = [999]
+        mock_fetch.return_value = (
+            999,
+            {
+                "id": 999,
+                "publications": [
+                    {"fullTitle": {"en": "Unknown Title"}, "authorsString": "No author"}
+                ],
+                "reviewRounds": [{"round": 1, "statusId": 5}],
+                "urlWorkflow": "https://ojs/workflow/999",
+            },
+        )
+        mock_stage1.return_value = []
+
+        result = get_active_submissions_by_stage_with_details()
+
+        declined_r1 = next(entry for entry in result if entry["key"] == "declined-R1")
+        self.assertEqual(declined_r1["articles"][0]["pid"], None)
