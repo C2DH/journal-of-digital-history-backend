@@ -420,7 +420,18 @@ def get_active_submissions_by_stage_with_details():
                 url_workflow = submission.get("urlWorkflow")
                 submission_id = submission.get("id", sid)
 
-                article = Article.objects.get(ojs_submission_id=submission_id)
+                article = (
+                    Article.objects.filter(ojs_submission_id=submission_id)
+                    .select_related("abstract")
+                    .first()
+                )
+
+                if article is None:
+                    article = (
+                        Article.objects.filter(abstract__title=fulltitle)
+                        .select_related("abstract")
+                        .first()
+                    )
 
                 parsed_rows.append(
                     {
@@ -431,7 +442,7 @@ def get_active_submissions_by_stage_with_details():
                         "round": round_value,
                         "status_id": status_id,
                         "url_workflow": url_workflow,
-                        "github_issue": article.github_issue
+                        "github_issue": article.github_issue if article else None,
                     }
                 )
                 titles.add(fulltitle)
@@ -447,7 +458,18 @@ def get_active_submissions_by_stage_with_details():
                 title = item.get("title", "No title")
 
                 submission_id = item.get("ojs_submission_id", 0)
-                article = Article.objects.get(ojs_submission_id=submission_id)
+                article = (
+                    Article.objects.filter(ojs_submission_id=submission_id)
+                    .select_related("abstract")
+                    .first()
+                )
+
+                if article is None:
+                    article = (
+                        Article.objects.filter(abstract__title=fulltitle)
+                        .select_related("abstract")
+                        .first()
+                    )
 
                 parsed_rows.append(
                     {
@@ -458,7 +480,7 @@ def get_active_submissions_by_stage_with_details():
                         "round": 1,
                         "status_id": 0,
                         "url_workflow": item.get("ojs_workflow_url"),
-                        "github_issue": article.github_issue
+                       "github_issue": article.github_issue if article else None,
                         
                     }
                 )
