@@ -4,11 +4,12 @@ import marko
 import requests
 from django.conf import settings
 from django.template.loader import render_to_string
-from jdh.validation import JSONSchema
-from jdhapi.models import Article
 from lxml import html
 from rest_framework.response import Response
 from weasyprint import HTML
+
+from jdh.validation import JSONSchema
+from jdhapi.models import Article
 
 from .logger import logger as get_logger
 
@@ -23,6 +24,33 @@ OJS_WEBSITE_URL = settings.OJS_WEBSITE_URL
 
 REQUEST_TIMEOUT_SECONDS = 8
 OJS_FETCH_WORKERS = 12
+
+
+def delete_submission_from_ojs(submission_id):
+    if not submission_id:
+        return
+
+    url = f"{OJS_API_URL}/submissions/{submission_id}"
+
+    try:
+        response = requests.delete(
+            url,
+            headers=headers,
+            timeout=REQUEST_TIMEOUT_SECONDS,
+        )
+
+        if response.status_code not in (200, 204):
+            logger.error(
+                "Failed to delete OJS submission %s: %s %s",
+                submission_id,
+                response.status_code,
+                response.text,
+            )
+    except requests.RequestException:
+        logger.exception(
+            "Could not clean up OJS submission %s",
+            submission_id,
+        )
 
 
 def create_blank_submission():
@@ -79,33 +107,46 @@ def create_contributor_in_ojs(submission_id, publication_id, article: Article):
 
     url = f"{settings.OJS_API_URL}/submissions/{submission_id}/publications/{publication_id}/contributors"
 
-    for author in article.abstract.authors.all():
-        logger.info(f"Contributor {author.firstname} {author.lastname} creation in OJS")
-        payload = {
-            "affiliation": {"en": author.affiliation},
-            "country": str(author.country),
-            "email": author.email,
-            "familyName": {"en": author.lastname},
-            "fullName": f"{author.firstname} {author.lastname}",
-            "givenName": {"en": author.firstname},
-            "includeInBrowse": True,
-            "locale": "en",
-            "orcid": author.orcid,
-            "preferredPublicName": {"en": ""},
-            "publicationId": publication_id,
-            "seq": 0,
-            "userGroupId": 14,
-            "userGroupName": {"en": "Author"},
-        }
-        res = requests.post(url=url, headers=headers, json=payload)
-        logger.info(
-            f"Contributor {author.firstname} {author.lastname} created with response: {res.json()}"
+    try:
+        for author in article.abstract.authors.all():
+            logger.info(
+                f"Contributor {author.firstname} {author.lastname} creation in OJS"
+            )
+            payload = {
+                "affiliation": {"en": author.affiliation},
+                "country": str(author.country),
+                "email": author.email,
+                "familyName": {"en": author.lastname},
+                "fullName": f"{author.firstname} {author.lastname}",
+                "givenName": {"en": author.firstname},
+                "includeInBrowse": True,
+                "locale": "en",
+                "orcid": author.orcid,
+                "preferredPublicName": {"en": ""},
+                "publicationId": publication_id,
+                "seq": 0,
+                "userGroupId": 14,
+                "userGroupName": {"en": "Author"},
+            }
+            res = requests.post(url=url, headers=headers, json=payload)
+
+            if res.status_code == 200:
+                logger.info(
+                    f"Contributor {author.firstname} {author.lastname} created with response: {res.json()}"
+                )
+                if article.abstract.contact_email == author.email:
+                    primary_contact_id = res.json().get("id", 0)
+
+                return primary_contact_id
+            else:
+                logger.error(
+                    f"Contributor {author.firstname} {author.lastname} NOT created with status code : {res.status_code} and response: {res.json()}"
+                )
+    except Exception as e:
+        logger.error(
+            f"[create_contributor_in_ojs]Failed to create the contributor on OJS. Details : {e}"
         )
-
-        if article.abstract.contact_email == author.email:
-            primary_contact_id = res.json().get("id", 0)
-
-    return primary_contact_id
+        raise
 
 
 def assign_primary_contact_and_metadata(
@@ -186,10 +227,14 @@ def get_count_submission_from_ojs():
             counter = response.json().get("itemsMax", 0)
             return counter
         else:
-            logger.error("[get_count_submission_from_ojs] Error occured while retrieving articles on OJS Submission stage.")
+            logger.error(
+                "[get_count_submission_from_ojs] Error occured while retrieving articles on OJS Submission stage."
+            )
             raise
     except Exception as e:
-        logger.error(f"[get_count_submission_from_ojs]Failed to connect to OJS API. Details : {e}")
+        logger.error(
+            f"[get_count_submission_from_ojs]Failed to connect to OJS API. Details : {e}"
+        )
         raise
 
 
@@ -268,7 +313,9 @@ def increase_round_per_stage(submissions_in_round, status_id):
         case 2 | 15:
             submissions_in_round["resubmit"] += 1
         case _:
-            logger.error(f"[increase_round_per_stage] - Status Id : {status_id}  is not managed.")
+            logger.error(
+                f"[increase_round_per_stage] - Status Id : {status_id}  is not managed."
+            )
 
 
 def find_right_stage_and_round(submissions, round, status_id, article):
@@ -289,7 +336,9 @@ def find_right_stage_and_round(submissions, round, status_id, article):
         case 2 | 15:
             stage = "resubmit"
         case _:
-            logger.error(f"[find_right_stage_and_round] - Status Id : {status_id} is not managed.")
+            logger.error(
+                f"[find_right_stage_and_round] - Status Id : {status_id} is not managed."
+            )
             # status_id = 5 is for 'declined' which is not display in KPI
             return
 
@@ -332,7 +381,9 @@ def assign_substatus(review_assignments):
             case 12:
                 substatuses.append("viewed")
             case _:
-                logger.error(f"[assign_substatus] - Status Id {status_id} is not managed.")
+                logger.error(
+                    f"[assign_substatus] - Status Id {status_id} is not managed."
+                )
                 return
 
     return substatuses
@@ -345,9 +396,27 @@ def get_active_submission_with_timing():
     logger.info(
         'Get submissions in peer review stage (stageId=3) from OJS formatted like with series like this [submitted, ontime, delay, declined, order:"R1"]'
     )
-    submissions_in_R1 = {"submitted": 0, "ontime": 0, "delay": 0, "declined": 0, "order": "R1"}
-    submissions_in_R2 = {"submitted": 0, "ontime": 0, "delay": 0, "declined": 0, "order": "R2"}
-    submissions_in_R3 = {"submitted": 0, "ontime": 0, "delay": 0, "declined": 0, "order": "R3+"}
+    submissions_in_R1 = {
+        "submitted": 0,
+        "ontime": 0,
+        "delay": 0,
+        "declined": 0,
+        "order": "R1",
+    }
+    submissions_in_R2 = {
+        "submitted": 0,
+        "ontime": 0,
+        "delay": 0,
+        "declined": 0,
+        "order": "R2",
+    }
+    submissions_in_R3 = {
+        "submitted": 0,
+        "ontime": 0,
+        "delay": 0,
+        "declined": 0,
+        "order": "R3+",
+    }
     submissions_with_timing = []
 
     try:
@@ -361,7 +430,7 @@ def get_active_submission_with_timing():
             for sid, submission in pool.map(fetch_submission, submission_ids):
                 if not submission:
                     continue
-         
+
                 review_rounds = submission.get("reviewRounds") or []
                 last_round = review_rounds[-1] if review_rounds else {}
                 round = last_round.get("round", 0)
@@ -606,15 +675,16 @@ def get_active_submissions_by_stage_with_details():
         ]
         fallback_by_title = {}
         if missing_titles:
-            for a in (
-                Article.objects.filter(abstract__title__in=missing_titles)
-                .select_related("abstract")
-            ):
+            for a in Article.objects.filter(
+                abstract__title__in=missing_titles
+            ).select_related("abstract"):
                 fallback_by_title.setdefault(a.abstract.title, a)
 
         # Build response
         for row in parsed_rows:
-            article_db = articles_by_sid.get(row["id"]) or fallback_by_title.get(row["title"])
+            article_db = articles_by_sid.get(row["id"]) or fallback_by_title.get(
+                row["title"]
+            )
             pid = article_db.abstract.pid if article_db else None
 
             article = {
@@ -715,4 +785,3 @@ def get_active_submissions_ids():
     except Exception as e:
         logger.error(f"Failed to connect to OJS API: {e}")
         raise
-
