@@ -247,7 +247,7 @@ def fetch_submission_and_status(submission_id):
         logger.error(
             f"[get_active_submissions_by_stage_with_details] HTTP request failed for submission {submission_id}: {e}"
         )
-        return submission_id, None, None
+        return submission_id, None
 
     return submission_id, submission
 
@@ -342,23 +342,30 @@ def get_active_submission_with_timing():
         raise
 
 
-def find_right_stage_and_round(submissions, round, status_id, article):
+def find_right_stage_and_round(submissions, round, status_id, stage_id, article):
     # Keep R3 label to match initialized keys ontime-R3, etc.
     round_label = "R1" if round == 1 else "R2" if round == 2 else "R3"
 
-    match status_id:
-        case 0:
-            stage = "submitted"
-        case 10:
-            stage = "delay"
-        case 5:
-            stage = "declined"
-        case 1 | 2 | 3 | 4 | 6 | 7 | 8 | 9 | 11 | 12 | 13 | 14 | 15:
-            stage = "ontime"
-        case _:
-            logger.error(
-                f"[find_right_stage_and_round] - Status Id : {status_id}  is not managed."
-            )
+    if stage_id == 1:
+        stage = "submitted"
+    elif stage_id == 3:
+        match status_id:
+            case 10:
+                stage = "delay"
+            case 5:
+                stage = "declined"
+            case 1 | 2 | 3 | 4 | 6 | 7 | 8 | 9 | 11 | 12 | 13 | 14 | 15:
+                stage = "ontime"
+            case _:
+                logger.error(
+                    f"[find_right_stage_and_round] - Status Id : {status_id}  is not managed."
+                )
+                return
+    elif stage_id == 4:
+        stage = "over"
+    else:
+        logger.error("[find_right_stage_and_round] - No stage_id provided")
+        return
 
     key = f"{stage}-{round_label}"
     entry = next((s for s in submissions if s["key"] == key), None)
@@ -366,6 +373,66 @@ def find_right_stage_and_round(submissions, round, status_id, article):
         entry["articles"].append(article)
     else:
         logger.error(f"[find_right_stage_and_round] - Key {key} not found.")
+
+
+def _parse_peer_review_submission(sid, submission):
+    """Extract the fields used by the dashboard from a full OJS submission (stageId=3)."""
+    publication = (submission.get("publications") or [{}])[0]
+    last_round = (submission.get("reviewRounds") or [{}])[-1] or {}
+    return {
+        "id": submission.get("id", sid),
+        "stage_id": 3,
+        "title": (publication.get("fullTitle") or {}).get("en", "No title"),
+        "author": publication.get("authorsString", "No author"),
+        "ojs_status": last_round.get("status", ""),
+        "round": last_round.get("round", 0),
+        "status_id": last_round.get("statusId", 0),
+        "url_workflow": submission.get("urlWorkflow"),
+    }
+
+
+def _parse_stage_list_submission(item, stage_id, ojs_status, round, status_id):
+    """Extract the fields used by the dashboard from a stage list item (stageId 1 or 4)."""
+    return {
+        "id": item.get("ojs_submission_id", 0),
+        "stage_id": stage_id,
+        "title": item.get("title", "No title"),
+        "author": item.get("author", "No author"),
+        "ojs_status": ojs_status,
+        "round": round,
+        "status_id": status_id,
+        "url_workflow": item.get("ojs_workflow_url"),
+    }
+
+
+def _resolve_articles(rows):
+    """
+    Resolve the matching Article for every parsed row with two bulk queries:
+    first by ojs_submission_id, then fallback by abstract title.
+    """
+    articles_by_sid = {
+        a.ojs_submission_id: a
+        for a in Article.objects.filter(
+            ojs_submission_id__in=[row["id"] for row in rows]
+        ).select_related("abstract")
+    }
+
+    missing_titles = [
+        row["title"] for row in rows if row["id"] not in articles_by_sid
+    ]
+    fallback_by_title = {}
+    if missing_titles:
+        for a in (
+            Article.objects.filter(abstract__title__in=missing_titles)
+            .select_related("abstract")
+            .order_by("abstract_id")
+        ):
+            fallback_by_title.setdefault(a.abstract.title, a)
+
+    return [
+        articles_by_sid.get(row["id"]) or fallback_by_title.get(row["title"])
+        for row in rows
+    ]
 
 
 def get_active_submissions_by_stage_with_details():
@@ -397,6 +464,7 @@ def get_active_submissions_by_stage_with_details():
     - ontime
     - delay
     - declined
+    - over
     """
     logger.info(
         "[get_active_submissions_by_stage_with_details] - Get list of detail articles for each peer review stage"
@@ -415,6 +483,7 @@ def get_active_submissions_by_stage_with_details():
         {"key": "ontime-R3", "articles": []},
         {"key": "delay-R3", "articles": []},
         {"key": "declined-R3", "articles": []},
+        {"key": "over-R3", "articles": []},
     ]
 
     try:
@@ -422,142 +491,73 @@ def get_active_submissions_by_stage_with_details():
         if not isinstance(submission_ids, list):
             return submission_ids
 
-        # Parallel HTTP fetch (submission + decision)
-        fetched = []
+        # Fetch all three categories concurrently.
         with ThreadPoolExecutor(max_workers=OJS_FETCH_WORKERS) as pool:
             futures_peer_review = {
                 pool.submit(fetch_submission_and_status, sid): sid
                 for sid in submission_ids
             }
-            futures_submission = pool.submit(get_submissions)
+            futures_stage_1 = pool.submit(get_submissions)
+            futures_stage_4 = pool.submit(get_submissions_copyediting)
+
+            rows = []
             for f in as_completed(futures_peer_review):
                 sid, submission = f.result()
-                if submission:
-                    fetched.append((sid, submission))
-
-            submissions_stage_1 = futures_submission.result()
-
-        # Build title set for one-shot fallback lookup
-        titles = set()
-        parsed_rows = []
-
-        for sid, submission in fetched:
-            try:
-                publication = (submission.get("publications") or [{}])[0]
-                fulltitle = (publication.get("fullTitle") or {}).get("en", "No title")
-                author = publication.get("authorsString", "No author")
-                review_rounds = submission.get("reviewRounds") or []
-                last_round = review_rounds[-1] if review_rounds else {}
-                ojs_status = last_round.get("status", "")
-                round_value = last_round.get("round", 0)
-                status_id = last_round.get("statusId", 0)
-                url_workflow = submission.get("urlWorkflow")
-                submission_id = submission.get("id", sid)
-
-                article = (
-                    Article.objects.filter(ojs_submission_id=submission_id)
-                    .select_related("abstract")
-                    .first()
-                )
-
-                if article is None:
-                    article = (
-                        Article.objects.filter(abstract__title=fulltitle)
-                        .select_related("abstract")
-                        .first()
+                if not submission:
+                    continue
+                try:
+                    rows.append(_parse_peer_review_submission(sid, submission))
+                except Exception as e:
+                    logger.error(
+                        f"[get_active_submissions_by_stage_with_details] Failed to parse submission data for id {sid}: {e}"
                     )
 
-                parsed_rows.append(
-                    {
-                        "id": submission_id,
-                        "title": fulltitle,
-                        "author": author,
-                        "ojs_status": ojs_status,
-                        "round": round_value,
-                        "status_id": status_id,
-                        "url_workflow": url_workflow,
-                        "github_issue": article.github_issue if article else None,
-                    }
-                )
-                titles.add(fulltitle)
-            except Exception as e:
-                logger.error(
-                    f"[get_active_submissions_by_stage_with_details] Failed to parse submission data for id {sid}: {e}"
-                )
+            submissions_stage_1 = futures_stage_1.result()
+            submissions_stage_4 = futures_stage_4.result()
 
         # Stage 1 (Incomplete/Submission) items haven't entered a review round yet,
         # so they always land in the "submitted-R1" bucket.
         if isinstance(submissions_stage_1, list):
-            for item in submissions_stage_1:
-                fulltitle = (item.get("title") or {}).get("en", "No title")
-
-                submission_id = item.get("ojs_submission_id", 0)
-                article = (
-                    Article.objects.filter(ojs_submission_id=submission_id)
-                    .select_related("abstract")
-                    .first()
-                )
-
-                if article is None:
-                    article = (
-                        Article.objects.filter(abstract__title=fulltitle)
-                        .select_related("abstract")
-                        .first()
-                    )
-
-                parsed_rows.append(
-                    {
-                        "id": submission_id,
-                        "title": fulltitle,
-                        "author": item.get("author", "No author"),
-                        "ojs_status": "",
-                        "round": 1,
-                        "status_id": 0,
-                        "url_workflow": item.get("ojs_workflow_url"),
-                        "github_issue": article.github_issue if article else None,
-                    }
-                )
-                titles.add(fulltitle)
+            rows.extend(
+                _parse_stage_list_submission(item, 1, "", 1, 0)
+                for item in submissions_stage_1
+            )
         else:
             logger.error(
                 "[get_active_submissions_by_stage_with_details] Failed to retrieve stage 1 submissions."
             )
 
-        # One-shot DB fetch by OJS id (now also covers stage-1 ids)
-        articles_by_sid = {
-            a.ojs_submission_id: a
-            for a in Article.objects.filter(
-                ojs_submission_id__in=[row["id"] for row in parsed_rows]
-            ).select_related("abstract")
-        }
-        # One-shot fallback by title
-        missing_titles = [
-            row["title"] for row in parsed_rows if row["id"] not in articles_by_sid
-        ]
-        fallback_by_title = {}
-        if missing_titles:
-            for a in Article.objects.filter(
-                abstract__title__in=missing_titles
-            ).select_related("abstract"):
-                fallback_by_title.setdefault(a.abstract.title, a)
+        # Stage 4 (Copyediting) items have finished peer-review
+        # so they always land in the "over-R3" bucket.
+        if isinstance(submissions_stage_4, list):
+            rows.extend(
+                _parse_stage_list_submission(item, 4, "", 3, 0)
+                for item in submissions_stage_4
+            )
+        else:
+            logger.error(
+                "[get_active_submissions_by_stage_with_details] Failed to retrieve stage 4 submissions."
+            )
+
+        # Resolve each submission to its Article with two bulk queries (no N+1).
+        linked_articles = _resolve_articles(rows)
 
         # Build response
-        for row in parsed_rows:
-            article_db = articles_by_sid.get(row["id"]) or fallback_by_title.get(
-                row["title"]
-            )
-            pid = article_db.abstract.pid if article_db else None
-
+        for row, article_db in zip(rows, linked_articles):
             article = {
-                "pid": pid,
+                "pid": article_db.abstract.pid if article_db else None,
                 "authors": row["author"],
                 "title": row["title"],
                 "url": row["url_workflow"],
                 "ojs_status": row["ojs_status"],
-                "github_issue": row["github_issue"],
+                "github_issue": article_db.github_issue if article_db else None,
             }
             find_right_stage_and_round(
-                submissions_by_stage_round, row["round"], row["status_id"], article
+                submissions_by_stage_round,
+                row["round"],
+                row["status_id"],
+                row["stage_id"],
+                article,
             )
         return submissions_by_stage_round
 
