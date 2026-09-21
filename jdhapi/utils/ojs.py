@@ -198,6 +198,30 @@ def get_submissions_submitted_counter():
         raise
 
 
+def get_submissions_copyediting_counter():
+    """
+    Get the number of articles in copyediting in OJS and being either in 'Incomplete' submission stage or 'Submission'
+    stage.
+    """
+    url = f"{OJS_API_URL}/submissions?stageIds=4"
+
+    try:
+        response = requests.get(url, headers=headers)
+        if response.status_code == 200:
+            counter = response.json().get("itemsMax", 0)
+            return counter
+        else:
+            logger.error(
+                "[get_count_submission_from_ojs] Error occured while retrieving articles on OJS Submission stage."
+            )
+            raise
+    except Exception as e:
+        logger.error(
+            f"[get_count_submission_from_ojs]Failed to connect to OJS API. Details : {e}"
+        )
+        raise
+
+
 def fetch_submission(sid):
     url = f"{OJS_API_URL}/submissions/{sid}"
     try:
@@ -251,6 +275,7 @@ def get_active_submission_with_timing():
         "ontime": 0,
         "delay": 0,
         "declined": 0,
+        "over": 0,
         "order": "R1",
     }
     submissions_in_R2 = {
@@ -258,6 +283,7 @@ def get_active_submission_with_timing():
         "ontime": 0,
         "delay": 0,
         "declined": 0,
+        "over": 0,
         "order": "R2",
     }
     submissions_in_R3 = {
@@ -265,14 +291,19 @@ def get_active_submission_with_timing():
         "ontime": 0,
         "delay": 0,
         "declined": 0,
+        "over": 0,
         "order": "R3+",
     }
+    copyediting = {"over": 0, "order": "Post review"}
     submissions_with_timing = []
 
     try:
         with ThreadPoolExecutor(max_workers=2) as init_pool:
             future_ids = init_pool.submit(get_submissions_peer_review_ids)
             future_count = init_pool.submit(get_submissions_submitted_counter)
+            submissions_copy_editing = init_pool.submit(
+                get_submissions_copyediting_counter
+            )
             submission_ids = future_ids.result()
             counter_submitted = future_count.result() or 0
 
@@ -293,18 +324,21 @@ def get_active_submission_with_timing():
                 elif round >= 3:
                     increase_round(submissions_in_R3, status_id)
 
+            copyediting["over"] = submissions_copy_editing.result()
+
         submissions_with_timing = [
             submissions_in_R1,
             submissions_in_R2,
             submissions_in_R3,
+            copyediting,
         ]
 
         logger.info(
-            f"Active submissions in peer review stage with decisions : {submissions_with_timing}"
+            f"Active submissions in peer review stage: {submissions_with_timing}"
         )
         return submissions_with_timing
     except Exception as e:
-        logger.error(f"Error while retrieving submissions with decisions: {e}")
+        logger.error(f"Error while retrieving submissions: {e}")
         raise
 
 
@@ -455,7 +489,7 @@ def get_active_submissions_by_stage_with_details():
         # so they always land in the "submitted-R1" bucket.
         if isinstance(submissions_stage_1, list):
             for item in submissions_stage_1:
-                title = item.get("title", "No title")
+                fulltitle = (publication.get("fullTitle") or {}).get("en", "No title")
 
                 submission_id = item.get("ojs_submission_id", 0)
                 article = (
@@ -474,17 +508,16 @@ def get_active_submissions_by_stage_with_details():
                 parsed_rows.append(
                     {
                         "id": submission_id,
-                        "title": title,
+                        "title": fulltitle,
                         "author": item.get("author", "No author"),
                         "ojs_status": "",
                         "round": 1,
                         "status_id": 0,
                         "url_workflow": item.get("ojs_workflow_url"),
-                       "github_issue": article.github_issue if article else None,
-                        
+                        "github_issue": article.github_issue if article else None,
                     }
                 )
-                titles.add(title)
+                titles.add(fulltitle)
         else:
             logger.error(
                 "[get_active_submissions_by_stage_with_details] Failed to retrieve stage 1 submissions."
@@ -521,7 +554,7 @@ def get_active_submissions_by_stage_with_details():
                 "title": row["title"],
                 "url": row["url_workflow"],
                 "ojs_status": row["ojs_status"],
-                "github_issue": row["github_issue"]
+                "github_issue": row["github_issue"],
             }
             find_right_stage_and_round(
                 submissions_by_stage_round, row["round"], row["status_id"], article
@@ -542,6 +575,54 @@ def get_submissions_peer_review():
     )
 
     url = f"{OJS_API_URL}/submissions?stageIds=3"
+    submissions = []
+
+    try:
+        response = requests.get(url, headers=headers)
+        if response.status_code == 200:
+            for item in response.json().get("items", []):
+                stage_id = item.get("stageId", 0)
+                id = item.get("id", 0)
+                fulltitle = item.get("publications", [{}])[0].get(
+                    "fullTitle", "No title"
+                )
+                author = item.get("publications", [{}])[0].get(
+                    "authorsString", "No author"
+                )
+
+                submissions.append(
+                    {
+                        "ojs_submission_id": id,
+                        "ojs_workflow_url": f"{OJS_WEBSITE_URL}/workflow/index/{id}/{stage_id}",
+                        "title": fulltitle,
+                        "author": author,
+                    }
+                )
+
+            # logger.info(f"Active submissions in peer review stage : {submissions}")
+            return submissions
+        else:
+            return Response(
+                {
+                    "error": "Unexpected error occurred while contacting OJS API.",
+                    "status_code": response.status_code,
+                },
+                status=response.status_code,
+            )
+    except Exception as e:
+        logger.error(f"Failed to connect to OJS API: {e}")
+        raise
+
+
+def get_submissions_copyediting():
+    """
+    Get list of OJS copyediting articles with oj_submission_id, ojs_workflow_url, title and author.
+    """
+    logger.info(
+        "Get submissions in copyediting stage (stageId=4) from OJS formatted with id, link, title, author."
+    )
+
+    url = f"{OJS_API_URL}/submissions?stageIds=4"
     submissions = []
 
     try:
@@ -620,7 +701,7 @@ def get_submissions():
     Get list of OJS submitted articles with oj_submission_id, ojs_workflow_url, title and author.
     """
     logger.info(
-        "Get submissions in peer review stage (stageId=1) from OJS formatted with id, link, title, author."
+        "Get submissions in submitted stage (stageId=1) from OJS formatted with id, link, title, author."
     )
 
     url = f"{OJS_API_URL}/submissions?stageIds=1"
