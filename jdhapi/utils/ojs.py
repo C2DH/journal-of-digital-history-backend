@@ -315,6 +315,7 @@ def get_active_submission_with_timing():
         "ontime": 0,
         "delay": 0,
         "declined": 0,
+        "over": 0,
         "order": "R1",
     }
     submissions_in_R2 = {
@@ -322,6 +323,7 @@ def get_active_submission_with_timing():
         "ontime": 0,
         "delay": 0,
         "declined": 0,
+        "over": 0,
         "order": "R2",
     }
     submissions_in_R3 = {
@@ -329,6 +331,7 @@ def get_active_submission_with_timing():
         "ontime": 0,
         "delay": 0,
         "declined": 0,
+        "over": 0,
         "order": "R3+",
     }
     copyediting = {"over": 0, "order": "Post review"}
@@ -459,9 +462,7 @@ def _resolve_articles(rows):
         ).select_related("abstract")
     }
 
-    missing_titles = [
-        row["title"] for row in rows if row["id"] not in articles_by_sid
-    ]
+    missing_titles = [row["title"] for row in rows if row["id"] not in articles_by_sid]
     fallback_by_title = {}
     if missing_titles:
         for a in (
@@ -625,9 +626,9 @@ def get_submissions_peer_review():
             for item in response.json().get("items", []):
                 stage_id = item.get("stageId", 0)
                 id = item.get("id", 0)
-                fulltitle = (item.get("publications", [{}])[0].get("fullTitle") or {}).get(
-                    "en", "No title"
-                )
+                fulltitle = (
+                    item.get("publications", [{}])[0].get("fullTitle") or {}
+                ).get("en", "No title")
                 author = item.get("publications", [{}])[0].get(
                     "authorsString", "No author"
                 )
@@ -673,9 +674,9 @@ def get_submissions_copyediting():
             for item in response.json().get("items", []):
                 stage_id = item.get("stageId", 0)
                 id = item.get("id", 0)
-                fulltitle = (item.get("publications", [{}])[0].get("fullTitle") or {}).get(
-                    "en", "No title"
-                )
+                fulltitle = (
+                    item.get("publications", [{}])[0].get("fullTitle") or {}
+                ).get("en", "No title")
                 author = item.get("publications", [{}])[0].get(
                     "authorsString", "No author"
                 )
@@ -755,9 +756,9 @@ def get_submissions():
             for item in response.json().get("items", []):
                 stage_id = item.get("stageId", 0)
                 id = item.get("id", 0)
-                fulltitle = (item.get("publications", [{}])[0].get("fullTitle") or {}).get(
-                    "en", "No title"
-                )
+                fulltitle = (
+                    item.get("publications", [{}])[0].get("fullTitle") or {}
+                ).get("en", "No title")
                 author = item.get("publications", [{}])[0].get(
                     "authorsString", "No author"
                 )

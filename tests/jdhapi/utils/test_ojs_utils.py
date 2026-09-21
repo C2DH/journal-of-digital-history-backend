@@ -103,11 +103,12 @@ class OJSUtilsTestCase(TestCase):
 
         self.assertEqual(result, (123, None))
 
+    @patch("jdhapi.utils.ojs.get_submissions_copyediting_counter")
     @patch("jdhapi.utils.ojs.fetch_submission")
     @patch("jdhapi.utils.ojs.get_submissions_submitted_counter")
     @patch("jdhapi.utils.ojs.get_submissions_peer_review_ids")
     def test_get_active_submission_with_timing_aggregates_rounds(
-        self, mock_ids, mock_count, mock_fetch
+        self, mock_ids, mock_count, mock_fetch, mock_copyediting_counter
     ):
         mock_ids.return_value = [1, 2, 3]
         mock_count.return_value = 0
@@ -130,7 +131,6 @@ class OJSUtilsTestCase(TestCase):
             result[2], {"submitted": 0, "ontime": 1, "delay": 0, "declined": 0, "over": 0, "order": "R3+"}
         )
 
-    @patch("jdhapi.utils.ojs.get_submissions_copyediting")
     @patch("jdhapi.utils.ojs.get_submissions")
     @patch("jdhapi.utils.ojs.fetch_submission_and_status")
     @patch("jdhapi.utils.ojs.get_submissions_peer_review_ids")
