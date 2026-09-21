@@ -26,6 +26,33 @@ REQUEST_TIMEOUT_SECONDS = 8
 OJS_FETCH_WORKERS = 12
 
 
+def delete_submission_from_ojs(submission_id):
+    if not submission_id:
+        return
+
+    url = f"{OJS_API_URL}/submissions/{submission_id}"
+
+    try:
+        response = requests.delete(
+            url,
+            headers=headers,
+            timeout=REQUEST_TIMEOUT_SECONDS,
+        )
+
+        if response.status_code not in (200, 204):
+            logger.error(
+                "Failed to delete OJS submission %s: %s %s",
+                submission_id,
+                response.status_code,
+                response.text,
+            )
+    except requests.RequestException:
+        logger.exception(
+            "Could not clean up OJS submission %s",
+            submission_id,
+        )
+
+
 def create_blank_submission():
     """
     Create a blank submission in OJS to get the submission_id for the article
@@ -80,33 +107,46 @@ def create_contributor_in_ojs(submission_id, publication_id, article: Article):
 
     url = f"{settings.OJS_API_URL}/submissions/{submission_id}/publications/{publication_id}/contributors"
 
-    for author in article.abstract.authors.all():
-        logger.info(f"Contributor {author.firstname} {author.lastname} creation in OJS")
-        payload = {
-            "affiliation": {"en": author.affiliation},
-            "country": str(author.country),
-            "email": author.email,
-            "familyName": {"en": author.lastname},
-            "fullName": f"{author.firstname} {author.lastname}",
-            "givenName": {"en": author.firstname},
-            "includeInBrowse": True,
-            "locale": "en",
-            "orcid": author.orcid,
-            "preferredPublicName": {"en": ""},
-            "publicationId": publication_id,
-            "seq": 0,
-            "userGroupId": 14,
-            "userGroupName": {"en": "Author"},
-        }
-        res = requests.post(url=url, headers=headers, json=payload)
-        logger.info(
-            f"Contributor {author.firstname} {author.lastname} created with response: {res.json()}"
+    try:
+        for author in article.abstract.authors.all():
+            logger.info(
+                f"Contributor {author.firstname} {author.lastname} creation in OJS"
+            )
+            payload = {
+                "affiliation": {"en": author.affiliation},
+                "country": str(author.country),
+                "email": author.email,
+                "familyName": {"en": author.lastname},
+                "fullName": f"{author.firstname} {author.lastname}",
+                "givenName": {"en": author.firstname},
+                "includeInBrowse": True,
+                "locale": "en",
+                "orcid": author.orcid,
+                "preferredPublicName": {"en": ""},
+                "publicationId": publication_id,
+                "seq": 0,
+                "userGroupId": 14,
+                "userGroupName": {"en": "Author"},
+            }
+            res = requests.post(url=url, headers=headers, json=payload)
+
+            if res.status_code == 200:
+                logger.info(
+                    f"Contributor {author.firstname} {author.lastname} created with response: {res.json()}"
+                )
+                if article.abstract.contact_email == author.email:
+                    primary_contact_id = res.json().get("id", 0)
+
+                return primary_contact_id
+            else:
+                logger.error(
+                    f"Contributor {author.firstname} {author.lastname} NOT created with status code : {res.status_code} and response: {res.json()}"
+                )
+    except Exception as e:
+        logger.error(
+            f"[create_contributor_in_ojs]Failed to create the contributor on OJS. Details : {e}"
         )
-
-        if article.abstract.contact_email == author.email:
-            primary_contact_id = res.json().get("id", 0)
-
-    return primary_contact_id
+        raise
 
 
 def assign_primary_contact_and_metadata(
@@ -275,7 +315,6 @@ def get_active_submission_with_timing():
         "ontime": 0,
         "delay": 0,
         "declined": 0,
-        "over": 0,
         "order": "R1",
     }
     submissions_in_R2 = {
@@ -283,7 +322,6 @@ def get_active_submission_with_timing():
         "ontime": 0,
         "delay": 0,
         "declined": 0,
-        "over": 0,
         "order": "R2",
     }
     submissions_in_R3 = {
@@ -291,7 +329,6 @@ def get_active_submission_with_timing():
         "ontime": 0,
         "delay": 0,
         "declined": 0,
-        "over": 0,
         "order": "R3+",
     }
     copyediting = {"over": 0, "order": "Post review"}

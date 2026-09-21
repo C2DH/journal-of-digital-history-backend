@@ -17,6 +17,7 @@ from jdhapi.utils.ojs import (
     assign_primary_contact_and_metadata,
     create_blank_submission,
     create_contributor_in_ojs,
+    delete_submission_from_ojs,
     generate_pdf_for_submission,
     get_active_submission_with_timing,
     get_active_submissions_by_stage_with_details,
@@ -211,6 +212,8 @@ def submit_to_ojs(request):
                 logger.error(error_msg)
                 raise ValidationError(error_msg)
 
+            submission_id = None
+
             try:
                 # 1. create a blank submission in OJS
                 res = create_blank_submission()
@@ -239,7 +242,7 @@ def submit_to_ojs(request):
                 primary_contact_id = create_contributor_in_ojs(
                     submission_id, publication_id, article
                 )
-
+                
                 if not primary_contact_id:
                     raise Exception(
                         "Failed to create contributor or retrieve primary contact ID"
@@ -262,6 +265,8 @@ def submit_to_ojs(request):
                 # submit_to_ojs(submission_id)
 
             except Exception as e:
+                if submission_id is not None:
+                    delete_submission_from_ojs(submission_id)
                 logger.error(f"Error during OJS submission process: {e}")
                 raise e
 
