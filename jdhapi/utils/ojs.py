@@ -350,6 +350,8 @@ def find_right_stage_and_round(submissions, round, status_id, stage_id, article)
         stage = "submitted"
     elif stage_id == 3:
         match status_id:
+            case 0:
+                stage = "submitted"
             case 10:
                 stage = "delay"
             case 5:
@@ -393,10 +395,13 @@ def _parse_peer_review_submission(sid, submission):
 
 def _parse_stage_list_submission(item, stage_id, ojs_status, round, status_id):
     """Extract the fields used by the dashboard from a stage list item (stageId 1 or 4)."""
+    title = item.get("title", "No title")
+    if isinstance(title, dict):
+        title = title.get("en", "No title")
     return {
         "id": item.get("ojs_submission_id", 0),
         "stage_id": stage_id,
-        "title": item.get("title", "No title"),
+        "title": title,
         "author": item.get("author", "No author"),
         "ojs_status": ojs_status,
         "round": round,
@@ -583,8 +588,8 @@ def get_submissions_peer_review():
             for item in response.json().get("items", []):
                 stage_id = item.get("stageId", 0)
                 id = item.get("id", 0)
-                fulltitle = item.get("publications", [{}])[0].get(
-                    "fullTitle", "No title"
+                fulltitle = (item.get("publications", [{}])[0].get("fullTitle") or {}).get(
+                    "en", "No title"
                 )
                 author = item.get("publications", [{}])[0].get(
                     "authorsString", "No author"
@@ -631,8 +636,8 @@ def get_submissions_copyediting():
             for item in response.json().get("items", []):
                 stage_id = item.get("stageId", 0)
                 id = item.get("id", 0)
-                fulltitle = item.get("publications", [{}])[0].get(
-                    "fullTitle", "No title"
+                fulltitle = (item.get("publications", [{}])[0].get("fullTitle") or {}).get(
+                    "en", "No title"
                 )
                 author = item.get("publications", [{}])[0].get(
                     "authorsString", "No author"
@@ -713,8 +718,8 @@ def get_submissions():
             for item in response.json().get("items", []):
                 stage_id = item.get("stageId", 0)
                 id = item.get("id", 0)
-                fulltitle = item.get("publications", [{}])[0].get(
-                    "fullTitle", "No title"
+                fulltitle = (item.get("publications", [{}])[0].get("fullTitle") or {}).get(
+                    "en", "No title"
                 )
                 author = item.get("publications", [{}])[0].get(
                     "authorsString", "No author"
