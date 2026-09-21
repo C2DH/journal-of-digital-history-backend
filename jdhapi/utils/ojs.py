@@ -489,7 +489,7 @@ def get_active_submissions_by_stage_with_details():
         # so they always land in the "submitted-R1" bucket.
         if isinstance(submissions_stage_1, list):
             for item in submissions_stage_1:
-                fulltitle = (publication.get("fullTitle") or {}).get("en", "No title")
+                fulltitle = (item.get("title") or {}).get("en", "No title")
 
                 submission_id = item.get("ojs_submission_id", 0)
                 article = (
