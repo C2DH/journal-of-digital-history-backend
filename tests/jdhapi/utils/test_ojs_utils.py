@@ -131,6 +131,7 @@ class OJSUtilsTestCase(TestCase):
             result[2], {"submitted": 0, "ontime": 1, "delay": 0, "declined": 0, "over": 0, "order": "R3+"}
         )
 
+    @patch("jdhapi.utils.ojs.get_submissions_copyediting")
     @patch("jdhapi.utils.ojs.get_submissions")
     @patch("jdhapi.utils.ojs.fetch_submission_and_status")
     @patch("jdhapi.utils.ojs.get_submissions_peer_review_ids")
