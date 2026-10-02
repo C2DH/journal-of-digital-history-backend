@@ -122,13 +122,13 @@ class OJSUtilsTestCase(TestCase):
         result = get_active_submission_with_timing()
 
         self.assertEqual(
-            result[0], {"submitted": 0, "ontime": 1, "delay": 0, "declined": 0, "over": 0, "order": "R1"}
+            result[0], {"submitted": 0, "ontime": 1, "delay": 0, "declined": 0, "over": 0, "order": "Round 1"}
         )
         self.assertEqual(
-            result[1], {"submitted": 0, "ontime": 0, "delay": 1, "declined": 0, "over": 0, "order": "R2"}
+            result[1], {"submitted": 0, "ontime": 0, "delay": 1, "declined": 0, "over": 0, "order": "Round 2"}
         )
         self.assertEqual(
-            result[2], {"submitted": 0, "ontime": 1, "delay": 0, "declined": 0, "over": 0, "order": "R3+"}
+            result[2], {"submitted": 0, "ontime": 1, "delay": 0, "declined": 0, "over": 0, "order": "Round 3+"}
         )
 
     @patch("jdhapi.utils.ojs.get_submissions_copyediting")
