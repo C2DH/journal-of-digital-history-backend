@@ -316,7 +316,7 @@ def get_active_submission_with_timing():
         "delay": 0,
         "declined": 0,
         "over": 0,
-        "order": "R1",
+        "order": "Round 1",
     }
     submissions_in_R2 = {
         "submitted": 0,
@@ -324,7 +324,7 @@ def get_active_submission_with_timing():
         "delay": 0,
         "declined": 0,
         "over": 0,
-        "order": "R2",
+        "order": "Round 2",
     }
     submissions_in_R3 = {
         "submitted": 0,
@@ -332,7 +332,7 @@ def get_active_submission_with_timing():
         "delay": 0,
         "declined": 0,
         "over": 0,
-        "order": "R3+",
+        "order": "Round 3+",
     }
     copyediting = {"over": 0, "order": "Post review"}
     submissions_with_timing = []
