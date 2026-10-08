@@ -10,6 +10,7 @@ ARTICLE_STATUSES = [
     ("PEER_REVIEW", "Peer review"),
     ("COPY_EDITING", "Copy editing"),
     ("DESIGN_REVIEW", "Design review"),
+    ("SOCIAL_MEDIA", "Social media"),
     ("PUBLISHED", "Published"),
     ("REJECTED", "Rejected"),
 ]
@@ -41,8 +42,7 @@ class BarChartDataView(APIView):
 
         # Index counts by (issue_id, status) for fast lookup
         article_count_map = {
-            (row["issue_id"], row["status"]): row["count"]
-            for row in article_counts
+            (row["issue_id"], row["status"]): row["count"] for row in article_counts
         }
 
         article_series = []
@@ -55,7 +55,9 @@ class BarChartDataView(APIView):
         article_labels = [issue.pid for issue in issues]
 
         # --- Advance articles (published but issue not yet published) ---
-        advance_count = Article.objects.filter(issue__status='DRAFT', status='PUBLISHED').count()
+        advance_count = Article.objects.filter(
+            issue__status="DRAFT", status="PUBLISHED"
+        ).count()
 
         advance_series = [
             {
@@ -66,8 +68,9 @@ class BarChartDataView(APIView):
                 "Peer review": 0,
                 "Copy editing": 0,
                 "Design review": 0,
+                "Social media": 0,
                 "Published": advance_count,
-                "Rejected": 0
+                "Rejected": 0,
             }
         ]
 
@@ -99,7 +102,6 @@ class BarChartDataView(APIView):
         abstract_labels = [cfp.title for cfp in cfps]
 
         print(f"Article series: {article_series}")
-        
         return Response(
             {
                 "articleSeries": article_series,
@@ -109,4 +111,3 @@ class BarChartDataView(APIView):
                 "abstractLabels": abstract_labels,
             }
         )
-           

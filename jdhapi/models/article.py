@@ -50,20 +50,24 @@ class Article(models.Model):
             "PEER_REVIEW",
             "Peer review",
         )
-        DESIGN_REVIEW = (
-            "DESIGN_REVIEW",
-            "Design review",
-        )
         COPY_EDITING = (
             "COPY_EDITING",
             "Copy editing",
         )
+        DESIGN_REVIEW = (
+            "DESIGN_REVIEW",
+            "Design review",
+        )
+        SOCIAL_MEDIA = (
+            "SOCIAL_MEDIA",
+            "Social Media"
+        )
         PUBLISHED = (
-            "PUBLISHED", 
+            "PUBLISHED",
             "Published",
         )
         REJECTED = (
-            "REJECTED", 
+            "REJECTED",
             "Rejected",
         )
 
