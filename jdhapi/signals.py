@@ -5,6 +5,9 @@ from django.dispatch import receiver
 
 from jdhapi.models import Article
 from jdhapi.utils.articles import convert_string_to_base64
+from jdhapi.utils.logger import logger as get_logger
+
+logger = get_logger()
 
 
 @receiver(pre_save, sender=Article)

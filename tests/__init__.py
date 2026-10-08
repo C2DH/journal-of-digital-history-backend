@@ -2,6 +2,7 @@ from .jdhapi.fixtures.fixture_signals import *
 from .jdhapi.models.test_author import *
 from .jdhapi.test_admin import *
 from .jdhapi.test_signals import *
+from .jdhapi.test_tasks import *
 from .jdhapi.utils.test_bluesky import *
 from .jdhapi.utils.test_facebook import *
 from .jdhapi.utils.test_ojs_utils import *

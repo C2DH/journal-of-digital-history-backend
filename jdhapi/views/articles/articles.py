@@ -11,6 +11,7 @@ from jdhapi.models import Article
 from jdhapi.serializers.article import ArticleSerializer
 from jdhapi.views.articles.status_handlers import (
     CopyEditingHandler,
+    DesignReviewHandler,
     PeerReviewHandler,
     PublishedHandler,
     RejectedHandler,
@@ -105,6 +106,7 @@ class ArticleStatus(APIView):
         "TECHNICAL_REVIEW": TechnicalReviewHandler(),
         "COPY_EDITING": CopyEditingHandler(),
         "PEER_REVIEW": PeerReviewHandler(),
+        "DESIGN_REVIEW": DesignReviewHandler(),
         "PUBLISHED": PublishedHandler(),
         "REJECTED": RejectedHandler(),
     }

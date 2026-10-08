@@ -1,15 +1,33 @@
 import os
+import sys
+
 from celery import Celery
+from celery.schedules import crontab
 
 # set the default Django settings module for the 'celery' program.
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'jdh.settings')
-app = Celery('jdhtasks')
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "jdh.settings")
+app = Celery("jdhtasks")
 
 # Using a string here means the worker doesn't have to serialize
 # the configuration object to child processes.
 # - namespace='CELERY' means all celery-related configuration keys
 #   should have a `CELERY_` prefix.
-app.config_from_object('django.conf:settings', namespace='CELERY')
+app.config_from_object("django.conf:settings", namespace="CELERY")
+
+# Make Celery delay run inline
+if "test" in sys.argv:
+    app.conf.task_always_eager = True
+    app.conf.task_eager_propagates = True
 
 # Load task modules from all registered Django app configs.
 app.autodiscover_tasks()
+
+app.conf.timezone = "UTC"
+
+app.conf.beat_schedule = {
+    "get-github-issue-url-for-existing-article": {
+        "task": "jdhapi.tasks.get_github_issue_url_for_all_articles",
+        "schedule": crontab(hour=7, minute=30, day_of_week='mon-fri'),
+    }
+}
+

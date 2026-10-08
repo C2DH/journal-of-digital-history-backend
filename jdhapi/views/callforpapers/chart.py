@@ -8,8 +8,10 @@ ARTICLE_STATUSES = [
     ("DRAFT", "Writing"),
     ("TECHNICAL_REVIEW", "Technical review"),
     ("PEER_REVIEW", "Peer review"),
+    ("COPY_EDITING", "Copy editing"),
     ("DESIGN_REVIEW", "Design review"),
     ("PUBLISHED", "Published"),
+    ("REJECTED", "Rejected"),
 ]
 
 ABSTRACT_STATUSES = [
@@ -62,8 +64,10 @@ class BarChartDataView(APIView):
                 "Writing": 0,
                 "Technical review": 0,
                 "Peer review": 0,
+                "Copy editing": 0,
                 "Design review": 0,
                 "Published": advance_count,
+                "Rejected": 0
             }
         ]
 

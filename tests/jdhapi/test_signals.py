@@ -1,15 +1,18 @@
+from unittest.mock import Mock, patch
+
 from django.core.exceptions import ValidationError
 from django.test import TestCase
-from jdhapi.models import Article, Abstract, Issue
+
+from jdhapi.models import Abstract, Article, Issue
+
 from .fixtures.fixture_signals import (
     date,
-    repository_url,
+    false_notebook_url,
+    false_repository_url,
     notebook_url,
     notebook_url_skim,
-    false_repository_url,
-    false_notebook_url,
+    repository_url,
 )
-from unittest.mock import patch, Mock
 
 
 class TestSignal(TestCase):
