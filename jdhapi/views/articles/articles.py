@@ -15,6 +15,7 @@ from jdhapi.views.articles.status_handlers import (
     PeerReviewHandler,
     PublishedHandler,
     RejectedHandler,
+    SocialMediaHandler,
     TechnicalReviewHandler,
 )
 
@@ -107,6 +108,7 @@ class ArticleStatus(APIView):
         "COPY_EDITING": CopyEditingHandler(),
         "PEER_REVIEW": PeerReviewHandler(),
         "DESIGN_REVIEW": DesignReviewHandler(),
+        "SOCIAL_MEDIA": SocialMediaHandler(),
         "PUBLISHED": PublishedHandler(),
         "REJECTED": RejectedHandler(),
     }
