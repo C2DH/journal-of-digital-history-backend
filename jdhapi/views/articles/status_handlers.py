@@ -48,11 +48,21 @@ class PeerReviewHandler(StatusHandler):
 
 class DesignReviewHandler(StatusHandler):
     def handle(self, article, request):
-        logger.info("Setting status Design_REVIEW pid=%s", article.abstract.pid)
+        logger.info("Setting status DESIGN_REVIEW pid=%s", article.abstract.pid)
         article.status = article.Status.DESIGN_REVIEW
         article.save()
         return Response(
             {"status": "Design Review set.", "article pid": article.abstract.pid}
+        )
+
+
+class SocialMediaHandler(StatusHandler):
+    def handle(self, article, request):
+        logger.info("Setting status SOCIAL_MEDIA pid=%s", article.abstract.pid)
+        article.status = article.Status.SOCIAL_MEDIA
+        article.save()
+        return Response(
+            {"status": "Social Media set.", "article pid": article.abstract.pid}
         )
 
 
