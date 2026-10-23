@@ -5,6 +5,7 @@ from .jdhapi.test_signals import *
 from .jdhapi.test_tasks import *
 from .jdhapi.utils.test_bluesky import *
 from .jdhapi.utils.test_facebook import *
+from .jdhapi.utils.test_github_repository import *
 from .jdhapi.utils.test_ojs_utils import *
 from .jdhapi.views.abstracts.test_search_abstract import *
 from .jdhapi.views.abstracts.test_submit_abstract import *
