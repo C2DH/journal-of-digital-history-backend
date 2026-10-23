@@ -5,6 +5,7 @@ from rest_framework import status
 from rest_framework.response import Response
 
 from jdhapi.utils.articles import save_citation
+from jdhapi.utils.github_repository import _github_issue_tag_user
 
 logger = logging.getLogger(__name__)
 
@@ -51,6 +52,8 @@ class DesignReviewHandler(StatusHandler):
         logger.info("Setting status DESIGN_REVIEW pid=%s", article.abstract.pid)
         article.status = article.Status.DESIGN_REVIEW
         article.save()
+        _github_issue_tag_user('biumiamy', 'This article has switched to Design Review.', article.github_issue)
+
         return Response(
             {"status": "Design Review set.", "article pid": article.abstract.pid}
         )
