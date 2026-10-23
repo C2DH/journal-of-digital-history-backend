@@ -286,8 +286,8 @@ DEFAULT_FROM_EMAIL = get_env_variable("DEFAULT_FROM_EMAIL", "jdh.admin@uni.lu")
 DEFAULT_TO_EMAIL = get_env_variable("DEFAULT_TO_EMAIL", "jdh.admin@uni.lu")
 
 # GitHub API token owned by jdh-observer
-GITHUB_ACCESS_TOKEN = get_env_variable("GITHUB_ACCESS_TOKEN")
-GITHUB_API_TOKEN = get_env_variable("GITHUB_API_TOKEN")
+GITHUB_ACCESS_TOKEN = get_env_variable("GITHUB_ACCESS_TOKEN", 0)
+GITHUB_API_TOKEN = get_env_variable("GITHUB_API_TOKEN", 0)
 
 # Social network
 BLUESKY_JDH_ACCOUNT = get_env_variable("BLUESKY_JDH_ACCOUNT")
