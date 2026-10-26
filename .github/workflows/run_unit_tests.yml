@@ -46,7 +46,7 @@ jobs:
 
       - name: Run tests
         env:
-          ALTCHA_HMAC_KEY: ${{ secrets.ALTCHA_HMAC_KEY }}
+          ALTCHA_HMAC_KEY: default-key
           SECRET_KEY: default-secret-key-for-testing
           DATABASE_ENGINE: django.db.backends.postgresql_psycopg2
           DATABASE_NAME: test_db
@@ -64,11 +64,12 @@ jobs:
           EMAIL_HOST_USER: user@example.com
           EMAIL_HOST_PASSWORD: password
           JDH_ORCID_API_TOKEN: default-token
-          GITHUB_ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN_GITHUB }}
-          BLUESKY_JDH_ACCOUNT: ${{ secrets.BLUESKY_JDH_ACCOUNT }}
-          BLUESKY_JDH_PASSWORD: ${{ secrets.BLUESKY_JDH_PASSWORD }}
-          FACEBOOK_JDH_PAGE_ID: ${{ secrets.FACEBOOK_JDH_PAGE_ID }}
-          FACEBOOK_JDH_ACCESS_TOKEN: ${{ secrets.FACEBOOK_JDH_ACCESS_TOKEN }}
+          GITHUB_ACCESS_TOKEN: default-token
+          GITHUB_API_TOKEN: default-token
+          BLUESKY_JDH_ACCOUNT: default-account
+          BLUESKY_JDH_PASSWORD: default-password
+          FACEBOOK_JDH_PAGE_ID: default-page-id
+          FACEBOOK_JDH_ACCESS_TOKEN: default-access-token
           OJS_API_KEY_TOKEN: default-token
           OJS_API_URL: https://ojs-api-url-example.com
           COPY_EDITOR_ADDRESS: copy-editor-address@mail.com
