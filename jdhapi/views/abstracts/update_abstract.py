@@ -25,7 +25,7 @@ abstract_status_schema = JSONSchema(filepath="abstract_status.json")
 @permission_classes([IsAdminUser])
 def update_abstract_status_with_email(request, pid):
     """
-    PATCH /api/abstracts/<pid>/status
+    PATCH /api/abstracts/<pid>/status/email
 
     Endpoint to modify the status of an abstract identified by its PID.
     It sends an email notification to the contact email of the abstract.
