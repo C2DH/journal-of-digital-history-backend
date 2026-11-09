@@ -71,55 +71,6 @@ def update_abstract_status_with_email(request, pid):
         )
 
 
-@api_view(["PATCH"])
-@permission_classes([IsAdminUser])
-def update_abstract_status(request):
-    """
-    PATCH /api/abstracts/status
-
-    Endpoint to modify the status of one or several abstract identified by its PID.
-    Send no email notification.
-    Requires admin permissions.
-    """
-
-    try:
-        data = change_status(request)
-        return Response(
-            {"message": "Abstracts updated successfully.", "data": data},
-            status=status.HTTP_200_OK,
-        )
-    except ValidationError as e:
-        logger.error(f"JSON schema validation failed: {e}")
-        return Response(
-            {"error": "Invalid data format", "message": str(e)},
-            status=status.HTTP_400_BAD_REQUEST,
-        )
-    except SchemaError as e:
-        logger.exception("Schema error occurred.")
-        return Response(
-            {"error": "SchemaError", "message": str(e)},
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content_type="application/json",
-        )
-    except (KeyError, IndexError) as e:
-        logger.exception("Data invalid after validation")
-        return Response(
-            {"error": "KeyError", "message": str(e)},
-            status=status.HTTP_400_BAD_REQUEST,
-            content_type="application/json",
-        )
-    except Exception as e:
-        logger.exception("An unexpected error occurred.")
-        return Response(
-            {
-                "error": "InternalError",
-                "message": str(e),
-            },
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content_type="application/json",
-        )
-
-
 def send_mail_to_contact(request, abstract, status):
     """
     Sends an email notification to the contact associated with an abstract.
@@ -215,49 +166,3 @@ def change_status_with_email(request, pid):
             "title": abstract.title,
             "new_status": abstract.status,
         }
-
-
-def change_status(request):
-    """
-    Change abstract(s) status(es) with no notification.
-    Args:
-        request: containing pids and status (which is the new status).
-    """
-    logger.info("Change abstract status")
-    logger.info("Start JSON validation")
-    with transaction.atomic():
-
-        abstract_status_schema.validate(instance=request.data)
-
-        pids = request.data.get("pids", [])
-        status = request.data.get("status", "").upper()
-
-        try:
-            logger.info("Retrieve abstract(s) according to PID(s).")
-            if not pids:
-                logger.error("No PID provided in request data.")
-                raise ValidationError({"error": "At least one PID is required."})
-            abstracts = Abstract.objects.filter(pid__in=pids)
-            if not abstracts.exists():
-                logger.error(f"No Abstracts found for PIDs {pids}.")
-                raise Exception({"error": "Abstract(s) not found."})
-
-        except Abstract.DoesNotExist:
-            logger.error(f"Abstracts with PID(s) {pids} do not exist.")
-            raise Exception({"error": "Abstract(s) not found."})
-
-        updated_abstracts = []
-
-        for abstract in abstracts:
-            abstract.status = status
-            abstract.save()
-            updated_abstracts.append(
-                {
-                    "pid": abstract.pid,
-                    "title": abstract.title,
-                    "new_status": abstract.status,
-                }
-            )
-            logger.info(f"Abstract {abstract.pid} status updated to {status}.")
-
-    return updated_abstracts
