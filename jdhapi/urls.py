@@ -19,6 +19,7 @@ urlpatterns = [
         views.update_abstract_status,
         name="abstract-change-status",
     ),
+    path("api/abstracts/<str:pid>/status", views.AbstractStatus.as_view(), name='abstract-status'),   
     path(
         "api/abstracts/<str:pid>/status/email",
         views.update_abstract_status_with_email,

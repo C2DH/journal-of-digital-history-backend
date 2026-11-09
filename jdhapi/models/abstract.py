@@ -1,7 +1,8 @@
+import shortuuid
 from django.db import models
 from django.utils import timezone
+
 from .callforpaper import CallForPaper
-import shortuuid
 
 
 def create_short_url():
@@ -72,6 +73,11 @@ class Abstract(models.Model):
 
     class Meta:
         ordering = ["submitted_date"]
+
+    def submitted(self):
+        self.validation_date = None
+        self.status = Abstract.Status.SUBMITTED
+        self.save()
 
     def accepted(self):
         self.validation_date = timezone.now()

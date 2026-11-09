@@ -1,14 +1,25 @@
 from typing import ClassVar
 
+from django.shortcuts import get_object_or_404
 from django.views.decorators.csrf import csrf_exempt
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_recaptcha.fields import ReCaptchaV2Field
-from rest_framework import filters, generics, permissions
+from rest_framework import filters, generics
+from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
 from rest_framework.serializers import Serializer
+from rest_framework.views import APIView
 
 from jdhapi.models import Abstract
 from jdhapi.serializers.abstract import AbstractSerializer, CreateAbstractSerializer
+from jdhapi.views.abstracts.status_handlers import (
+    AbandonedHandler,
+    AcceptedHandler,
+    DeclinedHandler,
+    PublishedHandler,
+    SubmittedHandler,
+    SuspendedHandler,
+)
 
 
 class V2Serializer(Serializer):
@@ -17,7 +28,7 @@ class V2Serializer(Serializer):
 
 class AbstractList(generics.ListCreateAPIView):
     queryset = Abstract.objects.all()
-    permission_classes: ClassVar[list[object]] = [permissions.IsAdminUser]
+    permission_classes: ClassVar[list[object]] = [IsAdminUser]
     serializer_class = AbstractSerializer
     filter_backends: ClassVar[list[object]] = [
         DjangoFilterBackend,
@@ -92,3 +103,24 @@ class AbstractDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Abstract.objects.all()
     serializer_class = AbstractSerializer
     lookup_field = "pid"
+
+
+class AbstractStatus(APIView):
+    permission_classes: ClassVar[list[object]] = [IsAdminUser]
+    STATUS_HANDLERS: ClassVar[dict[str, object]] = {
+        "SUBMITTED": SubmittedHandler(),
+        "ACCEPTED": AcceptedHandler(),
+        "DECLINED": DeclinedHandler(),
+        "ABANDONED": AbandonedHandler(),
+        "SUSPENDED": SuspendedHandler(),
+        "PUBLISHED": PublishedHandler()
+    }
+
+    def patch(self, request, pid):
+        abstract = get_object_or_404(Abstract, pid=pid)
+        new_status = request.data.get("status")
+
+        handler = self.STATUS_HANDLERS.get(new_status)
+        if handler:
+            return handler.handle(abstract)
+        return Response({"error": "Invalid status"}, status=400)
