@@ -1,5 +1,6 @@
-from jdhapi.models import Abstract, Article
 from rest_framework import serializers
+
+from jdhapi.models import Abstract, Article
 
 
 class CreateAbstractSerializer(serializers.ModelSerializer):
@@ -65,6 +66,7 @@ class AbstractSerializer(serializers.ModelSerializer):
     contact_email = serializers.SerializerMethodField()
     contact_orcid = serializers.SerializerMethodField()
     issue = serializers.SerializerMethodField()
+    status_log = serializers.SerializerMethodField()
 
     class Meta:
         model = Abstract
@@ -89,6 +91,7 @@ class AbstractSerializer(serializers.ModelSerializer):
             "datasets",
             "issue",
             "repository_url",
+            "status_log"
         )
 
     def get_callpaper_title(self, obj):
@@ -146,3 +149,16 @@ class AbstractSerializer(serializers.ModelSerializer):
         from jdhapi.serializers.dataset import DatasetSlimSerializer
 
         return DatasetSlimSerializer(obj.datasets.all(), many=True).data
+
+    def get_status_log(self, obj):
+        status_changes = []
+
+        for record in obj.history.all():
+            status_changes.append(
+                {
+                    "date": record.history_date,
+                    "user": record.history_user.username,
+                    "status": record.status,
+                }
+            )
+        return status_changes

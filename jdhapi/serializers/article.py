@@ -17,9 +17,7 @@ class ArticleSerializer(serializers.ModelSerializer):
     campaigns = SocialMediaSerializer(many=True)
 
     kernel_language = serializers.SerializerMethodField()
-
-    def get_kernel_language(self, obj):
-        return obj.get_kernel_language()
+    status_log = serializers.SerializerMethodField()
 
     class Meta:
         model = Article
@@ -46,4 +44,21 @@ class ArticleSerializer(serializers.ModelSerializer):
             "ojs_submission_id",
             "campaigns",
             "fingerprint",
+            "status_log"
         ]
+    
+    def get_kernel_language(self, obj):
+        return obj.get_kernel_language()
+
+    def get_status_log(self, obj):
+        status_changes = []
+
+        for record in obj.history.all():
+            status_changes.append(
+                {
+                    "date": record.history_date,
+                    "user": record.history_user.username,
+                    "status": record.status,
+                }
+            )
+        return status_changes
