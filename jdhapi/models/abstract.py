@@ -1,6 +1,7 @@
 import shortuuid
 from django.db import models
 from django.utils import timezone
+from simple_history.models import HistoricalRecords
 
 from .callforpaper import CallForPaper
 
@@ -70,6 +71,7 @@ class Abstract(models.Model):
     )
     consented = models.BooleanField(default=False)
     comment = models.TextField(blank=True, null=True)
+    history = HistoricalRecords()
 
     class Meta:
         ordering = ["submitted_date"]
