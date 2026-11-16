@@ -1,7 +1,6 @@
 from django.core.mail import send_mail
 from django.db import transaction
 from django.shortcuts import get_object_or_404
-from jdh.validation import JSONSchema
 from jsonschema.exceptions import SchemaError, ValidationError
 from rest_framework import status
 from rest_framework.decorators import (
@@ -11,6 +10,7 @@ from rest_framework.decorators import (
 from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
 
+from jdh.validation import JSONSchema
 from jdhapi.forms import EmailConfigurationForm
 from jdhapi.models import Abstract
 from jdhapi.utils.logger import logger as get_logger
@@ -153,7 +153,6 @@ def change_status_with_email(request, pid):
                     abstract.suspended()
                     logger.info(f"Abstract {pid} suspended.")
 
-            abstract.save()
             logger.info(f"Abstract {pid} saved after status update.")
             send_mail_to_contact(request, abstract, new_status)
 
@@ -165,4 +164,5 @@ def change_status_with_email(request, pid):
             "pid": abstract.pid,
             "title": abstract.title,
             "new_status": abstract.status,
+            "message": f"Abstract updated to {abstract.status} and email sent."
         }
