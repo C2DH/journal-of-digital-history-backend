@@ -157,8 +157,17 @@ class AbstractSerializer(serializers.ModelSerializer):
             status_changes.append(
                 {
                     "date": record.history_date,
-                    "user": record.history_user.username,
+                    "user": record.history_user.username if record.history_user else "system",
                     "status": record.status,
                 }
             )
+
+        status_changes.append(
+            {
+                "date": obj.submitted_date,
+                "user": "author(s)",
+                "status": Abstract.Status.SUBMITTED
+            }
+        )
+        
         return status_changes

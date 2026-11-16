@@ -57,7 +57,7 @@ class ArticleSerializer(serializers.ModelSerializer):
             status_changes.append(
                 {
                     "date": record.history_date,
-                    "user": record.history_user.username,
+                    "user": record.history_user.username if record.history_user else "system",
                     "status": record.status,
                 }
             )
