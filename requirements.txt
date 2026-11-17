@@ -60,9 +60,9 @@ arrow==1.3.0 \
     # via
     #   isoduration
     #   journal-of-digital-history-backend
-asgiref==3.8.1 \
-    --hash=sha256:3e1e3ecc849832fe52ccf2cb6686b7a55f82bb1d6aee72a58826471390335e47 \
-    --hash=sha256:c343bd80a0bec947a9860adb4c432ffa7db769836c64238fc34bdc3fec84d590
+asgiref==3.9.1 \
+    --hash=sha256:a5ab6582236218e5ef1648f242fd9f10626cfd4de8dc377db215d5d5098e3142 \
+    --hash=sha256:f3bba7092a48005b5f5bacd747d36ee4a5a61f4a269a6df590b43144355ebd2c
     # via
     #   django
     #   django-cors-headers
@@ -362,9 +362,9 @@ diff-match-patch==20241021 \
     # via
     #   django-import-export
     #   journal-of-digital-history-backend
-django==5.1.6 \
-    --hash=sha256:1e39eafdd1b185e761d9fab7a9f0b9fa00af1b37b25ad980a8aa0dac13535690 \
-    --hash=sha256:8d203400bc2952fbfb287c2bbda630297d654920c72a73cc82a9ad7926feaad5
+django==6.1.3 \
+    --hash=sha256:a0530e3fdac55d34ccc5893c36f6c57d7a7083064f3d414537e51473648b3290 \
+    --hash=sha256:b5d2d9e35295065d13b1927b3f19a59bd119f737aa6299def14ccca1ae3c8c0d
     # via
     #   crispy-bootstrap4
     #   django-cors-headers
@@ -372,6 +372,7 @@ django==5.1.6 \
     #   django-filter
     #   django-import-export
     #   django-model-utils
+    #   django-simple-history
     #   djangorestframework
     #   drf-recaptcha
     #   journal-of-digital-history-backend
@@ -407,9 +408,13 @@ django-model-utils==5.0.0 \
     --hash=sha256:041cdd6230d2fbf6cd943e1969318bce762272077f4ecd333ab2263924b4e5eb \
     --hash=sha256:fec78e6c323d565a221f7c4edc703f4567d7bb1caeafe1acd16a80c5ff82056b
     # via journal-of-digital-history-backend
-djangorestframework==3.15.2 \
-    --hash=sha256:2b8871b062ba1aefc2de01f773875441a961fefbf79f5eed1e32b2f096944b20 \
-    --hash=sha256:36fe88cd2d6c6bec23dca9804bab2ba5517a8bb9d8f47ebc68981b56840107ad
+django-simple-history==3.13.0 \
+    --hash=sha256:1cf1d83054479f64aee022023afc1671843aa0a99888799c5c4c3966b0252521 \
+    --hash=sha256:ca3c1e4ccd5f16f45fbbef6015ee2a246465fd9bd924100df8e9dfb368c4f26c
+    # via journal-of-digital-history-backend
+djangorestframework==3.18.3 \
+    --hash=sha256:446a9b352e7eff630421ab3f2328bd2401b109a9470afa4a31189994911ed030 \
+    --hash=sha256:8544bb674846731b1e3c9b309236ee1dc412905a0aa725be2ec193ca950a7d12
     # via
     #   drf-recaptcha
     #   journal-of-digital-history-backend
