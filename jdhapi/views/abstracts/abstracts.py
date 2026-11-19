@@ -120,7 +120,12 @@ class AbstractStatus(APIView):
         abstract = get_object_or_404(Abstract, pid=pid)
         new_status = request.data.get("status")
 
+        if not isinstance(new_status, str):
+            return Response({"error": "Invalid status"}, status=400)
+
         handler = self.STATUS_HANDLERS.get(new_status)
+
         if handler:
             return handler.handle(abstract)
+            
         return Response({"error": "Invalid status"}, status=400)
