@@ -52,8 +52,16 @@ class ArticleSerializer(serializers.ModelSerializer):
 
     def get_status_log(self, obj):
         status_changes = []
+        previous_status = None
 
-        for record in obj.history.all():
+        records = obj.history.selec_related("history_user").order_by(
+            "history_date", "history_id"
+        )
+
+        for record in records:
+            if status_changes and record.status == previous_status:
+                continue
+            
             status_changes.append(
                 {
                     "date": record.history_date,
@@ -61,4 +69,6 @@ class ArticleSerializer(serializers.ModelSerializer):
                     "status": record.status,
                 }
             )
+            previous_status = record.status
+            
         return status_changes

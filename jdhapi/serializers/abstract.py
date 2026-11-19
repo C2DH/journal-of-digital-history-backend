@@ -91,7 +91,7 @@ class AbstractSerializer(serializers.ModelSerializer):
             "datasets",
             "issue",
             "repository_url",
-            "status_log"
+            "status_log",
         )
 
     def get_callpaper_title(self, obj):
@@ -152,22 +152,38 @@ class AbstractSerializer(serializers.ModelSerializer):
 
     def get_status_log(self, obj):
         status_changes = []
+        previous_status = None
 
-        for record in obj.history.all():
+        records = obj.history.selec_related("history_user").order_by(
+            "history_date", "history_id"
+        )
+
+        for record in records:
+            if status_changes and record.status == previous_status:
+                continue
+
             status_changes.append(
                 {
                     "date": record.history_date,
-                    "user": record.history_user.username if record.history_user else "system",
+                    "user": record.history_user.username
+                    if record.history_user
+                    else "system",
                     "status": record.status,
                 }
             )
+            previous_status = record.status
 
-        status_changes.append(
-            {
-                "date": obj.submitted_date,
-                "user": "author(s)",
-                "status": Abstract.Status.SUBMITTED
-            }
-        )
-        
+        if obj.submitted_date and (
+            not status_changes
+            or status_changes[0]["status"] != Abstract.Status.SUBMITTED
+        ):
+            status_changes.insert(
+                0,
+                {
+                    "date": obj.submitted_date,
+                    "user": "author(s)",
+                    "status": Abstract.Status.SUBMITTED,
+                },
+            )
+
         return status_changes
