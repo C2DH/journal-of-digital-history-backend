@@ -117,7 +117,12 @@ class ArticleStatus(APIView):
         article = get_object_or_404(Article, abstract__pid=abstract__pid)
         new_status = request.data.get("status")
 
+        if not isinstance(new_status, str):
+            return Response({"error": "Invalid status"}, status=400)
+
         handler = self.STATUS_HANDLERS.get(new_status)
+        
         if handler:
             return handler.handle(article, request)
+
         return Response({"error": "Invalid status"}, status=400)

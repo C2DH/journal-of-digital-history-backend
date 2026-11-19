@@ -1,4 +1,0 @@
-[tool.ruff]
-line-length = 88
-select = ["F", "E", "I", "RUF"]
-fix = true

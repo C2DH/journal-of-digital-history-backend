@@ -1,9 +1,11 @@
+from unittest.mock import patch
+
 from django.contrib.auth import get_user_model
 from django.urls import reverse
-from jdhapi.models import Abstract
-from rest_framework.test import APITestCase, APIClient
 from rest_framework import status
-from unittest.mock import patch
+from rest_framework.test import APIClient, APITestCase
+
+from jdhapi.models import Abstract
 
 
 class UpdateAbstractStatusTestCase(APITestCase):
@@ -28,7 +30,7 @@ class UpdateAbstractStatusTestCase(APITestCase):
         self.single_url = reverse(
             "abstract-change-status-with-email", args=[self.abstract1.pid]
         )
-        self.bulk_url = reverse("abstract-change-status")
+
         self.single_data = {
             "from": "admin@example.com",
             "to": "test1@example.com",
@@ -60,28 +62,5 @@ class UpdateAbstractStatusTestCase(APITestCase):
     def test_update_abstract_status_with_email_not_found(self):
         url = reverse("abstract-change-status-with-email", args=["doesnotexist"])
         response = self.client.patch(url, self.single_data, format="json")
-        self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
-        self.assertIn("error", response.data)
-
-    def test_update_abstract_status_bulk_success(self):
-        response = self.client.patch(self.bulk_url, self.bulk_data, format="json")
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data["data"]), 2)
-        self.assertEqual(
-            response.data["data"][0]["new_status"], Abstract.Status.DECLINED
-        )
-        self.assertEqual(
-            response.data["data"][1]["new_status"], Abstract.Status.DECLINED
-        )
-
-    def test_update_abstract_status_bulk_missing_pids(self):
-        data = {"status": "declined"}
-        response = self.client.patch(self.bulk_url, data, format="json")
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn("error", response.data)
-
-    def test_update_abstract_status_bulk_not_found(self):
-        data = {"pids": ["doesnotexist"], "status": "declined"}
-        response = self.client.patch(self.bulk_url, data, format="json")
         self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
         self.assertIn("error", response.data)

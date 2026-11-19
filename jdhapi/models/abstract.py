@@ -1,7 +1,9 @@
+import shortuuid
 from django.db import models
 from django.utils import timezone
+from simple_history.models import HistoricalRecords
+
 from .callforpaper import CallForPaper
-import shortuuid
 
 
 def create_short_url():
@@ -69,9 +71,15 @@ class Abstract(models.Model):
     )
     consented = models.BooleanField(default=False)
     comment = models.TextField(blank=True, null=True)
+    history = HistoricalRecords()
 
     class Meta:
         ordering = ["submitted_date"]
+
+    def submitted(self):
+        self.validation_date = None
+        self.status = Abstract.Status.SUBMITTED
+        self.save()
 
     def accepted(self):
         self.validation_date = timezone.now()

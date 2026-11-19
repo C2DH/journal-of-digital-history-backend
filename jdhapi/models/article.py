@@ -2,6 +2,7 @@ import logging
 
 from django.db import models
 from model_utils import FieldTracker
+from simple_history.models import HistoricalRecords
 
 logger = logging.getLogger(__name__)
 
@@ -58,10 +59,7 @@ class Article(models.Model):
             "DESIGN_REVIEW",
             "Design review",
         )
-        SOCIAL_MEDIA = (
-            "SOCIAL_MEDIA",
-            "Social Media"
-        )
+        SOCIAL_MEDIA = ("SOCIAL_MEDIA", "Social Media")
         PUBLISHED = (
             "PUBLISHED",
             "Published",
@@ -144,7 +142,7 @@ class Article(models.Model):
         blank=True,
         null=True,
         help_text="Url to find here https://data.journalofdigitalhistory.org/",
-    ) 
+    )
     publication_date = models.DateTimeField(blank=True, null=True)
     copyright_type = models.CharField(
         max_length=15,
@@ -170,8 +168,12 @@ class Article(models.Model):
     authors = models.ManyToManyField("jdhapi.Author", through="Role")
     ojs_submission_id = models.IntegerField(null=True, blank=True, default=None)
     github_issue = models.URLField(
-        max_length=254, null=True, blank=True, help_text="GitHub's issue URL on C2DH/jdh-notebook repository"
+        max_length=254,
+        null=True,
+        blank=True,
+        help_text="GitHub's issue URL on C2DH/jdh-notebook repository",
     )
+    history = HistoricalRecords()
 
     def get_kernel_language(self):
         tool_tags = self.tags.filter(category="tool")

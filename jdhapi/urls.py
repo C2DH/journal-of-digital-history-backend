@@ -14,29 +14,20 @@ urlpatterns = [
         views.AbstractDetail.as_view(),
         name="abstract-detail",
     ),
+    path("api/abstracts/<str:pid>/status", views.AbstractStatus.as_view(), name='abstract-status'),   
     path(
-        "api/abstracts/status",
-        views.update_abstract_status,
-        name="abstract-change-status",
-    ),
-    path(
-        "api/abstracts/<str:pid>/status",
+        "api/abstracts/<str:pid>/status/email",
         views.update_abstract_status_with_email,
         name="abstract-change-status-with-email",
     ),
     path("api/abstracts/submit", views.submit_abstract, name="submit-abstract"),
     path("api/articles/", views.ArticleList.as_view(), name="article-list"),
-    path("api/articles/<str:abstract__pid>/status", views.ArticleStatus.as_view(), name='article-status'),    
     path(
         "api/articles/<str:abstract__pid>/",
         views.ArticleDetail.as_view(),
         name="article-detail",
     ),
-    path(
-        "api/articles/status",
-        views.update_article_status,
-        name="article-change-status",
-    ),
+    path("api/articles/<str:abstract__pid>/status", views.ArticleStatus.as_view(), name='article-status'),
     path("api/articles/advance", views.AdvanceArticleList.as_view(), name="advance-article-list"),
     path(
         "api/articles/bluesky",
