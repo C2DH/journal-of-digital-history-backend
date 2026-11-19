@@ -54,8 +54,8 @@ class ArticleSerializer(serializers.ModelSerializer):
         status_changes = []
         previous_status = None
 
-        records = obj.history.selec_related("history_user").order_by(
-            "history_date", "history_id"
+        records = obj.history.select_related("history_user").order_by(
+            "-history_date", "history_id"
         )
 
         for record in records:

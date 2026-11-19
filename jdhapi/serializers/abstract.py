@@ -154,8 +154,8 @@ class AbstractSerializer(serializers.ModelSerializer):
         status_changes = []
         previous_status = None
 
-        records = obj.history.selec_related("history_user").order_by(
-            "history_date", "history_id"
+        records = obj.history.select_related("history_user").order_by(
+            "-history_date", "history_id"
         )
 
         for record in records:
@@ -177,8 +177,7 @@ class AbstractSerializer(serializers.ModelSerializer):
             not status_changes
             or status_changes[0]["status"] != Abstract.Status.SUBMITTED
         ):
-            status_changes.insert(
-                0,
+            status_changes.append(
                 {
                     "date": obj.submitted_date,
                     "user": "author(s)",
