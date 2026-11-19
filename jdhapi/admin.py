@@ -196,7 +196,8 @@ class ArticleAdmin(admin.ModelAdmin):
                     "publication_date",
                     "issue",
                     "copyright_type",
-                    "github_issue"
+                    "github_issue",
+                    "ojs_submission_id"
                 ),
             },
         ),
