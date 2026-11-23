@@ -105,7 +105,10 @@ def create_contributor_in_ojs(submission_id, publication_id, article: Article):
 
     primary_contact_id = 0
 
-    url = f"{settings.OJS_API_URL}/submissions/{submission_id}/publications/{publication_id}/contributors"
+    url = (
+        f"{settings.OJS_API_URL}/submissions/{submission_id}"
+        f"/publications/{publication_id}/contributors"
+    )
 
     try:
         for author in article.abstract.authors.all():
@@ -132,21 +135,22 @@ def create_contributor_in_ojs(submission_id, publication_id, article: Article):
 
             if res.status_code == 200:
                 logger.info(
-                    f"Contributor {author.firstname} {author.lastname} created with response: {res.json()}"
+                    f"Contributor {author.firstname} {author.lastname} created with response {res.status_code} --- {res.json()}"
                 )
                 if article.abstract.contact_email == author.email:
                     primary_contact_id = res.json().get("id", 0)
 
-                return primary_contact_id
             else:
                 logger.error(
-                    f"Contributor {author.firstname} {author.lastname} NOT created with status code : {res.status_code} and response: {res.json()}"
+                    f"Contributor {author.firstname} {author.lastname} NOT created with status code : {res.status_code} ---  {res.json()}"
                 )
     except Exception as e:
         logger.error(
             f"[create_contributor_in_ojs]Failed to create the contributor on OJS. Details : {e}"
         )
         raise
+
+    return primary_contact_id
 
 
 def assign_primary_contact_and_metadata(
