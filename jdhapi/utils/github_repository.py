@@ -5,6 +5,7 @@ from urllib.parse import urlparse
 
 import requests
 from django.conf import settings
+from rest_framework.response import Response
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +48,7 @@ def is_socialmediacover_exist(repository_url):
 
 
 def parse_github_repo_url(repo_url: str):
-    """ Parse GitHub URL """
+    """Parse GitHub URL"""
     """ Accepts https://github.com/owner/repo or .git suffix """
     p = urlparse(
         repo_url,
@@ -63,7 +64,7 @@ def parse_github_repo_url(repo_url: str):
 
 
 def get_default_branch(owner: str, repo: str) -> str:
-    """ Get the default branch : main or another branch"""
+    """Get the default branch : main or another branch"""
     api = f"https://api.github.com/repos/{owner}/{repo}"
     r = requests.get(api, headers=get_github_headers())
     if r.status_code != 200:
@@ -72,14 +73,14 @@ def get_default_branch(owner: str, repo: str) -> str:
 
 
 def file_exists(owner: str, repo: str, branch: str, path: str) -> bool:
-    """ Check if a file exist"""
+    """Check if a file exist"""
     url = f"https://api.github.com/repos/{owner}/{repo}/contents/{path}"
     r = requests.head(url, params={"ref": branch}, headers=get_github_headers())
     return r.status_code == 200
 
 
 def fetch_file_bytes(owner: str, repo: str, branch: str, path: str) -> bytes:
-    """ Fetch a file from GitHub repository with the raw url"""
+    """Fetch a file from GitHub repository with the raw url"""
     raw = f"https://raw.githubusercontent.com/{owner}/{repo}/{branch}/{path}"
     r = requests.get(raw, headers=get_github_headers())
     if r.status_code != 200:
@@ -101,7 +102,7 @@ def parse_tweets_md(content: str) -> "tuple[list[str], list[str]]":
     """
     thread_texts: list[str] = []
     independent: list[str] = []
-    mode: "str | None" = None
+    mode: str | None = None
 
     for line in content.splitlines():
         stripped = line.strip()
@@ -157,7 +158,9 @@ def parse_times(arg, count: int) -> list:
                 last_dt = last_dt + timedelta(minutes=1)
                 arr.append(last_dt.isoformat())
         else:
-            raise ValueError(f"Schedule list has {len(arr)} timestamps but expected {count}")
+            raise ValueError(
+                f"Schedule list has {len(arr)} timestamps but expected {count}"
+            )
 
     times = []
     for s in arr:
@@ -172,3 +175,23 @@ def parse_times(arg, count: int) -> list:
     if any(times[i] > times[i + 1] for i in range(len(times) - 1)):
         raise ValueError("Schedule times must be in non-decreasing order.")
     return times
+
+
+def _github_issue_tag_user(username, message, github_issue_url):
+    """
+    Create a comment with the username of the person you want to tag on a GitHub issue.
+    """
+    logger.info("_github_issue_tag_user")
+
+    url = "https://api.github.com/repos/" + github_issue_url[19:] + '/comments'
+    headers = {"Authorization": f"Bearer {settings.GITHUB_API_TOKEN}"}
+    body = {"body": f"@{username} - {message}"}
+
+    try:
+        response = requests.post(url, headers=headers, json=body)
+        return response
+
+    except requests.exceptions.RequestException as e:
+        return Response(
+            {"error": "Failed to connect to GitHub API.", "details": str(e)}, status=500
+        )

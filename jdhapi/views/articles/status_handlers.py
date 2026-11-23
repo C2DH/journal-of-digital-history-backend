@@ -5,6 +5,7 @@ from rest_framework import status
 from rest_framework.response import Response
 
 from jdhapi.utils.articles import save_citation
+from jdhapi.utils.github_repository import _github_issue_tag_user
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +21,7 @@ class TechnicalReviewHandler(StatusHandler):
         article.status = article.Status.TECHNICAL_REVIEW
         article.save()
         return Response(
-            {"status": "Technical Review set.", "article pid": article.abstract.pid}
+            {"status": "Technical Review set.", "pid": article.abstract.pid}
         )
 
 
@@ -32,7 +33,7 @@ class CopyEditingHandler(StatusHandler):
         article.save()
         logger.info("Set status COPY_EDITING pid=%s", article.abstract.pid)
         return Response(
-            {"status": "Copyediting set.", "article pid": article.abstract.pid}
+            {"status": "Copyediting set.", "pid": article.abstract.pid}
         )
 
 
@@ -42,17 +43,29 @@ class PeerReviewHandler(StatusHandler):
         article.status = article.Status.PEER_REVIEW
         article.save()
         return Response(
-            {"status": "Peer Review set.", "article pid": article.abstract.pid}
+            {"status": "Peer Review set.", "pid": article.abstract.pid}
         )
 
 
 class DesignReviewHandler(StatusHandler):
     def handle(self, article, request):
-        logger.info("Setting status Design_REVIEW pid=%s", article.abstract.pid)
+        logger.info("Setting status DESIGN_REVIEW pid=%s", article.abstract.pid)
         article.status = article.Status.DESIGN_REVIEW
         article.save()
+        _github_issue_tag_user('biumiamy', 'This article has switched to Design Review.', article.github_issue)
+
         return Response(
-            {"status": "Design Review set.", "article pid": article.abstract.pid}
+            {"status": "Design Review set.", "pid": article.abstract.pid}
+        )
+
+
+class SocialMediaHandler(StatusHandler):
+    def handle(self, article, request):
+        logger.info("Setting status SOCIAL_MEDIA pid=%s", article.abstract.pid)
+        article.status = article.Status.SOCIAL_MEDIA
+        article.save()
+        return Response(
+            {"status": "Social Media set.", "pid": article.abstract.pid}
         )
 
 
@@ -88,7 +101,7 @@ class PublishedHandler(StatusHandler):
         article.status = article.Status.PUBLISHED
         article.save()
         return Response(
-            {"status": "Published set.", "article pid": article.abstract.pid}
+            {"status": "Published set.", "pid": article.abstract.pid}
         )
 
 
@@ -98,5 +111,5 @@ class RejectedHandler(StatusHandler):
         article.status = article.Status.REJECTED
         article.save()
         return Response(
-            {"status": "Rejected set.", "article pid": article.abstract.pid}
+            {"status": "Rejected set.", "pid": article.abstract.pid}
         )

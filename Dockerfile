@@ -57,7 +57,7 @@ COPY manage.py .
 COPY requirements.txt .
 
 
-RUN pip install -r requirements.txt
+RUN pip install --require-hashes --no-deps -r requirements.txt
 
 RUN apk del --no-cache .build-deps
 

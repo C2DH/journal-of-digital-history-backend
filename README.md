@@ -74,3 +74,43 @@ with Pip :
 ### To generate requirements.txt from the pipfile
 
 `pipenv requirements --dev --exclude-markers > requirements.txt`
+
+### Uv environment
+
+With Uv we can also create a `requirements.txt` with at least one SHA for each library, which is good practice.
+
+1. Every new library used in the project should be added to the `pyproject.toml` first (which is the reference of the listed libraries used for a project according to [PEP 621](https://peps.python.org/pep-0621/)).
+
+2. If you use Uv then you just need to do `uv lock` for resynchronising your lock file.
+
+3. And you can update the `requirements.txt` with the following :
+
+```
+uv export -o requirements.txt
+```
+
+### Actions tracking : History tables
+
+Two models for our database are concerned by the history tracking : **Abstract** and **Article**. For tracking every actions, we use a Django library named [django-simple-history](https://github.com/django-commons/django-simple-history). The implementation is made through this code line in both models :
+
+```python
+history = HistoricalRecords()
+```
+
+Then the records are presented in each corresponding serializer with `def get_status_log(self,obj)` method with for each status change : **the date**, **the user** who made the change, **the status** selected for the change.
+
+```python
+    {
+        "date": string
+        "user": string
+        "status": string
+    }
+```
+
+For populating the database, on the first sight, with no previous history, you can use :
+
+`uv run python manage.py populate_history --auto`
+
+For removing old history, for instance all the entries which are older than 30 days, you can do :
+
+`uv run python manage.py clean_old_history --days 30 --auto`
