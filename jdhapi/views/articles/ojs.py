@@ -163,6 +163,10 @@ def submit_to_ojs(request):
                 logger.error(f"No article found for PID : {pid}.")
                 raise Exception("Article not found.")
 
+            if article.ojs_submission_id:
+                logger.info(f"Article {pid} has already an existing submission on OJS.")
+                raise Exception(f"OJS submission already created for article {pid}")
+
             logger.info("Send article to OJS.")
 
             submission_id = 0
